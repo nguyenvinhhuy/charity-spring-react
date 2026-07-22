@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: clb_postgres
+    environment:
+      POSTGRES_DB: clb_charity
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d clb_charity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio
+    container_name: clb_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: clb_backend
+    environment:
+      # Point at the compose service names, not localhost.
+      DB_URL: jdbc:postgresql://postgres:5432/clb_charity
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      CORS_ORIGINS: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET}
+      BANK_ACCOUNT_NO: ${BANK_ACCOUNT_NO}
+      BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: clb_frontend
+    environment:
+      # Vite dev server proxies /api to the backend container; polling makes
+      # HMR work over the bind mount on Windows/macOS.
+      VITE_PROXY_TARGET: http://backend:8080
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  minio_data:

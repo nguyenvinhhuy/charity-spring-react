@@ -1,0 +1,13 @@
+# Dev image for the Vite frontend with hot-module reload.
+# Source is bind-mounted at runtime; node_modules lives in an anonymous volume.
+FROM node:lts-alpine
+WORKDIR /app
+
+# Install dependencies based on the manifest (cached unless package.json changes).
+COPY package.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host"]

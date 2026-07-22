@@ -1,0 +1,30 @@
+# ── Secrets ──────────────────────────────────────────────
+.env
+*.env
+!*.env.example
+
+# ── Backend (Maven / Java) ───────────────────────────────
+backend/target/
+backend/out/
+backend/bin/
+backend/.mvn/wrapper/maven-wrapper.jar
+# VS Code Java extension's own annotation-processing output (separate from Maven's build)
+backend/.apt_generated/
+backend/.apt_generated_tests/
+backend/.factorypath
+
+# ── Frontend (Node / Vite) ───────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+
+# ── IDE / OS ─────────────────────────────────────────────
+.idea/
+.vscode/
+.settings/
+.project
+.classpath
+*.iml
+.DS_Store
+Thumbs.db
