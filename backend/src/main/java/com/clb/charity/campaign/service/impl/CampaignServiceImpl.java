@@ -8,14 +8,17 @@ import com.clb.charity.campaign.dto.request.CreateCampaignRequest;
 import com.clb.charity.campaign.dto.request.CreateDonationRequest;
 import com.clb.charity.campaign.dto.request.UpdateCampaignRequest;
 import com.clb.charity.campaign.dto.response.CampaignDetailResponse;
+import com.clb.charity.campaign.dto.response.CampaignRegistrationContext;
 import com.clb.charity.campaign.dto.response.CampaignStatsResponse;
 import com.clb.charity.campaign.dto.response.CampaignSummaryResponse;
 import com.clb.charity.campaign.dto.response.DonationResponse;
+import com.clb.charity.campaign.dto.response.PublicCampaignStatsResponse;
 import com.clb.charity.campaign.mapper.CampaignMapper;
 import com.clb.charity.campaign.mapper.DonationMapper;
 import com.clb.charity.campaign.repository.CampaignRepository;
 import com.clb.charity.campaign.repository.DonationRepository;
 import com.clb.charity.campaign.service.CampaignService;
+import com.clb.charity.common.exception.CampaignCapacityRequiredException;
 import com.clb.charity.common.exception.CampaignDeletionNotAllowedException;
 import com.clb.charity.common.exception.CampaignNotFoundException;
 import com.clb.charity.common.exception.DonationNotFoundException;
@@ -23,6 +26,11 @@ import com.clb.charity.common.exception.DuplicateSlugException;
 import com.clb.charity.common.exception.InvalidStatusTransitionException;
 import com.clb.charity.common.model.Granularity;
 import com.clb.charity.common.util.SlugUtil;
+import com.clb.charity.comment.domain.CommentTargetType;
+import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.reaction.domain.ReactionTargetType;
+import com.clb.charity.reaction.service.ReactionService;
+import com.clb.charity.registration.service.RegistrationService;
 import com.clb.charity.vietqr.service.VietQrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,6 +57,9 @@ public class CampaignServiceImpl implements CampaignService {
     private final CampaignMapper campaignMapper;
     private final DonationMapper donationMapper;
     private final VietQrService vietQrService;
+    private final ReactionService reactionService;
+    private final CommentService commentService;
+    private final RegistrationService registrationService;
 
     @Override
     public Page<CampaignSummaryResponse> list(@Nullable CampaignStatus status, @Nullable CampaignCategory category,
@@ -63,7 +74,14 @@ public class CampaignServiceImpl implements CampaignService {
 
     @Override
     @Transactional
+    public void recordView(Long id) {
+        campaignRepository.incrementViewCount(id);
+    }
+
+    @Override
+    @Transactional
     public CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy) {
+        validateCapacityPairing(request.capacity(), request.eventStartDate());
         String slug = SlugUtil.slugify(request.title());
         if (campaignRepository.existsBySlug(slug)) {
             throw new DuplicateSlugException(slug);
@@ -77,6 +95,7 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional
     public CampaignDetailResponse update(Long id, UpdateCampaignRequest request) {
+        validateCapacityPairing(request.capacity(), request.eventStartDate());
         Campaign campaign = loadById(id);
         campaignMapper.updateEntity(request, campaign);
         return campaignMapper.toDetail(campaignRepository.save(campaign));
@@ -113,7 +132,23 @@ public class CampaignServiceImpl implements CampaignService {
         if (campaign.getStatus() != CampaignStatus.DRAFT) {
             throw new CampaignDeletionNotAllowedException(campaign.getStatus().name());
         }
+        reactionService.deleteAllForTarget(ReactionTargetType.CAMPAIGN, id);
+        commentService.deleteAllForTarget(CommentTargetType.CAMPAIGN, id);
+        registrationService.deleteAllForCampaign(id);
         campaignRepository.delete(campaign);
+    }
+
+    @Override
+    public CampaignRegistrationContext getRegistrationContext(Long id) {
+        Campaign campaign = loadById(id);
+        return new CampaignRegistrationContext(campaign.getCapacity(), campaign.getEventStartDate());
+    }
+
+    /** Enforces that capacity and eventStartDate are only ever set together, never one without the other. */
+    private static void validateCapacityPairing(@Nullable Integer capacity, @Nullable LocalDate eventStartDate) {
+        if ((capacity != null) != (eventStartDate != null)) {
+            throw new CampaignCapacityRequiredException();
+        }
     }
 
     @Override
@@ -224,6 +259,25 @@ public class CampaignServiceImpl implements CampaignService {
         long completed = statusCounts.getOrDefault(CampaignStatus.COMPLETED, 0L);
         return new CampaignStatsResponse(totalRaised, totalDonors, active, completed, campaigns.size(),
                 statusList, categoryList, progress, series, recentCampaigns, recentDonations);
+    }
+
+    @Override
+    public PublicCampaignStatsResponse publicStats() {
+        long totalRaised = 0;
+        int totalDonors = 0;
+        long activeCount = 0;
+        long completedCount = 0;
+        List<Campaign> campaigns = campaignRepository.findAll();
+        for (Campaign c : campaigns) {
+            totalRaised += c.getCurrentAmount();
+            totalDonors += c.getDonorCount();
+            if (c.getStatus() == CampaignStatus.ACTIVE) {
+                activeCount++;
+            } else if (c.getStatus() == CampaignStatus.COMPLETED) {
+                completedCount++;
+            }
+        }
+        return new PublicCampaignStatsResponse(totalRaised, totalDonors, activeCount, completedCount, campaigns.size());
     }
 
     /** Returns the integer percentage of current over target, capped at 100. */

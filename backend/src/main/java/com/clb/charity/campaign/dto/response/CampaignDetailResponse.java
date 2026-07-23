@@ -22,6 +22,7 @@ public record CampaignDetailResponse(
         long targetAmount,
         long currentAmount,
         int donorCount,
+        long viewCount,
         String bankAccountNo,
         String bankAccountName,
         @Nullable String qrDescription,
@@ -33,6 +34,7 @@ public record CampaignDetailResponse(
         @Nullable LocalDate endDate,
         @Nullable LocalDate eventStartDate,
         @Nullable LocalDate eventEndDate,
+        @Nullable Integer capacity,
         @Nullable Long createdBy,
         @Nullable Instant createdAt,
         @Nullable Instant updatedAt

@@ -6,6 +6,7 @@ import type {
   CampaignSummary,
   CreateCampaignRequest,
   Page,
+  PublicCampaignStats,
   UpdateCampaignRequest,
 } from '@/types';
 
@@ -107,6 +108,23 @@ export async function updateCampaignProgress(
  */
 export async function deleteCampaign(id: number): Promise<void> {
   await api.delete(`/campaigns/${id}`);
+}
+
+/**
+ * Fetch the public-safe campaign and donation totals (no per-donor or per-actor detail).
+ */
+export async function getPublicCampaignStats(): Promise<PublicCampaignStats> {
+  const { data } = await api.get<PublicCampaignStats>('/campaigns/stats');
+  return data;
+}
+
+/**
+ * Records one view of a campaign's detail page (fire-and-forget, call once per page load).
+ *
+ * @param id campaign id
+ */
+export async function recordCampaignView(id: number): Promise<void> {
+  await api.post(`/campaigns/${id}/views`);
 }
 
 /**

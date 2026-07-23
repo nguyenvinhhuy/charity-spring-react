@@ -1,55 +1,113 @@
 "use client"
 
-import React from 'react'
-import { LandingNavbar } from './components/navbar'
-import { HeroSection } from './components/hero-section'
-import { LogoCarousel } from './components/logo-carousel'
-import { StatsSection } from './components/stats-section'
-import { FeaturesSection } from './components/features-section'
-import { TeamSection } from './components/team-section'
-import { TestimonialsSection } from './components/testimonials-section'
-import { BlogSection } from './components/blog-section'
-import { PricingSection } from './components/pricing-section'
-import { CTASection } from './components/cta-section'
-import { ContactSection } from './components/contact-section'
-import { FaqSection } from './components/faq-section'
-import { LandingFooter } from './components/footer'
-import { LandingThemeCustomizer, LandingThemeCustomizerTrigger } from './components/landing-theme-customizer'
-import { AboutSection } from './components/about-section'
+import { Link } from "react-router"
+import { useTranslation } from "react-i18next"
+import { ArrowRight, HandHeart, HeartHandshake, ShieldCheck, Sparkles, Users } from "lucide-react"
+import { PublicLayout } from "@/components/layouts/public-layout"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { DotPattern } from "@/components/dot-pattern"
+import { Logo } from "@/components/logo"
+import { HomeStats } from "./components/home-stats"
+import { HomeHowItWorks } from "./components/home-how-it-works"
+import { HomeFeaturedCampaigns } from "./components/home-featured-campaigns"
+import { HomeLatestNews } from "./components/home-latest-news"
 
+/** Renders the public home page: hero, donation totals, featured campaigns, latest news, and a closing CTA. */
 export default function LandingPage() {
-  const [themeCustomizerOpen, setThemeCustomizerOpen] = React.useState(false)
+  const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <LandingNavbar />
+    <PublicLayout>
+      <section className="relative -mx-4 overflow-hidden bg-gradient-to-b from-background to-background/80 pt-8 pb-16 lg:-mx-6">
+        <div className="absolute inset-0">
+          <DotPattern className="opacity-100" size="md" fadeStyle="ellipse" />
+        </div>
 
-      {/* Main Content */}
-      <main>
-        <HeroSection />
-        <LogoCarousel />
-        <StatsSection />
-        <AboutSection />
-        <FeaturesSection />
-        <TeamSection />
-        <PricingSection />
-        <TestimonialsSection />
-        <BlogSection />
-        <FaqSection />
-        <CTASection />
-        <ContactSection />
-      </main>
+        <div className="relative mx-auto max-w-4xl px-4 text-center lg:px-6">
+          <div className="mb-8 flex justify-center">
+            <Badge variant="outline" className="border-foreground px-4 py-2">
+              <HeartHandshake className="mr-2 h-3 w-3" />
+              {t("auth.orgName")}
+            </Badge>
+          </div>
 
-      {/* Footer */}
-      <LandingFooter />
+          <h1 className="mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-6xl">
+            {t("auth.tagline")}
+          </h1>
 
-      {/* Theme Customizer */}
-      <LandingThemeCustomizerTrigger onClick={() => setThemeCustomizerOpen(true)} />
-      <LandingThemeCustomizer
-        open={themeCustomizerOpen}
-        onOpenChange={setThemeCustomizerOpen}
-      />
-    </div>
+          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-lg sm:text-xl">
+            {t("home.heroSubtitle")}
+          </p>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <Button size="lg" className="text-base" asChild>
+              <Link to="/campaigns">
+                <HeartHandshake />
+                {t("home.heroCtaCampaigns")}
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="text-base" asChild>
+              <Link to="/auth/sign-up">
+                <Users />
+                {t("home.heroCtaJoin")}
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="relative mx-auto mt-16 max-w-lg px-4 lg:px-6">
+          <div className="group relative">
+            <div className="absolute top-1/2 left-1/2 h-40 w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/40 blur-3xl" />
+            <div className="relative flex items-center justify-center rounded-xl border bg-card py-14 shadow-2xl">
+              <Logo size={96} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <HomeStats />
+      <HomeHowItWorks />
+      <HomeFeaturedCampaigns />
+      <HomeLatestNews />
+
+      <section className="border-t bg-muted/80 py-16 lg:py-24">
+        <div className="mx-auto max-w-3xl px-4 text-center lg:px-6">
+          <div className="mb-6 flex flex-col items-center gap-4">
+            <Badge variant="outline" className="flex items-center gap-2">
+              <Sparkles className="size-3" />
+              {t("home.ctaBadge")}
+            </Badge>
+          </div>
+
+          <h2 className="mb-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
+            {t("home.ctaTitle")}
+          </h2>
+          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-balance lg:text-lg">
+            {t("home.ctaSubtitle")}
+          </p>
+
+          <Button size="lg" className="px-8 py-6 text-lg font-medium" asChild>
+            <Link to="/auth/sign-up">
+              {t("home.ctaButton")}
+              <ArrowRight />
+            </Link>
+          </Button>
+
+          <div className="text-muted-foreground mt-8 flex flex-wrap items-center justify-center gap-4 text-sm sm:gap-6">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+              {t("home.trustTransparent")}
+            </span>
+            <Separator orientation="vertical" className="!h-4" />
+            <span className="flex items-center gap-2">
+              <HandHeart className="size-4 text-primary" />
+              {t("home.trustCommunity")}
+            </span>
+          </div>
+        </div>
+      </section>
+    </PublicLayout>
   )
 }

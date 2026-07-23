@@ -76,3 +76,12 @@ export async function publishPost(
   });
   return data;
 }
+
+/**
+ * Records one view of a post's detail page (fire-and-forget, call once per page load).
+ *
+ * @param id post id
+ */
+export async function recordPostView(id: number): Promise<void> {
+  await api.post(`/posts/${id}/views`);
+}

@@ -19,6 +19,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { FAQ_CATEGORIES, faqCategoryLabel } from "./faq-constants"
+
+/** Sentinel Select value for "pick a custom category" — never sent to the backend as-is. */
+const OTHER_CATEGORY = "__other__"
 
 interface FaqFormValues {
   question: string
@@ -34,7 +45,7 @@ const EMPTY_VALUES: FaqFormValues = {
   answer: "",
   questionEn: "",
   answerEn: "",
-  category: "",
+  category: FAQ_CATEGORIES[0],
   sortOrder: "0",
 }
 
@@ -45,7 +56,7 @@ function faqToValues(faq: Faq): FaqFormValues {
     answer: faq.answer,
     questionEn: faq.questionEn ?? "",
     answerEn: faq.answerEn ?? "",
-    category: faq.category ?? "",
+    category: faq.category ?? FAQ_CATEGORIES[0],
     sortOrder: String(faq.sortOrder),
   }
 }
@@ -76,6 +87,8 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
   const { t } = useTranslation()
   const isEdit = Boolean(faq)
   const [values, setValues] = useState<FaqFormValues>(EMPTY_VALUES)
+  const isKnownCategory = (FAQ_CATEGORIES as readonly string[]).includes(values.category)
+  const categorySelectValue = isKnownCategory ? values.category : OTHER_CATEGORY
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -183,11 +196,35 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>{t("faqManage.form.category")}</Label>
-            <Input
-              value={values.category}
-              onChange={(e) => setValues((v) => ({ ...v, category: e.target.value }))}
-              placeholder={t("faqManage.form.categoryPlaceholder")}
-            />
+            <Select
+              value={categorySelectValue}
+              onValueChange={(value) =>
+                setValues((v) => ({
+                  ...v,
+                  category: value === OTHER_CATEGORY ? (isKnownCategory ? "" : v.category) : value,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FAQ_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {faqCategoryLabel(t, category)}
+                  </SelectItem>
+                ))}
+                <SelectItem value={OTHER_CATEGORY}>{t("faqManage.form.categoryOther")}</SelectItem>
+              </SelectContent>
+            </Select>
+            {categorySelectValue === OTHER_CATEGORY && (
+              <Input
+                value={values.category}
+                onChange={(e) => setValues((v) => ({ ...v, category: e.target.value }))}
+                placeholder={t("faqManage.form.categoryOtherPlaceholder")}
+                className="mt-1.5"
+              />
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>{t("faqManage.form.sortOrder")}</Label>

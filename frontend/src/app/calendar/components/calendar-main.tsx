@@ -332,7 +332,7 @@ export function CalendarMain({
                     <Badge variant={STATUS_VARIANTS[detailItem.status]}>{statusLabel(t, detailItem.status)}</Badge>
                   </div>
                   <Button asChild className="w-full">
-                    <Link to="/campaigns" onClick={() => setDetailItem(null)}>
+                    <Link to="/dashboard/campaigns" onClick={() => setDetailItem(null)}>
                       {t("calendar.viewInCampaignManagement")}
                     </Link>
                   </Button>

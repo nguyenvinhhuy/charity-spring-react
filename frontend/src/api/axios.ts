@@ -55,6 +55,20 @@ function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
+/**
+ * Silently refreshes the access token on app startup when a prior session (persisted member)
+ * exists, so viewer-relative GET data (e.g. myReaction, canEdit) is correct from first paint
+ * instead of only after some later request happens to trigger the reactive 401 flow.
+ */
+export function bootstrapAccessToken(): Promise<void> {
+  if (!useAuthStore.getState().member) {
+    return Promise.resolve();
+  }
+  return refreshAccessToken()
+    .then(() => undefined)
+    .catch(() => undefined);
+}
+
 interface RetriableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }

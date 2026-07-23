@@ -10,6 +10,13 @@ const Campaigns = lazy(() => import('@/app/campaigns/page'))
 const Users = lazy(() => import('@/app/users/page'))
 const FAQs = lazy(() => import('@/app/faqs/page'))
 const FaqManage = lazy(() => import('@/app/faqs/manage/page'))
+const NewsManage = lazy(() => import('@/app/dashboard/news/manage/page'))
+
+// Public content pages (Phase 2)
+const PublicCampaigns = lazy(() => import('@/app/public/campaigns/page'))
+const PublicCampaignDetail = lazy(() => import('@/app/public/campaigns/detail'))
+const PublicNews = lazy(() => import('@/app/public/news/page'))
+const PublicNewsDetail = lazy(() => import('@/app/public/news/detail'))
 
 // Auth pages
 const SignIn = lazy(() => import('@/app/auth/sign-in/page'))
@@ -38,24 +45,44 @@ export interface RouteConfig {
 
 /** The application's route tree, consumed by AppRouter to render the matching Route elements. */
 export const routes: RouteConfig[] = [
-  // Default route - redirect to dashboard
-  // Use relative path "dashboard" instead of "/dashboard" for basename compatibility
+  // Public home — shown to everyone (anonymous, MEMBER, and staff alike). Staff
+  // are only redirected to /dashboard right after logging in (see login-form.tsx/
+  // signup-form.tsx); visiting "/" afterwards always shows the public site, so the
+  // sidebar's "Home" preview link actually previews it instead of bouncing back.
   {
     path: "/",
-    element: <Navigate to="dashboard" replace />
-  },
-
-  // Landing Page (public)
-  {
-    path: "/landing",
     element: <Landing />
   },
 
-  // Dashboard Routes (internal)
+  // Legacy standalone path; the home page now lives at "/" only.
+  {
+    path: "/landing",
+    element: <Navigate to="/" replace />
+  },
+
+  // Public content pages (Phase 2)
+  {
+    path: "/campaigns",
+    element: <PublicCampaigns />
+  },
+  {
+    path: "/campaigns/:slug",
+    element: <PublicCampaignDetail />
+  },
+  {
+    path: "/news",
+    element: <PublicNews />
+  },
+  {
+    path: "/news/:slug",
+    element: <PublicNewsDetail />
+  },
+
+  // Dashboard Routes (staff only: ADMIN/CONTRIBUTOR)
   {
     path: "/dashboard",
     element: <Dashboard />,
-    protected: true
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
   },
   // Legacy path kept as a redirect; the dashboard now lives at /dashboard only.
   {
@@ -63,19 +90,19 @@ export const routes: RouteConfig[] = [
     element: <Navigate to="/dashboard" replace />
   },
 
-  // Application Routes (internal)
+  // Application Routes (internal, namespaced under /dashboard)
   {
-    path: "/calendar",
+    path: "/dashboard/calendar",
     element: <Calendar />,
     requiredRoles: ["ADMIN", "CONTRIBUTOR"]
   },
   {
-    path: "/campaigns",
+    path: "/dashboard/campaigns",
     element: <Campaigns />,
     requiredRoles: ["ADMIN", "CONTRIBUTOR"]
   },
   {
-    path: "/users",
+    path: "/dashboard/users",
     element: <Users />,
     protected: true,
     requiredRole: "ADMIN"
@@ -87,8 +114,13 @@ export const routes: RouteConfig[] = [
     element: <FAQs />
   },
   {
-    path: "/faqs/manage",
+    path: "/dashboard/faqs",
     element: <FaqManage />,
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+  },
+  {
+    path: "/dashboard/news",
+    element: <NewsManage />,
     requiredRoles: ["ADMIN", "CONTRIBUTOR"]
   },
 
@@ -120,7 +152,7 @@ export const routes: RouteConfig[] = [
     element: <NotFound />
   },
 
-  // Profile (internal)
+  // Profile (public — shared by every authenticated role)
   {
     path: "/profile",
     element: <Profile />,

@@ -8,6 +8,7 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateProfileRequest;
+import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.dto.response.MemberStatsResponse;
 import com.clb.charity.member.mapper.MemberMapper;
@@ -88,6 +89,9 @@ public class MemberServiceImpl implements MemberService {
         member.setPhone(request.phone());
         member.setBio(request.bio());
         member.setAvatarUrl(request.avatarUrl());
+        member.setDateOfBirth(request.dateOfBirth());
+        member.setAddress(request.address());
+        member.setNationalId(request.nationalId());
         return memberMapper.toResponse(memberRepository.save(member));
     }
 
@@ -122,5 +126,12 @@ public class MemberServiceImpl implements MemberService {
         }
         return memberRepository.findAllById(ids).stream()
                 .collect(Collectors.toMap(Member::getId, Member::getFullName, (a, b) -> a));
+    }
+
+    @Override
+    public List<MemberMentionResponse> searchForMention(String query) {
+        return memberRepository.findTop10ByActiveTrueAndFullNameContainingIgnoreCase(query).stream()
+                .map(m -> new MemberMentionResponse(m.getId(), m.getFullName(), m.getAvatarUrl()))
+                .toList();
     }
 }

@@ -63,7 +63,8 @@ export function LoginForm({
       const res = await login(values)
       setAuth(res.accessToken, res.member)
       toast.success(t("auth.loginSuccess", { name: res.member.fullName }))
-      navigate("/dashboard")
+      const isStaff = res.member.role === "ADMIN" || res.member.role === "CONTRIBUTOR"
+      navigate(isStaff ? "/dashboard" : "/")
     } catch (err) {
       toast.error(getErrorMessage(err))
     }

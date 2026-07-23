@@ -9,7 +9,6 @@ import {
   HeartHandshake,
   LayoutDashboard,
   Calendar,
-  HelpCircle,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -129,14 +128,11 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
     { title: t("command.dashboard"), url: "/dashboard", group: t("command.group.dashboards"), icon: LayoutDashboard },
 
     // Apps
-    { title: t("command.campaigns"), url: "/campaigns", group: t("command.group.apps"), icon: HeartHandshake },
-    { title: t("command.calendar"), url: "/calendar", group: t("command.group.apps"), icon: Calendar },
+    { title: t("command.campaigns"), url: "/dashboard/campaigns", group: t("command.group.apps"), icon: HeartHandshake },
+    { title: t("command.calendar"), url: "/dashboard/calendar", group: t("command.group.apps"), icon: Calendar },
 
     // Profile
     { title: t("command.profile"), url: "/profile", group: t("command.group.settings"), icon: User },
-
-    // Pages
-    { title: t("command.faqs"), url: "/faqs", group: t("command.group.pages"), icon: HelpCircle },
   ]
 
   const groupedItems = searchItems.reduce((acc, item) => {

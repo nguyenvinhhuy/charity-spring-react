@@ -1,20 +1,161 @@
-import { BaseLayout } from "@/components/layouts/base-layout"
-import { FAQList } from "./components/faq-list"
-import { FeaturesGrid } from "./components/features-grid"
+"use client"
 
-// Import data
-import categoriesData from "./data/categories.json"
-import faqsData from "./data/faqs.json"
-import featuresData from "./data/features.json"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Search } from "lucide-react"
+import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import { PublicLayout } from "@/components/layouts/public-layout"
+import { listFaqs } from "@/api/faqs"
+import { getErrorMessage } from "@/api/axios"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import type { Faq } from "@/types"
+import { localized } from "@/app/campaigns/components/campaign-constants"
+import { faqCategoryLabel } from "@/app/faqs/manage/components/faq-constants"
+import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
-/** Renders the public FAQs page: the category-filterable question list plus the features grid. */
+const ALL_CATEGORIES = "ALL"
+
+/** Renders the public FAQ page: a category sidebar plus a searchable accordion of published FAQs. */
 export default function FAQsPage() {
+  const { t, i18n } = useTranslation()
+
+  const [faqs, setFaqs] = useState<Faq[]>([])
+  const [loading, setLoading] = useState(true)
+  const [category, setCategory] = useState(ALL_CATEGORIES)
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search)
+
+  /** Fetches all published FAQs (sorted by sort order); the backend has no category filter, so filtering happens client-side. */
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await listFaqs({ published: true, size: 200 })
+      setFaqs(result.content)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const faq of faqs) {
+      const key = faq.category?.trim() ?? ""
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+    return Array.from(counts.entries()).map(([key, count]) => ({
+      key,
+      label: faqCategoryLabel(t, key || null),
+      count,
+    }))
+  }, [faqs, t])
+
+  const filteredFaqs = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase()
+    return faqs.filter((faq) => {
+      const faqCategoryKey = faq.category?.trim() ?? ""
+      if (category !== ALL_CATEGORIES && faqCategoryKey !== category) return false
+      if (!query) return true
+      const question = localized(i18n.language, faq.question, faq.questionEn).toLowerCase()
+      const answer = localized(i18n.language, faq.answer, faq.answerEn).toLowerCase()
+      return question.includes(query) || answer.includes(query)
+    })
+  }, [faqs, category, debouncedSearch, i18n.language])
+
+  const selectedLabel =
+    category === ALL_CATEGORIES ? t("faqsPublic.allFaqs") : faqCategoryLabel(t, category || null)
+
   return (
-    <BaseLayout title="Frequently Asked Questions" description="Everything you need to know about our different services.">
-      <div className="px-4 lg:px-6">
-        <FAQList faqs={faqsData} categories={categoriesData} />
-        <FeaturesGrid features={featuresData} />
+    <PublicLayout title={t("faqsPublic.title")} description={t("faqsPublic.description")}>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+        <Card className="h-fit">
+          <CardHeader>
+            <CardTitle>{t("faqsPublic.categories")}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("faqsPublic.searchPlaceholder")}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setCategory(ALL_CATEGORIES)}
+                className={cn(
+                  "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  category === ALL_CATEGORIES ? "bg-muted" : "hover:bg-muted/50"
+                )}
+              >
+                <span>{t("faqsPublic.allFaqs")}</span>
+                <span className="text-muted-foreground text-xs">{faqs.length}</span>
+              </button>
+              {categories.map(({ key, label, count }) => (
+                <button
+                  key={key || "uncategorized"}
+                  type="button"
+                  onClick={() => setCategory(key)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    category === key ? "bg-muted" : "hover:bg-muted/50"
+                  )}
+                >
+                  <span>{label}</span>
+                  <span className="text-muted-foreground text-xs">{count}</span>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {selectedLabel}{" "}
+              <span className="text-muted-foreground font-normal">
+                {t("faqsPublic.total", { count: filteredFaqs.length })}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">{t("faqsPublic.loading")}</p>
+            ) : filteredFaqs.length === 0 ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">{t("faqsPublic.empty")}</p>
+            ) : (
+              <Accordion type="multiple">
+                {filteredFaqs.map((faq) => (
+                  <AccordionItem key={faq.id} value={String(faq.id)}>
+                    <AccordionTrigger>
+                      {localized(i18n.language, faq.question, faq.questionEn)}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      {localized(i18n.language, faq.answer, faq.answerEn)}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </BaseLayout>
+    </PublicLayout>
   )
 }

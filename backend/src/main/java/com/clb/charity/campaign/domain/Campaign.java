@@ -58,7 +58,7 @@ public class Campaign {
     private @Nullable String thumbnailUrl;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(columnDefinition = "text[]")
+    @Column(columnDefinition = "text[]", nullable = false)
     private List<String> images = new ArrayList<>();
 
     @Column(name = "target_amount", nullable = false)
@@ -69,6 +69,9 @@ public class Campaign {
 
     @Column(name = "donor_count", nullable = false)
     private int donorCount = 0;
+
+    @Column(name = "view_count", nullable = false)
+    private long viewCount = 0L;
 
     @Column(name = "bank_account_no", nullable = false, length = 50)
     private String bankAccountNo;
@@ -104,6 +107,10 @@ public class Campaign {
 
     @Column(name = "event_end_date")
     private @Nullable LocalDate eventEndDate;
+
+    /** Max participant count for the on-ground event; only set together with eventStartDate. */
+    @Column
+    private @Nullable Integer capacity;
 
     /** Author's member id — referenced by id only, no JPA relation (module boundary). */
     @Column(name = "created_by")

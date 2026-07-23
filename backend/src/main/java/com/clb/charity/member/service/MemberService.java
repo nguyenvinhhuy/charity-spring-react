@@ -4,6 +4,7 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateProfileRequest;
+import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.dto.response.MemberStatsResponse;
 import org.jspecify.annotations.Nullable;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -94,4 +96,12 @@ public interface MemberService {
      * @return a map of member id to full name (missing ids are absent)
      */
     Map<Long, String> namesByIds(Collection<Long> ids);
+
+    /**
+     * Searches active members by full name, for @mention autocomplete — returns only non-sensitive fields.
+     *
+     * @param query the partial name to search for
+     * @return up to 10 matching active members
+     */
+    List<MemberMentionResponse> searchForMention(String query);
 }

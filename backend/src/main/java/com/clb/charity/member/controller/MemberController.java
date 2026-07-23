@@ -4,6 +4,7 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateActiveRequest;
 import com.clb.charity.member.dto.request.UpdateRoleRequest;
+import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -46,6 +49,19 @@ public class MemberController {
             @RequestParam(required = false) Boolean active,
             Pageable pageable) {
         return memberService.list(search, role, active, pageable);
+    }
+
+    /**
+     * Searches active members by full name for @mention autocomplete (any authenticated member may call this;
+     * unlike {@link #list}, it returns only non-sensitive fields).
+     *
+     * @param query the partial name to search for
+     * @return up to 10 matching active members
+     */
+    @Operation(summary = "Search active members by name for @mention autocomplete")
+    @GetMapping("/mentions")
+    public List<MemberMentionResponse> searchForMention(@RequestParam String query) {
+        return memberService.searchForMention(query);
     }
 
     /**

@@ -45,6 +45,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { FaqFormDialog } from "./components/faq-form-dialog"
+import { faqCategoryLabel } from "./components/faq-constants"
 
 const PAGE_SIZE = 10
 const ALL = "ALL"
@@ -211,7 +212,7 @@ export default function FaqManagePage() {
                       <TableCell className="max-w-md">
                         <span className="line-clamp-2">{faq.question}</span>
                       </TableCell>
-                      <TableCell>{faq.category ?? "—"}</TableCell>
+                      <TableCell>{faqCategoryLabel(t, faq.category)}</TableCell>
                       <TableCell>{faq.sortOrder}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">

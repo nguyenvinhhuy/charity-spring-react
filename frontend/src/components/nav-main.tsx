@@ -35,6 +35,7 @@ export function NavMain({
     url: string
     icon?: LucideIcon
     isActive?: boolean
+    openInNewTab?: boolean
     items?: {
       title: string
       url: string
@@ -95,7 +96,11 @@ export function NavMain({
                 </>
               ) : (
                 <SidebarMenuButton asChild tooltip={item.title} className="cursor-pointer" isActive={location.pathname === item.url}>
-                  <Link to={item.url}>
+                  <Link
+                    to={item.url}
+                    target={item.openInNewTab ? "_blank" : undefined}
+                    rel={item.openInNewTab ? "noopener noreferrer" : undefined}
+                  >
                     {item.icon && <item.icon />}
                     <span>{item.title}</span>
                   </Link>

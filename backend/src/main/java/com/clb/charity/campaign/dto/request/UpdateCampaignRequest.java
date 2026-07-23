@@ -33,6 +33,7 @@ public record UpdateCampaignRequest(
         @NotNull LocalDate startDate,
         @Nullable LocalDate endDate,
         @Nullable LocalDate eventStartDate,
-        @Nullable LocalDate eventEndDate
+        @Nullable LocalDate eventEndDate,
+        @Positive @Nullable Integer capacity
 ) {
 }

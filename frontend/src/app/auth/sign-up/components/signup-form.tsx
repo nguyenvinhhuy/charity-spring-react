@@ -82,7 +82,8 @@ export function SignupForm({
       })
       setAuth(res.accessToken, res.member)
       toast.success(t("auth.signupSuccess"))
-      navigate("/dashboard")
+      const isStaff = res.member.role === "ADMIN" || res.member.role === "CONTRIBUTOR"
+      navigate(isStaff ? "/dashboard" : "/")
     } catch (err) {
       toast.error(getErrorMessage(err))
     }

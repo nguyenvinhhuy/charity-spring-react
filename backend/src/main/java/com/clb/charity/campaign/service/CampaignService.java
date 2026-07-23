@@ -6,9 +6,11 @@ import com.clb.charity.campaign.dto.request.CreateCampaignRequest;
 import com.clb.charity.campaign.dto.request.CreateDonationRequest;
 import com.clb.charity.campaign.dto.request.UpdateCampaignRequest;
 import com.clb.charity.campaign.dto.response.CampaignDetailResponse;
+import com.clb.charity.campaign.dto.response.CampaignRegistrationContext;
 import com.clb.charity.campaign.dto.response.CampaignStatsResponse;
 import com.clb.charity.campaign.dto.response.CampaignSummaryResponse;
 import com.clb.charity.campaign.dto.response.DonationResponse;
+import com.clb.charity.campaign.dto.response.PublicCampaignStatsResponse;
 import com.clb.charity.common.model.Granularity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -126,4 +128,27 @@ public interface CampaignService {
      * @return the aggregated statistics
      */
     CampaignStatsResponse stats(Granularity granularity);
+
+    /**
+     * Builds the campaign and donation totals safe to expose on the public site.
+     *
+     * @return the public-safe aggregated totals
+     */
+    PublicCampaignStatsResponse publicStats();
+
+    /**
+     * Records one view of a campaign, incrementing its cached view count.
+     *
+     * @param id the campaign id
+     */
+    void recordView(Long id);
+
+    /**
+     * Returns a campaign's capacity and event start date, used by the registration feature to
+     * check availability and cancellation eligibility without loading the full campaign detail.
+     *
+     * @param id the campaign id
+     * @return the registration context
+     */
+    CampaignRegistrationContext getRegistrationContext(Long id);
 }

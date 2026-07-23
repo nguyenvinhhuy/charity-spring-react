@@ -13,7 +13,7 @@ import { changeMyPassword, getMe, updateMyProfile } from "@/api/auth"
 import { uploadImage } from "@/api/media"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
-import { BaseLayout } from "@/components/layouts/base-layout"
+import { PublicLayout } from "@/components/layouts/public-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,6 +35,12 @@ function buildProfileSchema(t: TFunction) {
     fullName: z.string().min(1, t("auth.validation.fullNameRequired")),
     phone: z.string().optional(),
     bio: z.string().optional(),
+    dateOfBirth: z.string().optional(),
+    address: z.string().optional(),
+    nationalId: z
+      .string()
+      .optional()
+      .refine((v) => !v || /^\d{12}$/.test(v), t("profile.validation.nationalIdFormat")),
   })
 }
 type ProfileValues = z.infer<ReturnType<typeof buildProfileSchema>>
@@ -66,7 +72,7 @@ export default function ProfileSettingsPage() {
 
   const profileForm = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { fullName: "", phone: "", bio: "" },
+    defaultValues: { fullName: "", phone: "", bio: "", dateOfBirth: "", address: "", nationalId: "" },
   })
   const passwordForm = useForm<PasswordValues>({
     resolver: zodResolver(passwordSchema),
@@ -85,6 +91,9 @@ export default function ProfileSettingsPage() {
           fullName: fresh.fullName,
           phone: fresh.phone ?? "",
           bio: fresh.bio ?? "",
+          dateOfBirth: fresh.dateOfBirth ?? "",
+          address: fresh.address ?? "",
+          nationalId: fresh.nationalId ?? "",
         })
       })
       .catch(() => {
@@ -129,6 +138,9 @@ export default function ProfileSettingsPage() {
         phone: values.phone?.trim() ? values.phone.trim() : null,
         bio: values.bio?.trim() ? values.bio.trim() : null,
         avatarUrl,
+        dateOfBirth: values.dateOfBirth?.trim() ? values.dateOfBirth.trim() : null,
+        address: values.address?.trim() ? values.address.trim() : null,
+        nationalId: values.nationalId?.trim() ? values.nationalId.trim() : null,
       })
       setMember(updated)
       toast.success(t("profile.profileUpdated"))
@@ -156,7 +168,7 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <BaseLayout title={t("nav.profile")} description={t("profile.subtitle")}>
+    <PublicLayout title={t("nav.profile")} description={t("profile.subtitle")}>
       <div className="space-y-6 px-4 lg:px-6">
         {/* Profile */}
         <Form {...profileForm}>
@@ -258,6 +270,48 @@ export default function ProfileSettingsPage() {
                     </FormItem>
                   )}
                 />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField
+                    control={profileForm.control}
+                    name="dateOfBirth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("profile.dateOfBirth")}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={profileForm.control}
+                    name="nationalId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("profile.nationalId")}</FormLabel>
+                        <FormControl>
+                          <Input maxLength={12} placeholder="0123456789xx" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={profileForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("profile.address")}</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("profile.addressPlaceholder")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
             <Button type="submit" className="cursor-pointer" disabled={profileForm.formState.isSubmitting}>
@@ -324,6 +378,6 @@ export default function ProfileSettingsPage() {
           </form>
         </Form>
       </div>
-    </BaseLayout>
+    </PublicLayout>
   )
 }

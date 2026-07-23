@@ -16,6 +16,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "members")
@@ -57,6 +58,15 @@ public class Member {
 
     @Column(columnDefinition = "text")
     private @Nullable String bio;
+
+    @Column(name = "date_of_birth")
+    private @Nullable LocalDate dateOfBirth;
+
+    @Column(length = 255)
+    private @Nullable String address;
+
+    @Column(name = "national_id", length = 20)
+    private @Nullable String nationalId;
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;

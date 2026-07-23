@@ -10,6 +10,7 @@ import {
   Plus,
   Search,
   Trash2,
+  Users,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
@@ -71,6 +72,7 @@ import {
 } from "./components/campaign-constants"
 import { CampaignFormDialog } from "./components/campaign-form-dialog"
 import { DonationsDialog } from "./components/donations-dialog"
+import { RegistrationsDialog } from "./components/registrations-dialog"
 
 const PAGE_SIZE = 10
 const ALL = "ALL"
@@ -100,6 +102,8 @@ export default function CampaignsPage() {
   const [editing, setEditing] = useState<CampaignSummary | null>(null)
   const [donationsOpen, setDonationsOpen] = useState(false)
   const [donationsTarget, setDonationsTarget] = useState<CampaignSummary | null>(null)
+  const [registrationsOpen, setRegistrationsOpen] = useState(false)
+  const [registrationsTarget, setRegistrationsTarget] = useState<CampaignSummary | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -149,6 +153,16 @@ export default function CampaignsPage() {
   function openDonations(campaign: CampaignSummary) {
     setDonationsTarget(campaign)
     setDonationsOpen(true)
+  }
+
+  /**
+   * Opens the registrants management dialog for the given campaign.
+   *
+   * @param campaign the campaign whose registrants to manage
+   */
+  function openRegistrations(campaign: CampaignSummary) {
+    setRegistrationsTarget(campaign)
+    setRegistrationsOpen(true)
   }
 
   /**
@@ -321,6 +335,13 @@ export default function CampaignsPage() {
                                 </DropdownMenuItem>
                               )}
 
+                              {isAdmin && (
+                                <DropdownMenuItem onClick={() => openRegistrations(campaign)}>
+                                  <Users />
+                                  {t("campaigns.actions.manageRegistrations")}
+                                </DropdownMenuItem>
+                              )}
+
                               {isAdmin && transitions.length > 0 && (
                                 <>
                                   <DropdownMenuSeparator />
@@ -397,6 +418,12 @@ export default function CampaignsPage() {
         onOpenChange={setDonationsOpen}
         campaign={donationsTarget}
         onChanged={load}
+      />
+
+      <RegistrationsDialog
+        open={registrationsOpen}
+        onOpenChange={setRegistrationsOpen}
+        campaign={registrationsTarget}
       />
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

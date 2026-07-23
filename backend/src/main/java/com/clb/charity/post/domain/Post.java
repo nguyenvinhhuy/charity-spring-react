@@ -55,7 +55,7 @@ public class Post {
     private @Nullable String thumbnailUrl;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(columnDefinition = "text[]")
+    @Column(columnDefinition = "text[]", nullable = false)
     private List<String> tags = new ArrayList<>();
 
     @Column(name = "is_published", nullable = false)
@@ -63,6 +63,9 @@ public class Post {
 
     @Column(name = "published_at")
     private @Nullable Instant publishedAt;
+
+    @Column(name = "view_count", nullable = false)
+    private long viewCount = 0L;
 
     /** Author's member id — referenced by id only, no JPA relation (module boundary). */
     @Column(name = "created_by")

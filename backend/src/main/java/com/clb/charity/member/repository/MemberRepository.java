@@ -25,8 +25,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Query("""
             SELECT m FROM Member m
-            WHERE (:search IS NULL OR LOWER(m.fullName) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(m.email) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (:search IS NULL OR LOWER(m.fullName) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                   OR LOWER(m.email) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
               AND (:role IS NULL OR m.role = :role)
               AND (:active IS NULL OR m.active = :active)
             """)
@@ -34,4 +34,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                          @Param("role") @Nullable Role role,
                          @Param("active") @Nullable Boolean active,
                          Pageable pageable);
+
+    List<Member> findTop10ByActiveTrueAndFullNameContainingIgnoreCase(String query);
 }

@@ -5,9 +5,9 @@ import {
   LayoutDashboard,
   Calendar,
   CircleUser,
-  HelpCircle,
-  LayoutTemplate,
+  Home,
   ListChecks,
+  Newspaper,
   Users,
   HeartHandshake,
 } from "lucide-react"
@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ? [
                 {
                   title: t("nav.campaigns"),
-                  url: "/campaigns",
+                  url: "/dashboard/campaigns",
                   icon: HeartHandshake,
                 },
               ]
@@ -68,7 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ? [
                 {
                   title: t("nav.calendar"),
-                  url: "/calendar",
+                  url: "/dashboard/calendar",
                   icon: Calendar,
                 },
               ]
@@ -77,7 +77,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ? [
                 {
                   title: t("nav.users"),
-                  url: "/users",
+                  url: "/dashboard/users",
                   icon: Users,
                 },
               ]
@@ -86,8 +86,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             ? [
                 {
                   title: t("nav.faqManage"),
-                  url: "/faqs/manage",
+                  url: "/dashboard/faqs",
                   icon: ListChecks,
+                },
+              ]
+            : []),
+          ...(canManageCampaigns
+            ? [
+                {
+                  title: t("nav.newsManage"),
+                  url: "/dashboard/news",
+                  icon: Newspaper,
                 },
               ]
             : []),
@@ -97,20 +106,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         label: "Pages",
         items: [
           {
-            title: "Landing",
-            url: "/landing",
-            target: "_blank",
-            icon: LayoutTemplate,
+            title: t("nav.home"),
+            url: "/",
+            icon: Home,
+            openInNewTab: true,
           },
           {
             title: t("nav.profile"),
             url: "/profile",
             icon: CircleUser,
-          },
-          {
-            title: t("nav.faqs"),
-            url: "/faqs",
-            icon: HelpCircle,
           },
         ],
       },

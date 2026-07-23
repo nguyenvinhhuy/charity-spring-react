@@ -49,7 +49,8 @@ import { CATEGORY_OPTIONS, categoryLabel } from "./campaign-constants"
  * @param t the translation function
  */
 function buildCampaignSchema(t: TFunction) {
-  return z.object({
+  return z
+    .object({
     // Vietnamese content is required (the default language).
     title: z.string().min(1, t("campaigns.form.titleRequired")),
     summary: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
@@ -81,6 +82,33 @@ function buildCampaignSchema(t: TFunction) {
     // Dates of the on-ground activity, separate from the fundraising period above; not every campaign has one.
     eventStartDate: z.string().optional(),
     eventEndDate: z.string().optional(),
+    // Max participants for the on-ground event; only valid together with eventStartDate (enforced below).
+    capacity: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    const hasEventStart = !!values.eventStartDate
+    const hasCapacity = !!values.capacity
+    if (hasCapacity && !hasEventStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eventStartDate"],
+        message: t("campaigns.form.capacityRequiresEventDate"),
+      })
+    }
+    if (hasEventStart && !hasCapacity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["capacity"],
+        message: t("campaigns.form.eventDateRequiresCapacity"),
+      })
+    }
+    if (hasCapacity && Number(values.capacity) <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["capacity"],
+        message: t("campaigns.form.capacityPositive"),
+      })
+    }
   })
 }
 
@@ -104,6 +132,7 @@ const EMPTY_VALUES: CampaignFormValues = {
   endDate: "",
   eventStartDate: "",
   eventEndDate: "",
+  capacity: "",
 }
 
 /**
@@ -130,6 +159,7 @@ function detailToValues(detail: CampaignDetail): CampaignFormValues {
     endDate: detail.endDate ?? "",
     eventStartDate: detail.eventStartDate ?? "",
     eventEndDate: detail.eventEndDate ?? "",
+    capacity: detail.capacity != null ? String(detail.capacity) : "",
   }
 }
 
@@ -232,6 +262,7 @@ export function CampaignFormDialog({
       endDate: orNull(values.endDate),
       eventStartDate: orNull(values.eventStartDate),
       eventEndDate: orNull(values.eventEndDate),
+      capacity: values.capacity ? Number(values.capacity) : null,
     }
 
     try {
@@ -533,6 +564,20 @@ export function CampaignFormDialog({
                       <FormLabel>{t("campaigns.form.eventEndDateLabel")}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="capacity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("campaigns.form.capacityLabel")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={1} {...field} placeholder={t("campaigns.form.capacityPlaceholder")} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

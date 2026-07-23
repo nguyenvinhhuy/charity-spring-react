@@ -45,6 +45,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
+    public void recordView(Long id) {
+        postRepository.incrementViewCount(id);
+    }
+
+    @Override
+    @Transactional
     public PostDetailResponse create(CreatePostRequest request, Long createdBy) {
         String slug = SlugUtil.slugify(request.title());
         if (postRepository.existsBySlug(slug)) {

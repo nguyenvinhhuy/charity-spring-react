@@ -2,6 +2,7 @@ import { api } from '@/api/axios';
 import type {
   CreateMemberRequest,
   Member,
+  MemberMention,
   Page,
   Role,
 } from '@/types';
@@ -33,6 +34,18 @@ export async function listMembers(
  */
 export async function getMember(id: number): Promise<Member> {
   const { data } = await api.get<Member>(`/members/${id}`);
+  return data;
+}
+
+/**
+ * Search active members by name for @mention autocomplete (any authenticated member may call this).
+ *
+ * @param query the partial name to search for
+ */
+export async function searchMentions(query: string): Promise<MemberMention[]> {
+  const { data } = await api.get<MemberMention[]>('/members/mentions', {
+    params: { query },
+  });
   return data;
 }
 

@@ -12,13 +12,13 @@ export function QuickActions() {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button asChild>
-        <Link to="/campaigns">
+        <Link to="/dashboard/campaigns">
           <Megaphone className="size-4" />
           {t("dashboard.quickActions.createCampaign")}
         </Link>
       </Button>
       <Button variant="outline" asChild>
-        <Link to="/users">
+        <Link to="/dashboard/users">
           <Users className="size-4" />
           {t("dashboard.quickActions.manageUsers")}
         </Link>

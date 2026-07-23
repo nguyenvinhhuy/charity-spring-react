@@ -66,4 +66,11 @@ public interface PostService {
      * @return the recent post activity entries
      */
     List<PostActivityView> recentActivity();
+
+    /**
+     * Records one view of a post, incrementing its cached view count.
+     *
+     * @param id the post id
+     */
+    void recordView(Long id);
 }

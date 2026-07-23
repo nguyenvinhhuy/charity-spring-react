@@ -90,11 +90,30 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/campaigns").hasAnyRole("CONTRIBUTOR", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, API + "/campaigns/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        // View tracking: works for anonymous visitors too.
+                        .requestMatchers(HttpMethod.POST, API + "/campaigns/*/views").permitAll()
+                        // Reactions: any authenticated member may react, not just staff.
+                        .requestMatchers(HttpMethod.PUT, API + "/campaigns/*/reactions/me").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/reactions/me").authenticated()
+                        // Comments: any authenticated member may comment; ownership/moderation checked in the service layer.
+                        .requestMatchers(HttpMethod.POST, API + "/campaigns/*/comments").authenticated()
+                        .requestMatchers(HttpMethod.PUT, API + "/campaigns/*/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/comments/*").authenticated()
+                        // Registrations: any authenticated member may self-register/cancel; the roster (with member
+                        // names) and force-remove are moderator-only. Must precede the GET /campaigns/** catch-all
+                        // below, or it would fall through as permitAll instead.
+                        .requestMatchers(HttpMethod.POST, API + "/campaigns/*/registrations/me").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/registrations/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, API + "/campaigns/*/registrations")
+                        .hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/registrations/*")
+                        .hasAnyRole("CONTRIBUTOR", "ADMIN")
                         .requestMatchers(HttpMethod.GET, API + "/campaigns/**").permitAll()
 
                         // ── Dashboard ─────────────────────────────────────
+                        // Staff-only: the dashboard UI is restricted to ADMIN/CONTRIBUTOR.
                         .requestMatchers(HttpMethod.GET, API + "/dashboard/**")
-                        .hasAnyRole("MEMBER", "CONTRIBUTOR", "ADMIN")
+                        .hasAnyRole("CONTRIBUTOR", "ADMIN")
 
                         // ── Events (non-fundraising internal activities) ──
                         .requestMatchers(HttpMethod.DELETE, API + "/events/*").hasRole("ADMIN")
@@ -106,6 +125,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, API + "/posts/*/publish").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/posts").hasAnyRole("CONTRIBUTOR", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, API + "/posts/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        // View tracking: works for anonymous visitors too.
+                        .requestMatchers(HttpMethod.POST, API + "/posts/*/views").permitAll()
+                        // Reactions: any authenticated member may react, not just staff.
+                        .requestMatchers(HttpMethod.PUT, API + "/posts/*/reactions/me").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, API + "/posts/*/reactions/me").authenticated()
+                        // Comments: any authenticated member may comment; ownership/moderation checked in the service layer.
+                        .requestMatchers(HttpMethod.POST, API + "/posts/*/comments").authenticated()
+                        .requestMatchers(HttpMethod.PUT, API + "/posts/*/comments/*").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, API + "/posts/*/comments/*").authenticated()
                         .requestMatchers(HttpMethod.GET, API + "/posts/**").permitAll()
 
                         // ── FAQs ──────────────────────────────────────────
@@ -116,11 +144,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, API + "/faqs/**").permitAll()
 
                         // ── Members ───────────────────────────────────────
+                        // Mention search returns only id/name/avatar (non-sensitive) — any authenticated member may
+                        // call it. Must come BEFORE "/members/*" below, which would otherwise match this path too
+                        // (single path segment) and wrongly restrict it to ADMIN.
+                        .requestMatchers(HttpMethod.GET, API + "/members/mentions").authenticated()
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/members").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, API + "/members").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, API + "/members/*").hasAnyRole("MEMBER", "CONTRIBUTOR", "ADMIN")
+                        // Member detail can carry sensitive fields (DOB/address/national ID) — ADMIN only.
+                        .requestMatchers(HttpMethod.GET, API + "/members/*").hasRole("ADMIN")
 
                         // ── Reports ───────────────────────────────────────
                         .requestMatchers(HttpMethod.GET, API + "/reports/**").hasAnyRole("MEMBER", "CONTRIBUTOR", "ADMIN")

@@ -18,6 +18,7 @@ public record PostDetailResponse(
         List<String> tags,
         boolean isPublished,
         @Nullable Instant publishedAt,
+        long viewCount,
         @Nullable Long createdBy,
         Instant createdAt,
         Instant updatedAt

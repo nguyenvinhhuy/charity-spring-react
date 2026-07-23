@@ -5,9 +5,12 @@
     "en": "English"
   },
   "nav": {
+    "home": "Home",
     "dashboard": "Dashboard",
     "calendar": "Calendar",
     "campaigns": "Campaigns",
+    "news": "News",
+    "newsManage": "Manage News",
     "users": "Users",
     "profile": "My Profile",
     "faqs": "FAQs",
@@ -71,6 +74,10 @@
     "phone": "Phone number",
     "bio": "Bio",
     "bioPlaceholder": "A few lines about you...",
+    "dateOfBirth": "Date of birth",
+    "address": "Address",
+    "addressPlaceholder": "House number, street, ward, district, city/province",
+    "nationalId": "National ID (CCCD)",
     "saveProfile": "Save profile",
     "saving": "Saving...",
     "changePassword": "Change password",
@@ -86,7 +93,8 @@
     "loggedOut": "Logged out",
     "validation": {
       "currentPasswordRequired": "Please enter your current password",
-      "newPasswordMin": "New password must be at least {{min}} characters"
+      "newPasswordMin": "New password must be at least {{min}} characters",
+      "nationalIdFormat": "National ID must be exactly 12 digits"
     }
   },
   "role": {
@@ -122,6 +130,7 @@
     "actions": {
       "edit": "Edit",
       "manageDonations": "Manage donations",
+      "manageRegistrations": "Manage registrants",
       "changeStatus": "Change status"
     },
     "deleteDialog": {
@@ -176,6 +185,11 @@
       "eventSectionHint": "The dates the club carries out the on-ground activity (e.g. handing out gifts) — different from the fundraising period above. Leave blank if the campaign has no on-ground activity.",
       "eventStartDateLabel": "Program start date",
       "eventEndDateLabel": "Program end date",
+      "capacityLabel": "Max participants",
+      "capacityPlaceholder": "E.g. 20",
+      "capacityRequiresEventDate": "Please enter the program start date since a capacity was set",
+      "eventDateRequiresCapacity": "Please enter a capacity since a program start date was set",
+      "capacityPositive": "Capacity must be greater than 0",
       "saveChanges": "Save changes",
       "updated": "Campaign updated",
       "created": "Campaign created",
@@ -208,6 +222,14 @@
       "added": "Donation added",
       "deleted": "Donation deleted",
       "amountMustBePositive": "Amount must be greater than 0"
+    },
+    "registrations": {
+      "title": "Manage registrants",
+      "count": "{{count}} registered",
+      "tableName": "Name",
+      "tableRegisteredAt": "Registered at",
+      "empty": "No one has registered yet",
+      "removed": "Registration removed"
     }
   },
   "users": {
@@ -421,13 +443,75 @@
       "answer": "Answer",
       "answerPlaceholder": "Answer content",
       "enHint": "Leave blank if there's no English version yet — the Vietnamese version will be shown instead.",
-      "category": "Category (optional)",
-      "categoryPlaceholder": "Donation",
+      "category": "Category",
+      "categoryOther": "Other (custom)",
+      "categoryOtherPlaceholder": "Enter category name",
       "sortOrder": "Display order",
       "save": "Save changes",
       "saving": "Saving...",
       "questionRequired": "Please enter a question",
       "answerRequired": "Please enter an answer"
+    }
+  },
+  "news": {
+    "title": "News",
+    "description": "Updates and stories from the club",
+    "searchPlaceholder": "Search by title...",
+    "empty": "No news yet",
+    "loading": "Loading...",
+    "notFound": "Post not found",
+    "backToList": "Back to news",
+    "publishedOn": "Published on {{date}}",
+    "manage": {
+      "pageTitle": "Manage news",
+      "pageDescription": "Manage the news posts shown publicly",
+      "addPost": "Add post",
+      "searchPlaceholder": "Search by title...",
+      "total": "Total: {{count}}",
+      "loading": "Loading...",
+      "empty": "No posts yet",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "page": "Page {{current}}/{{total}}",
+      "status": {
+        "all": "All statuses",
+        "published": "Published",
+        "draft": "Draft"
+      },
+      "table": {
+        "title": "Title",
+        "tags": "Tags",
+        "status": "Status",
+        "publishedAt": "Published date"
+      },
+      "toast": {
+        "published": "Post published",
+        "unpublished": "Post hidden",
+        "updated": "Post updated",
+        "created": "Post created"
+      },
+      "form": {
+        "editTitle": "Edit post",
+        "editDescription": "Update the content of this post.",
+        "createDescription": "New posts start as a draft until published.",
+        "tabVi": "Vietnamese",
+        "tabEn": "English (optional)",
+        "titleLabel": "Title",
+        "titlePlaceholder": "Post title",
+        "summaryLabel": "Summary (optional)",
+        "summaryPlaceholder": "Short summary",
+        "contentLabel": "Content",
+        "enHint": "Leave blank if there's no English version yet — the Vietnamese version will be shown instead.",
+        "tagsLabel": "Tags (comma-separated)",
+        "tagsPlaceholder": "donation, event, 2026",
+        "thumbnailUrlLabel": "Thumbnail (URL)",
+        "thumbnailUrlPlaceholder": "https://...",
+        "save": "Save changes",
+        "saving": "Saving...",
+        "titleRequired": "Please enter a title",
+        "contentRequired": "Please enter content",
+        "invalidUrl": "Invalid URL"
+      }
     }
   },
   "command": {
@@ -446,5 +530,115 @@
       "settings": "Settings",
       "pages": "Pages"
     }
+  },
+  "comments": {
+    "title": "{{count}} comments",
+    "placeholder": "Write a comment... type @ to tag someone",
+    "submit": "Post",
+    "posting": "Posting...",
+    "loginPrompt": "Sign in to comment",
+    "loading": "Loading comments...",
+    "empty": "No comments yet",
+    "viewAll": "View all {{count}} comments",
+    "edited": "(edited)",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "mentionNoResults": "No members found",
+    "deleteDialog": {
+      "title": "Delete comment?",
+      "description": "Are you sure you want to delete this comment? This action cannot be undone.",
+      "deleting": "Deleting..."
+    }
+  },
+  "reactions": {
+    "loginPrompt": "Sign in to react",
+    "addReaction": "React",
+    "types": {
+      "LIKE": "Like",
+      "LOVE": "Love",
+      "CELEBRATE": "Celebrate",
+      "LAUGH": "Haha",
+      "SURPRISED": "Wow",
+      "SAD": "Sad"
+    }
+  },
+  "registrations": {
+    "title": "Event registration",
+    "countLabel": "{{count}}/{{capacity}} registered",
+    "registerButton": "Register",
+    "cancelButton": "Cancel registration",
+    "full": "Fully booked",
+    "loginPrompt": "Sign in to register",
+    "registerSuccess": "Registered successfully! You can only cancel before {{date}}.",
+    "cancelClosedHint": "Past the cancel cutoff (1 day before the event starts)"
+  },
+  "faqCategory": {
+    "general": "General",
+    "donation": "Donation",
+    "account": "Account",
+    "activities": "Activities"
+  },
+  "faqsPublic": {
+    "title": "Frequently Asked Questions",
+    "description": "Answers to common questions about the club's activities.",
+    "categories": "Categories",
+    "allFaqs": "All FAQs",
+    "searchPlaceholder": "Search questions...",
+    "uncategorized": "Other",
+    "total": "({{count}} questions)",
+    "empty": "No matching questions found.",
+    "loading": "Loading..."
+  },
+  "campaignsPublic": {
+    "title": "Fundraising campaigns",
+    "description": "Join hands with ongoing charity campaigns.",
+    "searchPlaceholder": "Search campaigns...",
+    "total": "{{count}} campaigns",
+    "empty": "No campaigns match your filters.",
+    "loading": "Loading campaigns...",
+    "donorCount": "{{count}} donors",
+    "viewDetail": "View details",
+    "notFound": "Campaign not found",
+    "backToList": "Back to list",
+    "donationAmount": "Donation amount (optional)",
+    "donationAmountPlaceholder": "Enter amount",
+    "bankAccountNo": "Account number",
+    "bankAccountName": "Account holder",
+    "transferNote": "Transfer note",
+    "viewOnThienNguyen": "View on thiennguyen.app",
+    "eventDates": "Program dates",
+    "donationInfo": "Donation information",
+    "images": "Campaign images"
+  },
+  "home": {
+    "heroSubtitle": "Follow every campaign transparently and journey with the club as we share love with the community.",
+    "heroCtaCampaigns": "View campaigns",
+    "heroCtaJoin": "Join the club",
+    "statsRaised": "Total raised",
+    "statsCampaigns": "Active campaigns",
+    "statsDonors": "Donations",
+    "howItWorksBadge": "How it works",
+    "howItWorksTitle": "Transparent giving in 3 steps",
+    "howItWorksSubtitle": "Every contribution is tracked publicly on each campaign.",
+    "step1Title": "Choose a campaign",
+    "step1Desc": "Browse ongoing campaigns, read their description and funding goal.",
+    "step2Title": "Scan the VietQR code",
+    "step2Desc": "Transfer funds directly via the QR code or bank details shown on the campaign page.",
+    "step3Title": "Track the progress",
+    "step3Desc": "Donation totals are updated publicly and transparently in real time.",
+    "featuredCampaignsBadge": "Fundraising now",
+    "featuredCampaignsTitle": "Featured campaigns",
+    "latestNewsBadge": "Updates",
+    "latestNewsTitle": "Latest news",
+    "viewAll": "View all",
+    "ctaBadge": "Join hands",
+    "ctaTitle": "Join hands to spread love",
+    "ctaSubtitle": "Join Hương Sen Charity Club and help us bring love to the community.",
+    "ctaButton": "Join now",
+    "trustTransparent": "Transparent about every contribution",
+    "trustCommunity": "Standing with the community"
   }
 }

@@ -26,8 +26,19 @@ export interface Member {
   avatarUrl: string | null;
   phone: string | null;
   bio: string | null;
+  dateOfBirth: string | null;
+  address: string | null;
+  nationalId: string | null;
   isActive: boolean;
   createdAt: string;
+}
+
+export interface PublicCampaignStats {
+  totalRaised: number;
+  totalDonors: number;
+  activeCount: number;
+  completedCount: number;
+  totalCount: number;
 }
 
 export interface CampaignSummary {
@@ -58,6 +69,8 @@ export interface CampaignDetail extends CampaignSummary {
   qrDescription: string | null;
   thienNguyenUrl: string | null;
   statementUrl: string | null;
+  viewCount: number;
+  capacity: number | null;
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
@@ -80,6 +93,7 @@ export interface PostSummary {
 export interface PostDetail extends PostSummary {
   content: string;
   contentEn: string | null;
+  viewCount: number;
   createdBy: number | null;
   updatedAt: string;
 }
@@ -203,6 +217,9 @@ export interface UpdateProfileRequest {
   phone: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  dateOfBirth: string | null;
+  address: string | null;
+  nationalId: string | null;
 }
 
 export interface ChangePasswordRequest {
@@ -230,6 +247,7 @@ export interface CreateCampaignRequest {
   endDate: string | null;
   eventStartDate: string | null;
   eventEndDate: string | null;
+  capacity: number | null;
 }
 
 export type UpdateCampaignRequest = CreateCampaignRequest;
@@ -326,3 +344,55 @@ export interface CreateFaqRequest {
 }
 
 export type UpdateFaqRequest = CreateFaqRequest;
+
+// ---- Reactions ----
+
+export type ReactionType = 'LIKE' | 'LOVE' | 'CELEBRATE' | 'LAUGH' | 'SURPRISED' | 'SAD';
+
+export interface ReactionSummary {
+  total: number;
+  counts: Record<ReactionType, number>;
+  reactorNames: Partial<Record<ReactionType, string[]>>;
+  myReaction: ReactionType | null;
+}
+
+// ---- Comments ----
+
+export interface Comment {
+  id: number;
+  targetId: number;
+  authorName: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  edited: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+}
+
+export type UpdateCommentRequest = CreateCommentRequest;
+
+export interface MemberMention {
+  id: number;
+  fullName: string;
+  avatarUrl: string | null;
+}
+
+// ---- Campaign registrations ----
+
+export interface RegistrationSummary {
+  registeredCount: number;
+  isRegistered: boolean;
+  myRegisteredAt: string | null;
+  canCancel: boolean;
+}
+
+export interface Registrant {
+  memberId: number;
+  memberName: string;
+  registeredAt: string;
+}

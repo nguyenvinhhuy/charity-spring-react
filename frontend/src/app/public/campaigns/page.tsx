@@ -1,0 +1,186 @@
+"use client"
+
+import { useCallback, useEffect, useState } from "react"
+import { Link } from "react-router"
+import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
+import { PublicLayout } from "@/components/layouts/public-layout"
+import { listCampaigns } from "@/api/campaigns"
+import { getErrorMessage } from "@/api/axios"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import type { CampaignStatus, CampaignSummary, Page } from "@/types"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  categoryLabel,
+  formatVnd,
+  localized,
+  progressPercent,
+  statusLabel,
+  STATUS_VARIANTS,
+} from "@/app/campaigns/components/campaign-constants"
+
+const PAGE_SIZE = 12
+
+/** Public statuses selectable in the list filter: DRAFT and ARCHIVED campaigns must never be reachable here. */
+type PublicCampaignStatus = Extract<CampaignStatus, "ACTIVE" | "COMPLETED" | "CLOSED">
+
+const PUBLIC_STATUS_OPTIONS: PublicCampaignStatus[] = ["ACTIVE", "COMPLETED", "CLOSED"]
+
+/** Renders the public campaign list page: a searchable, filterable, paginated grid of campaign cards. */
+export default function PublicCampaignsPage() {
+  const { t, i18n } = useTranslation()
+
+  const [page, setPage] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<PublicCampaignStatus>("ACTIVE")
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search)
+  const [data, setData] = useState<Page<CampaignSummary> | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  /** Fetches the current page of public campaigns and stores it, surfacing errors as a toast. */
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await listCampaigns({
+        page,
+        size: PAGE_SIZE,
+        status: statusFilter,
+        search: debouncedSearch || undefined,
+      })
+      setData(result)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [page, statusFilter, debouncedSearch])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const campaigns = data?.content ?? []
+
+  return (
+    <PublicLayout title={t("campaignsPublic.title")} description={t("campaignsPublic.description")}>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+              <Input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(0)
+                }}
+                placeholder={t("campaignsPublic.searchPlaceholder")}
+                className="w-64 pl-9"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value as PublicCampaignStatus)
+                setPage(0)
+              }}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PUBLIC_STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {statusLabel(t, status)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground text-sm">
+              {t("campaignsPublic.total", { count: data?.totalElements ?? 0 })}
+            </span>
+          </div>
+        </div>
+
+        {loading ? (
+          <p className="text-muted-foreground py-10 text-center text-sm">{t("campaignsPublic.loading")}</p>
+        ) : campaigns.length === 0 ? (
+          <p className="text-muted-foreground py-10 text-center text-sm">{t("campaignsPublic.empty")}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {campaigns.map((campaign) => (
+              <Link key={campaign.id} to={`/campaigns/${campaign.slug}`}>
+                <Card className="h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
+                  {campaign.thumbnailUrl ? (
+                    <img
+                      src={campaign.thumbnailUrl}
+                      alt=""
+                      className="h-40 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="bg-muted h-40 w-full" />
+                  )}
+                  <CardContent className="flex flex-col gap-3 py-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{categoryLabel(t, campaign.category)}</Badge>
+                      <Badge variant={STATUS_VARIANTS[campaign.status]}>
+                        {statusLabel(t, campaign.status)}
+                      </Badge>
+                    </div>
+                    <h3 className="line-clamp-2 font-semibold">
+                      {localized(i18n.language, campaign.title, campaign.titleEn)}
+                    </h3>
+                    <div className="flex flex-col gap-1">
+                      <Progress value={progressPercent(campaign.currentAmount, campaign.targetAmount)} />
+                      <span className="text-muted-foreground text-xs">
+                        {formatVnd(campaign.currentAmount)} / {formatVnd(campaign.targetAmount)}
+                        {" · "}
+                        {t("campaignsPublic.donorCount", { count: campaign.donorCount })}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-center justify-end gap-4">
+          <span className="text-muted-foreground text-sm">
+            {t("common.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={loading || (data?.first ?? true)}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={loading || (data?.last ?? true)}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </PublicLayout>
+  )
+}

@@ -5,9 +5,12 @@
     "en": "English"
   },
   "nav": {
+    "home": "Trang chủ",
     "dashboard": "Bảng điều khiển",
     "calendar": "Lịch",
     "campaigns": "Chiến dịch",
+    "news": "Tin tức",
+    "newsManage": "Quản lý tin tức",
     "users": "Người dùng",
     "profile": "Hồ sơ của tôi",
     "faqs": "Câu hỏi thường gặp",
@@ -71,6 +74,10 @@
     "phone": "Số điện thoại",
     "bio": "Giới thiệu",
     "bioPlaceholder": "Vài dòng về bạn...",
+    "dateOfBirth": "Ngày sinh",
+    "address": "Địa chỉ",
+    "addressPlaceholder": "Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố",
+    "nationalId": "Số CCCD",
     "saveProfile": "Lưu hồ sơ",
     "saving": "Đang lưu...",
     "changePassword": "Đổi mật khẩu",
@@ -86,7 +93,8 @@
     "loggedOut": "Đã đăng xuất",
     "validation": {
       "currentPasswordRequired": "Vui lòng nhập mật khẩu hiện tại",
-      "newPasswordMin": "Mật khẩu mới tối thiểu {{min}} ký tự"
+      "newPasswordMin": "Mật khẩu mới tối thiểu {{min}} ký tự",
+      "nationalIdFormat": "CCCD phải gồm đúng 12 chữ số"
     }
   },
   "role": {
@@ -122,6 +130,7 @@
     "actions": {
       "edit": "Chỉnh sửa",
       "manageDonations": "Quản lý quyên góp",
+      "manageRegistrations": "Quản lý người đăng ký",
       "changeStatus": "Chuyển trạng thái"
     },
     "deleteDialog": {
@@ -176,6 +185,11 @@
       "eventSectionHint": "Ngày CLB trực tiếp thực hiện hoạt động (vd: đi trao quà) — khác với ngày quyên góp ở trên. Để trống nếu chiến dịch không có hoạt động thực địa.",
       "eventStartDateLabel": "Ngày bắt đầu chương trình",
       "eventEndDateLabel": "Ngày kết thúc chương trình",
+      "capacityLabel": "Số lượng người tham gia tối đa",
+      "capacityPlaceholder": "Vd: 20",
+      "capacityRequiresEventDate": "Cần nhập ngày bắt đầu chương trình khi đã đặt số lượng tối đa",
+      "eventDateRequiresCapacity": "Cần nhập số lượng tối đa khi đã có ngày bắt đầu chương trình",
+      "capacityPositive": "Số lượng tối đa phải lớn hơn 0",
       "saveChanges": "Lưu thay đổi",
       "updated": "Đã cập nhật chiến dịch",
       "created": "Đã tạo chiến dịch",
@@ -208,6 +222,14 @@
       "added": "Đã thêm quyên góp",
       "deleted": "Đã xóa quyên góp",
       "amountMustBePositive": "Số tiền phải lớn hơn 0"
+    },
+    "registrations": {
+      "title": "Quản lý người đăng ký",
+      "count": "{{count}} người đã đăng ký",
+      "tableName": "Tên",
+      "tableRegisteredAt": "Thời gian đăng ký",
+      "empty": "Chưa có ai đăng ký tham gia",
+      "removed": "Đã xóa đăng ký"
     }
   },
   "users": {
@@ -421,13 +443,75 @@
       "answer": "Câu trả lời",
       "answerPlaceholder": "Nội dung trả lời",
       "enHint": "Để trống nếu chưa có bản tiếng Anh — hệ thống sẽ hiển thị bản tiếng Việt.",
-      "category": "Danh mục (tùy chọn)",
-      "categoryPlaceholder": "Quyên góp",
+      "category": "Danh mục",
+      "categoryOther": "Khác (nhập tay)",
+      "categoryOtherPlaceholder": "Nhập tên danh mục",
       "sortOrder": "Thứ tự hiển thị",
       "save": "Lưu thay đổi",
       "saving": "Đang lưu...",
       "questionRequired": "Vui lòng nhập câu hỏi",
       "answerRequired": "Vui lòng nhập câu trả lời"
+    }
+  },
+  "news": {
+    "title": "Tin tức",
+    "description": "Cập nhật hoạt động và câu chuyện từ CLB",
+    "searchPlaceholder": "Tìm theo tiêu đề...",
+    "empty": "Chưa có tin tức nào",
+    "loading": "Đang tải...",
+    "notFound": "Không tìm thấy bài viết",
+    "backToList": "Quay lại danh sách tin tức",
+    "publishedOn": "Đăng ngày {{date}}",
+    "manage": {
+      "pageTitle": "Quản lý tin tức",
+      "pageDescription": "Quản lý bài viết tin tức hiển thị công khai",
+      "addPost": "Thêm bài viết",
+      "searchPlaceholder": "Tìm theo tiêu đề...",
+      "total": "Tổng: {{count}}",
+      "loading": "Đang tải...",
+      "empty": "Chưa có bài viết nào",
+      "edit": "Chỉnh sửa",
+      "cancel": "Hủy",
+      "page": "Trang {{current}}/{{total}}",
+      "status": {
+        "all": "Tất cả trạng thái",
+        "published": "Đã đăng",
+        "draft": "Nháp"
+      },
+      "table": {
+        "title": "Tiêu đề",
+        "tags": "Thẻ",
+        "status": "Trạng thái",
+        "publishedAt": "Ngày đăng"
+      },
+      "toast": {
+        "published": "Đã đăng bài viết",
+        "unpublished": "Đã ẩn bài viết",
+        "updated": "Đã cập nhật bài viết",
+        "created": "Đã tạo bài viết"
+      },
+      "form": {
+        "editTitle": "Chỉnh sửa bài viết",
+        "editDescription": "Cập nhật nội dung bài viết.",
+        "createDescription": "Bài viết mới sẽ ở trạng thái nháp cho đến khi được đăng.",
+        "tabVi": "Tiếng Việt",
+        "tabEn": "Tiếng Anh (tùy chọn)",
+        "titleLabel": "Tiêu đề",
+        "titlePlaceholder": "Tiêu đề bài viết",
+        "summaryLabel": "Tóm tắt (tùy chọn)",
+        "summaryPlaceholder": "Tóm tắt ngắn gọn",
+        "contentLabel": "Nội dung",
+        "enHint": "Để trống nếu chưa có bản tiếng Anh — hệ thống sẽ hiển thị bản tiếng Việt.",
+        "tagsLabel": "Thẻ (phân cách bằng dấu phẩy)",
+        "tagsPlaceholder": "quyên góp, sự kiện, 2026",
+        "thumbnailUrlLabel": "Ảnh đại diện (URL)",
+        "thumbnailUrlPlaceholder": "https://...",
+        "save": "Lưu thay đổi",
+        "saving": "Đang lưu...",
+        "titleRequired": "Vui lòng nhập tiêu đề",
+        "contentRequired": "Vui lòng nhập nội dung",
+        "invalidUrl": "Đường dẫn không hợp lệ"
+      }
     }
   },
   "command": {
@@ -446,5 +530,115 @@
       "settings": "Cài đặt",
       "pages": "Trang"
     }
+  },
+  "comments": {
+    "title": "{{count}} bình luận",
+    "placeholder": "Viết bình luận... gõ @ để tag ai đó",
+    "submit": "Đăng",
+    "posting": "Đang đăng...",
+    "loginPrompt": "Đăng nhập để bình luận",
+    "loading": "Đang tải bình luận...",
+    "empty": "Chưa có bình luận nào",
+    "viewAll": "Xem tất cả {{count}} bình luận",
+    "edited": "(đã chỉnh sửa)",
+    "edit": "Sửa",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "mentionNoResults": "Không tìm thấy thành viên",
+    "deleteDialog": {
+      "title": "Xóa bình luận?",
+      "description": "Bạn có chắc muốn xóa bình luận này? Hành động này không thể hoàn tác.",
+      "deleting": "Đang xóa..."
+    }
+  },
+  "reactions": {
+    "loginPrompt": "Đăng nhập để bày tỏ cảm xúc",
+    "addReaction": "Bày tỏ cảm xúc",
+    "types": {
+      "LIKE": "Thích",
+      "LOVE": "Yêu thích",
+      "CELEBRATE": "Ăn mừng",
+      "LAUGH": "Haha",
+      "SURPRISED": "Wow",
+      "SAD": "Buồn"
+    }
+  },
+  "registrations": {
+    "title": "Đăng ký tham gia",
+    "countLabel": "{{count}}/{{capacity}} đã đăng ký",
+    "registerButton": "Đăng ký",
+    "cancelButton": "Hủy đăng ký",
+    "full": "Đã đủ số lượng",
+    "loginPrompt": "Đăng nhập để đăng ký tham gia",
+    "registerSuccess": "Đăng ký thành công! Bạn chỉ có thể hủy đăng ký trước ngày {{date}}.",
+    "cancelClosedHint": "Đã quá hạn hủy đăng ký (trước 1 ngày sự kiện bắt đầu)"
+  },
+  "faqCategory": {
+    "general": "Chung",
+    "donation": "Quyên góp",
+    "account": "Tài khoản",
+    "activities": "Hoạt động"
+  },
+  "faqsPublic": {
+    "title": "Câu hỏi thường gặp",
+    "description": "Giải đáp những thắc mắc phổ biến về hoạt động của CLB.",
+    "categories": "Danh mục",
+    "allFaqs": "Tất cả câu hỏi",
+    "searchPlaceholder": "Tìm câu hỏi...",
+    "uncategorized": "Khác",
+    "total": "({{count}} câu hỏi)",
+    "empty": "Không tìm thấy câu hỏi nào phù hợp.",
+    "loading": "Đang tải..."
+  },
+  "campaignsPublic": {
+    "title": "Chiến dịch quyên góp",
+    "description": "Cùng chung tay đóng góp cho các chiến dịch thiện nguyện đang diễn ra.",
+    "searchPlaceholder": "Tìm kiếm chiến dịch...",
+    "total": "{{count}} chiến dịch",
+    "empty": "Không tìm thấy chiến dịch nào phù hợp.",
+    "loading": "Đang tải chiến dịch...",
+    "donorCount": "{{count}} người ủng hộ",
+    "viewDetail": "Xem chi tiết",
+    "notFound": "Không tìm thấy chiến dịch",
+    "backToList": "Quay lại danh sách",
+    "donationAmount": "Số tiền quyên góp (tùy chọn)",
+    "donationAmountPlaceholder": "Nhập số tiền",
+    "bankAccountNo": "Số tài khoản",
+    "bankAccountName": "Chủ tài khoản",
+    "transferNote": "Nội dung chuyển khoản",
+    "viewOnThienNguyen": "Xem trên thiennguyen.app",
+    "eventDates": "Ngày thực hiện chương trình",
+    "donationInfo": "Thông tin quyên góp",
+    "images": "Hình ảnh chiến dịch"
+  },
+  "home": {
+    "heroSubtitle": "Cùng theo dõi minh bạch từng chiến dịch và đồng hành cùng CLB trên hành trình sẻ chia yêu thương.",
+    "heroCtaCampaigns": "Xem chiến dịch",
+    "heroCtaJoin": "Tham gia CLB",
+    "statsRaised": "Tổng quyên góp",
+    "statsCampaigns": "Chiến dịch đang chạy",
+    "statsDonors": "Lượt ủng hộ",
+    "howItWorksBadge": "Quy trình",
+    "howItWorksTitle": "Quyên góp minh bạch chỉ với 3 bước",
+    "howItWorksSubtitle": "Mọi khoản đóng góp đều được cập nhật công khai trên từng chiến dịch.",
+    "step1Title": "Chọn chiến dịch",
+    "step1Desc": "Xem danh sách chiến dịch đang gây quỹ, đọc mô tả và mục tiêu quyên góp.",
+    "step2Title": "Quét mã VietQR",
+    "step2Desc": "Chuyển khoản trực tiếp qua mã QR hoặc số tài khoản hiển thị trên trang chiến dịch.",
+    "step3Title": "Theo dõi tiến độ",
+    "step3Desc": "Số tiền quyên góp được cập nhật công khai, minh bạch theo thời gian thực.",
+    "featuredCampaignsBadge": "Đang gây quỹ",
+    "featuredCampaignsTitle": "Chiến dịch nổi bật",
+    "latestNewsBadge": "Cập nhật",
+    "latestNewsTitle": "Tin tức mới nhất",
+    "viewAll": "Xem tất cả",
+    "ctaBadge": "Cùng chung tay",
+    "ctaTitle": "Cùng chung tay lan tỏa yêu thương",
+    "ctaSubtitle": "Tham gia CLB Hương Sen để cùng chúng tôi mang yêu thương đến với cộng đồng.",
+    "ctaButton": "Tham gia ngay",
+    "trustTransparent": "Minh bạch trong từng khoản đóng góp",
+    "trustCommunity": "Đồng hành cùng cộng đồng"
   }
 }

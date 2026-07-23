@@ -14,6 +14,9 @@ import com.clb.charity.common.exception.CampaignDeletionNotAllowedException;
 import com.clb.charity.common.exception.CampaignNotFoundException;
 import com.clb.charity.common.exception.DuplicateSlugException;
 import com.clb.charity.common.exception.InvalidStatusTransitionException;
+import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.reaction.service.ReactionService;
+import com.clb.charity.registration.service.RegistrationService;
 import com.clb.charity.vietqr.service.VietQrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +47,15 @@ class CampaignServiceTest {
     @Mock
     private VietQrService vietQrService;
 
+    @Mock
+    private ReactionService reactionService;
+
+    @Mock
+    private CommentService commentService;
+
+    @Mock
+    private RegistrationService registrationService;
+
     // Use the real generated MapStruct mappers so slug/status mapping is exercised.
     private final CampaignMapper campaignMapper = Mappers.getMapper(CampaignMapper.class);
     private final DonationMapper donationMapper = Mappers.getMapper(DonationMapper.class);
@@ -53,7 +65,8 @@ class CampaignServiceTest {
     @BeforeEach
     void setUp() {
         campaignService = new CampaignServiceImpl(
-                campaignRepository, donationRepository, campaignMapper, donationMapper, vietQrService);
+                campaignRepository, donationRepository, campaignMapper, donationMapper, vietQrService,
+                reactionService, commentService, registrationService);
     }
 
     private CreateCampaignRequest sampleRequest() {
@@ -62,7 +75,7 @@ class CampaignServiceTest {
                 null, null, null,
                 null, null,
                 50_000_000L, "1234567890", "CLB Thiện Nguyện", "ung ho",
-                null, CampaignCategory.CHILDREN, LocalDate.of(2026, 1, 1), null, null, null);
+                null, CampaignCategory.CHILDREN, LocalDate.of(2026, 1, 1), null, null, null, null);
     }
 
     private Campaign draftCampaign() {

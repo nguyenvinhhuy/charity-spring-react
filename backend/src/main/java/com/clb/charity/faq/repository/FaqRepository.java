@@ -15,8 +15,8 @@ public interface FaqRepository extends JpaRepository<Faq, Long> {
     @Query("""
             SELECT f FROM Faq f
             WHERE (:published IS NULL OR f.published = :published)
-              AND (:search IS NULL OR LOWER(f.question) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(f.questionEn) LIKE LOWER(CONCAT('%', :search, '%')))
+              AND (:search IS NULL OR LOWER(f.question) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))
+                   OR LOWER(f.questionEn) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')))
             ORDER BY f.sortOrder ASC
             """)
     Page<Faq> search(@Param("published") @Nullable Boolean published,
