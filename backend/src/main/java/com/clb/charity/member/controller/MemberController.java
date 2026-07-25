@@ -4,8 +4,10 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateActiveRequest;
 import com.clb.charity.member.dto.request.UpdateRoleRequest;
+import com.clb.charity.member.dto.request.UpdateTeamProfileRequest;
 import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
+import com.clb.charity.member.dto.response.TeamMemberResponse;
 import com.clb.charity.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -65,6 +67,17 @@ public class MemberController {
     }
 
     /**
+     * Lists active members featured on the public About page's team section.
+     *
+     * @return the featured team members
+     */
+    @Operation(summary = "List active members featured on the public team section")
+    @GetMapping("/team")
+    public List<TeamMemberResponse> listTeam() {
+        return memberService.listTeam();
+    }
+
+    /**
      * Returns a single member by id.
      *
      * @param id the member id
@@ -112,5 +125,18 @@ public class MemberController {
     @PatchMapping("/{id}/status")
     public MemberResponse setActive(@PathVariable Long id, @Valid @RequestBody UpdateActiveRequest request) {
         return memberService.setActive(id, request.active());
+    }
+
+    /**
+     * Sets or clears a member's public team display fields.
+     *
+     * @param id the member id
+     * @param request the new team display values
+     * @return the updated member representation
+     */
+    @Operation(summary = "Set or clear a member's public team display fields")
+    @PatchMapping("/{id}/team-profile")
+    public MemberResponse updateTeamProfile(@PathVariable Long id, @Valid @RequestBody UpdateTeamProfileRequest request) {
+        return memberService.updateTeamProfile(id, request);
     }
 }

@@ -25,6 +25,8 @@ public record MemberResponse(
         @Nullable LocalDate dateOfBirth,
         @Nullable String address,
         @Nullable String nationalId,
+        @Nullable String leadershipTitle,
+        @Nullable Integer teamDisplayOrder,
         boolean isActive,
         Instant createdAt
 ) {

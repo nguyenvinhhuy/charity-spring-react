@@ -5,6 +5,8 @@ import type {
   MemberMention,
   Page,
   Role,
+  TeamMember,
+  UpdateTeamProfileRequest,
 } from '@/types';
 
 export interface ListMembersParams {
@@ -86,5 +88,27 @@ export async function setMemberActive(
   active: boolean,
 ): Promise<Member> {
   const { data } = await api.patch<Member>(`/members/${id}/status`, { active });
+  return data;
+}
+
+/**
+ * List active members featured on the public About page's team section.
+ */
+export async function listTeam(): Promise<TeamMember[]> {
+  const { data } = await api.get<TeamMember[]>('/members/team');
+  return data;
+}
+
+/**
+ * Set or clear a member's public team display fields (admin only).
+ *
+ * @param id member id
+ * @param payload the new team display values
+ */
+export async function updateTeamProfile(
+  id: number,
+  payload: UpdateTeamProfileRequest,
+): Promise<Member> {
+  const { data } = await api.patch<Member>(`/members/${id}/team-profile`, payload);
   return data;
 }

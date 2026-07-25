@@ -89,9 +89,9 @@ export default function NewsPage() {
                 className="group bg-card flex flex-col overflow-hidden rounded-lg border transition-shadow hover:shadow-md"
               >
                 {post.thumbnailUrl ? (
-                  <img src={post.thumbnailUrl} alt="" className="h-40 w-full object-cover" />
+                  <img src={post.thumbnailUrl} alt="" className="aspect-[3/2] w-full object-cover" />
                 ) : (
-                  <div className="bg-muted h-40 w-full" />
+                  <div className="bg-muted aspect-[3/2] w-full" />
                 )}
                 <div className="flex flex-1 flex-col gap-2 p-4">
                   <h2 className="group-hover:text-primary line-clamp-2 font-semibold">

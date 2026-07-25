@@ -9,7 +9,7 @@ import {
   formatVnd,
   localized,
   statusLabel,
-  STATUS_VARIANTS,
+  STATUS_BADGE_CLASSES,
 } from "@/app/campaigns/components/campaign-constants"
 
 interface TopCampaignsProps {
@@ -47,7 +47,7 @@ export function TopCampaigns({ items }: TopCampaignsProps) {
                   <span className="truncate font-medium">
                     {localized(i18n.language, item.title, item.titleEn)}
                   </span>
-                  <Badge variant={STATUS_VARIANTS[item.status]} className="shrink-0">
+                  <Badge className={`shrink-0 ${STATUS_BADGE_CLASSES[item.status]}`}>
                     {statusLabel(t, item.status)}
                   </Badge>
                 </div>

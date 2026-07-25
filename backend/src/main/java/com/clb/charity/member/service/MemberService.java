@@ -4,9 +4,11 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateProfileRequest;
+import com.clb.charity.member.dto.request.UpdateTeamProfileRequest;
 import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.dto.response.MemberStatsResponse;
+import com.clb.charity.member.dto.response.TeamMemberResponse;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -104,4 +106,20 @@ public interface MemberService {
      * @return up to 10 matching active members
      */
     List<MemberMentionResponse> searchForMention(String query);
+
+    /**
+     * Lists active members featured on the public About page's team section, ordered for display.
+     *
+     * @return the featured team members
+     */
+    List<TeamMemberResponse> listTeam();
+
+    /**
+     * Sets or clears a member's public team display fields (ADMIN only).
+     *
+     * @param id the member id
+     * @param request the new team display values
+     * @return the updated member representation
+     */
+    MemberResponse updateTeamProfile(Long id, UpdateTeamProfileRequest request);
 }

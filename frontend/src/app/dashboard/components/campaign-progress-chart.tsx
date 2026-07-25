@@ -21,6 +21,20 @@ function truncate(value: string): string {
 }
 
 /**
+ * Renders a single-line Y-axis tick for the campaign name, bypassing Recharts' own
+ * `<Text>` component (which auto-wraps to multiple lines when the label doesn't fit
+ * the axis width) — the full name is still available via the native title tooltip on hover.
+ */
+function CampaignNameTick({ x, y, payload }: { x: number; y: number; payload: { value: string } }) {
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end" fontSize={12} className="fill-muted-foreground">
+      <title>{payload.value}</title>
+      {truncate(payload.value)}
+    </text>
+  )
+}
+
+/**
  * Renders a horizontal bar chart of funding progress percentages for the top campaigns.
  *
  * @param items the campaign progress items, already sorted by current amount descending
@@ -36,7 +50,7 @@ export function CampaignProgressChart({ items }: CampaignProgressChartProps) {
   } satisfies ChartConfig
 
   const data = items.slice(0, MAX_CAMPAIGNS).map((item) => ({
-    name: truncate(localized(i18n.language, item.title, item.titleEn)),
+    name: localized(i18n.language, item.title, item.titleEn),
     percent: item.percent,
   }))
 
@@ -74,7 +88,7 @@ export function CampaignProgressChart({ items }: CampaignProgressChartProps) {
                 width={150}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12 }}
+                tick={<CampaignNameTick x={0} y={0} payload={{ value: "" }} />}
               />
               <ChartTooltip
                 cursor={false}

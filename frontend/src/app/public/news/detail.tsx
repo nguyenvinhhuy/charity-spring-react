@@ -101,6 +101,14 @@ export default function NewsDetailPage() {
 
         <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
 
+        {post.thumbnailUrl && (
+          <img
+            src={post.thumbnailUrl}
+            alt={title}
+            className="aspect-[3/2] w-full rounded-lg object-cover"
+          />
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           {post.tags.map((tag) => (
             <Badge key={tag} variant="secondary">
@@ -114,10 +122,6 @@ export default function NewsDetailPage() {
         </div>
 
         <ReactionBar target="posts" targetId={post.id} />
-
-        {post.thumbnailUrl && (
-          <img src={post.thumbnailUrl} alt={title} className="w-full rounded-lg object-cover" />
-        )}
 
         <div
           className="[&_a]:text-primary [&_a]:underline [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:text-lg [&_h3]:font-semibold [&_img]:rounded-lg [&_li]:ml-4 [&_ol]:list-decimal [&_p]:my-3 [&_p]:leading-relaxed [&_ul]:list-disc"

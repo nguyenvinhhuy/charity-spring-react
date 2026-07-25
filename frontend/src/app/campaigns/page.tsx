@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import {
+  ArrowRightLeft,
   ChevronLeft,
   ChevronRight,
   HandCoins,
-  MoreHorizontal,
   Pencil,
   Plus,
   Search,
@@ -48,8 +48,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -68,7 +66,7 @@ import {
   progressPercent,
   statusLabel,
   STATUS_OPTIONS,
-  STATUS_VARIANTS,
+  STATUS_BADGE_CLASSES,
 } from "./components/campaign-constants"
 import { CampaignFormDialog } from "./components/campaign-form-dialog"
 import { DonationsDialog } from "./components/donations-dialog"
@@ -250,11 +248,11 @@ export default function CampaignsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("campaigns.table.campaign")}</TableHead>
+                  <TableHead className="pl-4">{t("campaigns.table.campaign")}</TableHead>
                   <TableHead>{t("campaigns.table.progress")}</TableHead>
                   <TableHead>{t("campaigns.table.status")}</TableHead>
                   <TableHead>{t("campaigns.table.startDate")}</TableHead>
-                  <TableHead className="w-12" />
+                  <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -276,7 +274,7 @@ export default function CampaignsPage() {
                     const canDelete = isAdmin && campaign.status === "DRAFT"
                     return (
                       <TableRow key={campaign.id}>
-                        <TableCell>
+                        <TableCell className="pl-4">
                           <div className="flex items-center gap-3">
                             {campaign.thumbnailUrl ? (
                               <img
@@ -310,42 +308,52 @@ export default function CampaignsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={STATUS_VARIANTS[campaign.status]}>
+                          <Badge className={STATUS_BADGE_CLASSES[campaign.status]}>
                             {statusLabel(t, campaign.status)}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(campaign.startDate)}</TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal />
+                        <TableCell className="pr-4">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={t("campaigns.actions.edit")}
+                              onClick={() => openEdit(campaign)}
+                            >
+                              <Pencil />
+                            </Button>
+
+                            {isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title={t("campaigns.actions.manageDonations")}
+                                onClick={() => openDonations(campaign)}
+                              >
+                                <HandCoins />
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEdit(campaign)}>
-                                <Pencil />
-                                {t("campaigns.actions.edit")}
-                              </DropdownMenuItem>
+                            )}
 
-                              {isAdmin && (
-                                <DropdownMenuItem onClick={() => openDonations(campaign)}>
-                                  <HandCoins />
-                                  {t("campaigns.actions.manageDonations")}
-                                </DropdownMenuItem>
-                              )}
+                            {isAdmin && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title={t("campaigns.actions.manageRegistrations")}
+                                onClick={() => openRegistrations(campaign)}
+                              >
+                                <Users />
+                              </Button>
+                            )}
 
-                              {isAdmin && (
-                                <DropdownMenuItem onClick={() => openRegistrations(campaign)}>
-                                  <Users />
-                                  {t("campaigns.actions.manageRegistrations")}
-                                </DropdownMenuItem>
-                              )}
-
-                              {isAdmin && transitions.length > 0 && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuLabel>{t("campaigns.actions.changeStatus")}</DropdownMenuLabel>
+                            {isAdmin && transitions.length > 0 && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" title={t("campaigns.actions.changeStatus")}>
+                                    <ArrowRightLeft />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
                                   {transitions.map((status) => (
                                     <DropdownMenuItem
                                       key={status}
@@ -354,23 +362,21 @@ export default function CampaignsPage() {
                                       {statusLabel(t, status)}
                                     </DropdownMenuItem>
                                   ))}
-                                </>
-                              )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
 
-                              {canDelete && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    onClick={() => setDeleteTarget(campaign)}
-                                  >
-                                    <Trash2 />
-                                    {t("common.delete")}
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title={t("common.delete")}
+                                onClick={() => setDeleteTarget(campaign)}
+                              >
+                                <Trash2 className="text-destructive" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     )

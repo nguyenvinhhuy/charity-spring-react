@@ -16,24 +16,6 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    image: minio/minio
-    container_name: clb_minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     build: ./backend
     container_name: clb_backend
@@ -42,10 +24,11 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/clb_charity
       DB_USER: postgres
       DB_PASSWORD: postgres
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: http://localhost:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      # Free Cloudinary account — fill these in your shell env or a local .env file,
+      # never commit real values here.
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CORS_ORIGINS: http://localhost:5173
       JWT_SECRET: ${JWT_SECRET}
       BANK_ACCOUNT_NO: ${BANK_ACCOUNT_NO}
@@ -54,8 +37,6 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
 
   frontend:
@@ -78,4 +59,3 @@ services:
 
 volumes:
   postgres_data:
-  minio_data:

@@ -14,7 +14,10 @@
     "users": "Người dùng",
     "profile": "Hồ sơ của tôi",
     "faqs": "Câu hỏi thường gặp",
-    "faqManage": "Quản lý FAQ"
+    "faqManage": "Quản lý FAQ",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ",
+    "inquiriesManage": "Quản lý liên hệ"
   },
   "userMenu": {
     "profile": "Hồ sơ",
@@ -39,7 +42,7 @@
     "creating": "Đang tạo...",
     "haveAccount": "Đã có tài khoản?",
     "termsNotice": "Khi tiếp tục, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
-    "tagline": "Lan tỏa yêu thương, chung tay vì cộng đồng.",
+    "tagline": "Góp nhặt yêu thương, gieo trồng hạnh phúc",
     "taglineSignup": "Cùng nhau tạo nên những điều tử tế.",
     "orgName": "Hội Thiện Nguyện Hương Sen",
     "loginSuccess": "Xin chào {{name}}",
@@ -103,13 +106,19 @@
     "MEMBER": "Thành viên"
   },
   "common": {
+    "actions": "Hành động",
     "cancel": "Hủy",
+    "close": "Đóng",
     "delete": "Xóa",
     "deleting": "Đang xóa...",
     "loading": "Đang tải...",
     "saving": "Đang lưu...",
     "total": "Tổng: {{count}}",
-    "page": "Trang {{current}}/{{total}}"
+    "page": "Trang {{current}}/{{total}}",
+    "uploadImage": "Nhấn để tải ảnh lên",
+    "uploadingImage": "Đang tải ảnh lên...",
+    "changeImage": "Đổi ảnh khác",
+    "noImage": "Chưa có ảnh"
   },
   "campaigns": {
     "title": "Quản lý chiến dịch",
@@ -177,8 +186,7 @@
       "qrDescriptionPlaceholder": "Ung ho chien dich",
       "thienNguyenUrlLabel": "Đường dẫn thiennguyen.app",
       "thienNguyenUrlPlaceholder": "https://thiennguyen.app/...",
-      "thumbnailUrlLabel": "Ảnh đại diện (URL)",
-      "thumbnailUrlPlaceholder": "https://...",
+      "thumbnailUrlLabel": "Ảnh đại diện",
       "startDateLabel": "Ngày bắt đầu",
       "endDateLabel": "Ngày kết thúc",
       "eventSectionTitle": "Ngày thực hiện chương trình",
@@ -251,13 +259,7 @@
     },
     "statusActive": "Hoạt động",
     "statusInactive": "Vô hiệu",
-    "changeRole": "Đổi vai trò",
-    "activate": "Kích hoạt",
-    "deactivate": "Vô hiệu hóa",
     "pagination": "Trang {{current}}/{{total}}",
-    "roleUpdated": "Đã cập nhật vai trò",
-    "activated": "Đã kích hoạt tài khoản",
-    "deactivated": "Đã vô hiệu hóa tài khoản",
     "addMember": "Thêm thành viên",
     "dialog": {
       "title": "Thêm thành viên",
@@ -277,6 +279,27 @@
       "emailRequired": "Vui lòng nhập email",
       "emailInvalid": "Email không hợp lệ",
       "passwordMin": "Mật khẩu tối thiểu {{min}} ký tự"
+    },
+    "editDialog": {
+      "trigger": "Cài đặt thành viên",
+      "accountSection": "Tài khoản",
+      "teamSection": "Hiển thị công khai",
+      "roleLabel": "Vai trò",
+      "roleHint": "Quyền truy cập trong hệ thống.",
+      "selfRoleLocked": "Không thể tự đổi vai trò của chính mình.",
+      "activeLabel": "Tài khoản hoạt động",
+      "activeHint": "Tắt để chặn đăng nhập.",
+      "selfActiveLocked": "Không thể tự vô hiệu hóa chính mình.",
+      "leadershipTitleLabel": "Chức vụ hiển thị",
+      "leadershipTitlePlaceholder": "VD: Chủ tịch",
+      "leadershipTitleHint": "Trống = ẩn khỏi trang Giới thiệu.",
+      "displayOrderLabel": "Thứ tự hiển thị",
+      "displayOrderHint": "Số nhỏ hơn hiển thị trước.",
+      "displayOrderPlaceholder": "VD: 1",
+      "cancel": "Hủy",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "saved": "Đã cập nhật thành viên"
     }
   },
   "dashboard": {
@@ -504,14 +527,48 @@
         "enHint": "Để trống nếu chưa có bản tiếng Anh — hệ thống sẽ hiển thị bản tiếng Việt.",
         "tagsLabel": "Thẻ (phân cách bằng dấu phẩy)",
         "tagsPlaceholder": "quyên góp, sự kiện, 2026",
-        "thumbnailUrlLabel": "Ảnh đại diện (URL)",
-        "thumbnailUrlPlaceholder": "https://...",
+        "thumbnailUrlLabel": "Ảnh đại diện",
         "save": "Lưu thay đổi",
         "saving": "Đang lưu...",
         "titleRequired": "Vui lòng nhập tiêu đề",
         "contentRequired": "Vui lòng nhập nội dung",
         "invalidUrl": "Đường dẫn không hợp lệ"
       }
+    }
+  },
+  "inquiries": {
+    "pageTitle": "Quản lý liên hệ",
+    "pageDescription": "Xem và xử lý các yêu cầu liên hệ gửi từ trang công khai",
+    "total": "Tổng: {{count}}",
+    "loading": "Đang tải...",
+    "empty": "Chưa có yêu cầu liên hệ nào",
+    "page": "Trang {{current}}/{{total}}",
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "status": {
+      "all": "Tất cả trạng thái",
+      "new": "Mới",
+      "handled": "Đã xử lý"
+    },
+    "table": {
+      "sender": "Người gửi",
+      "subject": "Chủ đề",
+      "status": "Trạng thái",
+      "date": "Ngày gửi"
+    },
+    "actions": {
+      "viewDetail": "Xem chi tiết",
+      "markHandled": "Đánh dấu đã xử lý",
+      "delete": "Xóa"
+    },
+    "toast": {
+      "markedHandled": "Đã đánh dấu xử lý",
+      "deleted": "Đã xóa yêu cầu liên hệ"
+    },
+    "deleteDialog": {
+      "title": "Xóa yêu cầu liên hệ?",
+      "description": "Bạn có chắc muốn xóa yêu cầu liên hệ này? Hành động này không thể hoàn tác.",
+      "deleting": "Đang xóa..."
     }
   },
   "command": {
@@ -640,5 +697,49 @@
     "ctaButton": "Tham gia ngay",
     "trustTransparent": "Minh bạch trong từng khoản đóng góp",
     "trustCommunity": "Đồng hành cùng cộng đồng"
+  },
+  "aboutPublic": {
+    "title": "Giới thiệu",
+    "description": "Câu chuyện, sứ mệnh và đội ngũ đứng sau CLB Hương Sen.",
+    "missionBadge": "Sứ mệnh",
+    "missionTitle": "Góp nhặt yêu thương, gieo trồng hạnh phúc",
+    "missionBody": "CLB Hương Sen hoạt động vì một cộng đồng nơi mọi hoàn cảnh khó khăn đều nhận được sự sẻ chia kịp thời, minh bạch và bền vững. Chúng tôi kết nối những tấm lòng hảo tâm với những nơi cần giúp đỡ nhất, thông qua các chiến dịch quyên góp và hoạt động tình nguyện thực tế.",
+    "storyTitle": "Hành trình của chúng tôi",
+    "storyBody": "Từ những bước đi đầu tiên đến nay, CLB Hương Sen không ngừng mở rộng quy mô và cách thức hoạt động để mang lại giá trị thiết thực hơn cho cộng đồng.",
+    "milestone1Title": "Thành lập CLB",
+    "milestone1Desc": "Một nhóm sinh viên cùng chung lý tưởng thiện nguyện sáng lập CLB Hương Sen.",
+    "milestone2Title": "Mở rộng hoạt động",
+    "milestone2Desc": "Triển khai thêm nhiều chiến dịch quyên góp và chương trình tình nguyện tại chỗ.",
+    "milestone3Title": "Số hóa minh bạch",
+    "milestone3Desc": "Ra mắt nền tảng quản lý chiến dịch trực tuyến, công khai tiến độ quyên góp theo thời gian thực.",
+    "milestone4Title": "Kết nối cộng đồng",
+    "milestone4Desc": "Mở rộng mạng lưới thành viên, tình nguyện viên và các đơn vị đồng hành.",
+    "teamBadge": "Ban chủ nhiệm",
+    "teamTitle": "Đội ngũ của chúng tôi"
+  },
+  "contactPublic": {
+    "title": "Liên hệ",
+    "description": "Mọi thắc mắc hoặc góp ý, đừng ngần ngại gửi cho chúng tôi.",
+    "infoTitle": "Thông tin liên hệ",
+    "addressLabel": "Địa chỉ",
+    "addressValue": "123 Đường Thiện Nguyện, Quận 1, TP. Hồ Chí Minh",
+    "phoneLabel": "Điện thoại",
+    "phoneValue": "0900 000 000",
+    "emailLabel": "Email",
+    "emailValue": "lienhe@clb.vn",
+    "formTitle": "Gửi tin nhắn cho chúng tôi",
+    "form": {
+      "fullNameLabel": "Họ và tên",
+      "emailLabel": "Email",
+      "subjectLabel": "Chủ đề",
+      "messageLabel": "Nội dung",
+      "submitButton": "Gửi liên hệ",
+      "sending": "Đang gửi...",
+      "success": "Cảm ơn bạn đã liên hệ, chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "fullNameRequired": "Vui lòng nhập họ và tên",
+      "emailInvalid": "Email không hợp lệ",
+      "subjectRequired": "Vui lòng nhập chủ đề",
+      "messageRequired": "Vui lòng nhập nội dung"
+    }
   }
 }

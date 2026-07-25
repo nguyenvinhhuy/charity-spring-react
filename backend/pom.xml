@@ -21,7 +21,7 @@
         <java.version>26</java.version>
         <springdoc.version>3.0.0</springdoc.version>
         <jjwt.version>0.12.6</jjwt.version>
-        <minio.version>8.5.17</minio.version>
+        <cloudinary.version>2.4.0</cloudinary.version>
         <itext7.version>7.2.5</itext7.version>
         <lombok.version>1.18.46</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
@@ -105,11 +105,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Object storage (MinIO, S3-compatible) -->
+        <!-- Object storage (Cloudinary) -->
         <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <version>${minio.version}</version>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http5</artifactId>
+            <version>${cloudinary.version}</version>
         </dependency>
 
         <!-- PDF export (iText 7) -->

@@ -11,12 +11,15 @@ const Users = lazy(() => import('@/app/users/page'))
 const FAQs = lazy(() => import('@/app/faqs/page'))
 const FaqManage = lazy(() => import('@/app/faqs/manage/page'))
 const NewsManage = lazy(() => import('@/app/dashboard/news/manage/page'))
+const InquiriesManage = lazy(() => import('@/app/dashboard/inquiries/page'))
 
 // Public content pages (Phase 2)
 const PublicCampaigns = lazy(() => import('@/app/public/campaigns/page'))
 const PublicCampaignDetail = lazy(() => import('@/app/public/campaigns/detail'))
 const PublicNews = lazy(() => import('@/app/public/news/page'))
 const PublicNewsDetail = lazy(() => import('@/app/public/news/detail'))
+const About = lazy(() => import('@/app/about/page'))
+const Contact = lazy(() => import('@/app/contact/page'))
 
 // Auth pages
 const SignIn = lazy(() => import('@/app/auth/sign-in/page'))
@@ -77,6 +80,14 @@ export const routes: RouteConfig[] = [
     path: "/news/:slug",
     element: <PublicNewsDetail />
   },
+  {
+    path: "/about",
+    element: <About />
+  },
+  {
+    path: "/contact",
+    element: <Contact />
+  },
 
   // Dashboard Routes (staff only: ADMIN/CONTRIBUTOR)
   {
@@ -121,6 +132,11 @@ export const routes: RouteConfig[] = [
   {
     path: "/dashboard/news",
     element: <NewsManage />,
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+  },
+  {
+    path: "/dashboard/inquiries",
+    element: <InquiriesManage />,
     requiredRoles: ["ADMIN", "CONTRIBUTOR"]
   },
 

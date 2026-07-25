@@ -40,11 +40,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { categoryLabel, localized, statusLabel, STATUS_VARIANTS } from "@/app/campaigns/components/campaign-constants"
+import { categoryLabel, localized, statusLabel, STATUS_BADGE_CLASSES } from "@/app/campaigns/components/campaign-constants"
 import type { CampaignCategory } from "@/types"
 import type { CalendarItem, EventCalendarItem } from "../types"
 import { itemsForDay } from "../lib"
@@ -231,7 +232,10 @@ export function CalendarMain({
                       )}
                     </div>
                   </div>
-                  <Badge variant={item.kind === "campaign" ? STATUS_VARIANTS[item.status] : "outline"}>
+                  <Badge
+                    variant={item.kind === "campaign" ? undefined : "outline"}
+                    className={item.kind === "campaign" ? STATUS_BADGE_CLASSES[item.status] : undefined}
+                  >
                     {item.kind === "campaign" ? statusLabel(t, item.status) : t("calendar.eventBadge")}
                   </Badge>
                 </div>
@@ -326,17 +330,10 @@ export function CalendarMain({
               </div>
 
               {detailItem.kind === "campaign" ? (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{categoryLabel(t, detailItem.category)}</Badge>
-                    <Badge variant={STATUS_VARIANTS[detailItem.status]}>{statusLabel(t, detailItem.status)}</Badge>
-                  </div>
-                  <Button asChild className="w-full">
-                    <Link to="/dashboard/campaigns" onClick={() => setDetailItem(null)}>
-                      {t("calendar.viewInCampaignManagement")}
-                    </Link>
-                  </Button>
-                </>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{categoryLabel(t, detailItem.category)}</Badge>
+                  <Badge className={STATUS_BADGE_CLASSES[detailItem.status]}>{statusLabel(t, detailItem.status)}</Badge>
+                </div>
               ) : (
                 <>
                   {detailItem.location && (
@@ -350,31 +347,43 @@ export function CalendarMain({
                       {localized(i18n.language, detailItem.description ?? "", detailItem.descriptionEn)}
                     </p>
                   )}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1 cursor-pointer"
-                      onClick={() => {
-                        onEditEvent(detailItem)
-                        setDetailItem(null)
-                      }}
-                    >
-                      {t("calendar.edit")}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="flex-1 cursor-pointer"
-                      onClick={() => {
-                        onDeleteEvent(detailItem.id)
-                        setDetailItem(null)
-                      }}
-                    >
-                      {t("calendar.delete")}
-                    </Button>
-                  </div>
                 </>
               )}
             </div>
+          )}
+          {detailItem && (
+            <DialogFooter className="flex-row gap-2">
+              {detailItem.kind === "campaign" ? (
+                <Button asChild className="w-full">
+                  <Link to="/dashboard/campaigns" onClick={() => setDetailItem(null)}>
+                    {t("calendar.viewInCampaignManagement")}
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      onEditEvent(detailItem)
+                      setDetailItem(null)
+                    }}
+                  >
+                    {t("calendar.edit")}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      onDeleteEvent(detailItem.id)
+                      setDetailItem(null)
+                    }}
+                  >
+                    {t("calendar.delete")}
+                  </Button>
+                </>
+              )}
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>

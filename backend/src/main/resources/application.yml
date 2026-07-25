@@ -42,14 +42,11 @@ app:
     secret: ${JWT_SECRET}
     access-token-expiry: 900       # 15 minutes in seconds
     refresh-token-expiry: 604800   # 7 days in seconds
-  minio:
-    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-    # Base URL returned to clients for stored objects. In Docker the backend
-    # reaches MinIO at http://minio:9000, but browsers must use localhost.
-    public-endpoint: ${MINIO_PUBLIC_ENDPOINT:http://localhost:9000}
-    access-key: ${MINIO_ACCESS_KEY:minioadmin}
-    secret-key: ${MINIO_SECRET_KEY:minioadmin}
-    bucket: clb-media
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+    upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:clb-media}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
   bank:

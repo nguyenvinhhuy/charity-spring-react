@@ -77,6 +77,12 @@ export function PublicLayout({ children, title, description }: PublicLayoutProps
             <Link to="/faqs" className="hover:text-primary">
               {t("nav.faqs")}
             </Link>
+            <Link to="/about" className="hover:text-primary">
+              {t("nav.about")}
+            </Link>
+            <Link to="/contact" className="hover:text-primary">
+              {t("nav.contact")}
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <LanguageToggle />

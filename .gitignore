@@ -8,10 +8,6 @@ backend/target/
 backend/out/
 backend/bin/
 backend/.mvn/wrapper/maven-wrapper.jar
-# VS Code Java extension's own annotation-processing output (separate from Maven's build)
-backend/.apt_generated/
-backend/.apt_generated_tests/
-backend/.factorypath
 
 # ── Frontend (Node / Vite) ───────────────────────────────
 frontend/node_modules/
@@ -28,3 +24,4 @@ frontend/*.local
 *.iml
 .DS_Store
 Thumbs.db
+setup.md

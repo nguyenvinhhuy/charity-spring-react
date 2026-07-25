@@ -14,7 +14,10 @@
     "users": "Users",
     "profile": "My Profile",
     "faqs": "FAQs",
-    "faqManage": "Manage FAQs"
+    "faqManage": "Manage FAQs",
+    "about": "About",
+    "contact": "Contact",
+    "inquiriesManage": "Manage Inquiries"
   },
   "userMenu": {
     "profile": "Profile",
@@ -39,7 +42,7 @@
     "creating": "Creating...",
     "haveAccount": "Already have an account?",
     "termsNotice": "By continuing, you agree to our Terms of Service and Privacy Policy.",
-    "tagline": "Spreading love, joining hands for the community.",
+    "tagline": "Gathering love, growing happiness.",
     "taglineSignup": "Together we create kind things.",
     "orgName": "Hương Sen Charity Club",
     "loginSuccess": "Welcome {{name}}",
@@ -103,13 +106,19 @@
     "MEMBER": "Member"
   },
   "common": {
+    "actions": "Actions",
     "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "saving": "Saving...",
     "total": "Total: {{count}}",
-    "page": "Page {{current}}/{{total}}"
+    "page": "Page {{current}}/{{total}}",
+    "uploadImage": "Click to upload an image",
+    "uploadingImage": "Uploading image...",
+    "changeImage": "Change image",
+    "noImage": "No image"
   },
   "campaigns": {
     "title": "Campaign management",
@@ -177,8 +186,7 @@
       "qrDescriptionPlaceholder": "Donate to the campaign",
       "thienNguyenUrlLabel": "thiennguyen.app link",
       "thienNguyenUrlPlaceholder": "https://thiennguyen.app/...",
-      "thumbnailUrlLabel": "Thumbnail (URL)",
-      "thumbnailUrlPlaceholder": "https://...",
+      "thumbnailUrlLabel": "Thumbnail",
       "startDateLabel": "Start date",
       "endDateLabel": "End date",
       "eventSectionTitle": "Program activity dates",
@@ -251,13 +259,7 @@
     },
     "statusActive": "Active",
     "statusInactive": "Inactive",
-    "changeRole": "Change role",
-    "activate": "Activate",
-    "deactivate": "Deactivate",
     "pagination": "Page {{current}}/{{total}}",
-    "roleUpdated": "Role updated",
-    "activated": "Account activated",
-    "deactivated": "Account deactivated",
     "addMember": "Add member",
     "dialog": {
       "title": "Add member",
@@ -277,6 +279,27 @@
       "emailRequired": "Please enter an email",
       "emailInvalid": "Invalid email",
       "passwordMin": "Password must be at least {{min}} characters"
+    },
+    "editDialog": {
+      "trigger": "Member settings",
+      "accountSection": "Account",
+      "teamSection": "Public display",
+      "roleLabel": "Role",
+      "roleHint": "Access level in the system.",
+      "selfRoleLocked": "You can't change your own role.",
+      "activeLabel": "Account active",
+      "activeHint": "Off blocks sign-in.",
+      "selfActiveLocked": "You can't deactivate your own account.",
+      "leadershipTitleLabel": "Team display title",
+      "leadershipTitlePlaceholder": "E.g. President",
+      "leadershipTitleHint": "Blank hides it from the About page.",
+      "displayOrderLabel": "Display order",
+      "displayOrderHint": "Lower numbers show first.",
+      "displayOrderPlaceholder": "E.g. 1",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "saved": "Member updated"
     }
   },
   "dashboard": {
@@ -504,14 +527,48 @@
         "enHint": "Leave blank if there's no English version yet — the Vietnamese version will be shown instead.",
         "tagsLabel": "Tags (comma-separated)",
         "tagsPlaceholder": "donation, event, 2026",
-        "thumbnailUrlLabel": "Thumbnail (URL)",
-        "thumbnailUrlPlaceholder": "https://...",
+        "thumbnailUrlLabel": "Thumbnail",
         "save": "Save changes",
         "saving": "Saving...",
         "titleRequired": "Please enter a title",
         "contentRequired": "Please enter content",
         "invalidUrl": "Invalid URL"
       }
+    }
+  },
+  "inquiries": {
+    "pageTitle": "Manage Inquiries",
+    "pageDescription": "View and handle contact requests submitted from the public site",
+    "total": "Total: {{count}}",
+    "loading": "Loading...",
+    "empty": "No inquiries yet",
+    "page": "Page {{current}}/{{total}}",
+    "close": "Close",
+    "cancel": "Cancel",
+    "status": {
+      "all": "All statuses",
+      "new": "New",
+      "handled": "Handled"
+    },
+    "table": {
+      "sender": "Sender",
+      "subject": "Subject",
+      "status": "Status",
+      "date": "Sent at"
+    },
+    "actions": {
+      "viewDetail": "View detail",
+      "markHandled": "Mark as handled",
+      "delete": "Delete"
+    },
+    "toast": {
+      "markedHandled": "Marked as handled",
+      "deleted": "Inquiry deleted"
+    },
+    "deleteDialog": {
+      "title": "Delete this inquiry?",
+      "description": "Are you sure you want to delete this inquiry? This action cannot be undone.",
+      "deleting": "Deleting..."
     }
   },
   "command": {
@@ -640,5 +697,49 @@
     "ctaButton": "Join now",
     "trustTransparent": "Transparent about every contribution",
     "trustCommunity": "Standing with the community"
+  },
+  "aboutPublic": {
+    "title": "About",
+    "description": "The story, mission, and team behind Hương Sen Charity Club.",
+    "missionBadge": "Mission",
+    "missionTitle": "Gathering love, growing happiness",
+    "missionBody": "Hương Sen Charity Club works toward a community where every hardship is met with timely, transparent, and sustainable support. We connect generous donors with those who need help most, through fundraising campaigns and hands-on volunteer activities.",
+    "storyTitle": "Our journey",
+    "storyBody": "From our very first steps to today, Hương Sen has continuously grown in scale and impact to bring more meaningful value to the community.",
+    "milestone1Title": "Club founded",
+    "milestone1Desc": "A group of students united by a shared passion for charity founded Hương Sen Charity Club.",
+    "milestone2Title": "Expanded activities",
+    "milestone2Desc": "Launched more fundraising campaigns and on-site volunteer programs.",
+    "milestone3Title": "Digital transparency",
+    "milestone3Desc": "Launched an online campaign management platform, publishing donation progress in real time.",
+    "milestone4Title": "Community connection",
+    "milestone4Desc": "Grew our network of members, volunteers, and partner organizations.",
+    "teamBadge": "Leadership",
+    "teamTitle": "Our team"
+  },
+  "contactPublic": {
+    "title": "Contact",
+    "description": "Have a question or feedback? Don't hesitate to reach out.",
+    "infoTitle": "Contact information",
+    "addressLabel": "Address",
+    "addressValue": "123 Charity Street, District 1, Ho Chi Minh City",
+    "phoneLabel": "Phone",
+    "phoneValue": "0900 000 000",
+    "emailLabel": "Email",
+    "emailValue": "contact@clb.vn",
+    "formTitle": "Send us a message",
+    "form": {
+      "fullNameLabel": "Full name",
+      "emailLabel": "Email",
+      "subjectLabel": "Subject",
+      "messageLabel": "Message",
+      "submitButton": "Send message",
+      "sending": "Sending...",
+      "success": "Thank you for reaching out, we'll get back to you as soon as possible.",
+      "fullNameRequired": "Please enter your full name",
+      "emailInvalid": "Invalid email",
+      "subjectRequired": "Please enter a subject",
+      "messageRequired": "Please enter a message"
+    }
   }
 }

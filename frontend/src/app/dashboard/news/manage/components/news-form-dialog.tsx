@@ -11,6 +11,7 @@ import { createPost, getPost, updatePost } from "@/api/posts"
 import { getErrorMessage } from "@/api/axios"
 import type { CreatePostRequest, PostDetail, PostSummary } from "@/types"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import { ImageUploadField } from "@/components/image-upload-field"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -201,6 +202,20 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
         ) : (
           <Form {...form}>
             <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <FormField
+                control={form.control}
+                name="thumbnailUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("news.manage.form.thumbnailUrlLabel")}</FormLabel>
+                    <FormControl>
+                      <ImageUploadField value={field.value ?? ""} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Bilingual content: Vietnamese is required, English is optional (falls back to VI). */}
               <Tabs defaultValue="vi">
                 <TabsList className="w-full">
@@ -296,35 +311,19 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
                 </TabsContent>
               </Tabs>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("news.manage.form.tagsLabel")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("news.manage.form.tagsPlaceholder")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="thumbnailUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("news.manage.form.thumbnailUrlLabel")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("news.manage.form.thumbnailUrlPlaceholder")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("news.manage.form.tagsLabel")}</FormLabel>
+                    <FormControl>
+                      <Input placeholder={t("news.manage.form.tagsPlaceholder")} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

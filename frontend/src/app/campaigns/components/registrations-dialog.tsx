@@ -12,6 +12,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -98,9 +99,9 @@ export function RegistrationsDialog({ open, onOpenChange, campaign }: Registrati
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("campaigns.registrations.tableName")}</TableHead>
+                <TableHead className="pl-4">{t("campaigns.registrations.tableName")}</TableHead>
                 <TableHead>{t("campaigns.registrations.tableRegisteredAt")}</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,9 +120,9 @@ export function RegistrationsDialog({ open, onOpenChange, campaign }: Registrati
               ) : (
                 registrants.map((r) => (
                   <TableRow key={r.memberId}>
-                    <TableCell>{r.memberName}</TableCell>
+                    <TableCell className="pl-4">{r.memberName}</TableCell>
                     <TableCell>{new Date(r.registeredAt).toLocaleString("vi-VN")}</TableCell>
-                    <TableCell>
+                    <TableCell className="pr-4 text-center">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -137,6 +138,12 @@ export function RegistrationsDialog({ open, onOpenChange, campaign }: Registrati
             </TableBody>
           </Table>
         </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.close")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

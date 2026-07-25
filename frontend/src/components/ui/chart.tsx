@@ -3,6 +3,11 @@ import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
 
+// Recharts doesn't re-export these from the package root (only from the internal
+// DefaultTooltipContent module), so we mirror their definitions structurally here.
+type ValueType = number | string | ReadonlyArray<number | string>
+type NameType = number | string
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
@@ -67,6 +72,32 @@ function ChartContainer({
   )
 }
 
+type ChartColorConfigEntry = [string, ChartConfig[string]]
+
+/**
+ * Builds the `[data-chart=id] { --color-x: ...; }` CSS block for a single theme.
+ *
+ * @param selector the theme's CSS selector prefix (e.g. `.dark`, or empty for light)
+ * @param chartId the chart's unique `data-chart` attribute value
+ * @param theme the theme key to read each entry's color for
+ * @param colorConfig the config entries that declare a color or theme
+ */
+function buildThemeCss(
+  selector: string,
+  chartId: string,
+  theme: keyof typeof THEMES,
+  colorConfig: ChartColorConfigEntry[]
+): string {
+  const declarations = colorConfig
+    .map(([key, itemConfig]) => {
+      const color = itemConfig.theme?.[theme] || itemConfig.color
+      return color ? `  --color-${key}: ${color};` : null
+    })
+    .join("\n")
+
+  return `${selector} [data-chart=${chartId}] {\n${declarations}\n}`
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([, config]) => config.theme || config.color
@@ -76,28 +107,13 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+  const css = Object.entries(THEMES)
+    .map(([theme, selector]) =>
+      buildThemeCss(selector, id, theme as keyof typeof THEMES, colorConfig)
+    )
+    .join("\n")
+
+  return <style dangerouslySetInnerHTML={{ __html: css }} />
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
@@ -116,8 +132,13 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+}: RechartsPrimitive.TooltipProps<ValueType, NameType> &
   React.ComponentProps<"div"> & {
+    // Omitted from TooltipProps because Recharts injects them via context at render
+    // time rather than the caller passing them in JSX — re-added here as optional.
+    active?: boolean
+    payload?: ReadonlyArray<any>
+    label?: string | number
     hideLabel?: boolean
     hideIndicator?: boolean
     indicator?: "line" | "dot" | "dashed"
@@ -255,7 +276,7 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+  Pick<RechartsPrimitive.DefaultLegendContentProps, "payload" | "verticalAlign"> & {
     hideIcon?: boolean
     nameKey?: string
   }) {

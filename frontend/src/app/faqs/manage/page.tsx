@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { BaseLayout } from "@/components/layouts/base-layout"
@@ -9,6 +9,7 @@ import { deleteFaq, listFaqs, publishFaq } from "@/api/faqs"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "@/lib/status-badges"
 import type { Faq, Page } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,12 +31,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -186,11 +181,11 @@ export default function FaqManagePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("faqManage.table.question")}</TableHead>
+                  <TableHead className="pl-4">{t("faqManage.table.question")}</TableHead>
                   <TableHead>{t("faqManage.table.category")}</TableHead>
                   <TableHead>{t("faqManage.table.sortOrder")}</TableHead>
                   <TableHead>{t("faqManage.table.status")}</TableHead>
-                  <TableHead className="w-12" />
+                  <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -209,14 +204,14 @@ export default function FaqManagePage() {
                 ) : (
                   faqs.map((faq) => (
                     <TableRow key={faq.id}>
-                      <TableCell className="max-w-md">
+                      <TableCell className="max-w-md pl-4">
                         <span className="line-clamp-2">{faq.question}</span>
                       </TableCell>
                       <TableCell>{faqCategoryLabel(t, faq.category)}</TableCell>
                       <TableCell>{faq.sortOrder}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Badge variant={faq.isPublished ? "default" : "secondary"}>
+                          <Badge className={faq.isPublished ? STATUS_BADGE_ACTIVE : STATUS_BADGE_INACTIVE}>
                             {faq.isPublished ? t("faqManage.status.published") : t("faqManage.status.draft")}
                           </Badge>
                           {isAdmin && (
@@ -227,26 +222,27 @@ export default function FaqManagePage() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal />
+                      <TableCell className="pr-4">
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title={t("faqManage.edit")}
+                            onClick={() => openEdit(faq)}
+                          >
+                            <Pencil />
+                          </Button>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={t("faqManage.delete")}
+                              onClick={() => setDeleteTarget(faq)}
+                            >
+                              <Trash2 className="text-destructive" />
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEdit(faq)}>
-                              <Pencil />
-                              {t("faqManage.edit")}
-                            </DropdownMenuItem>
-                            {isAdmin && (
-                              <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(faq)}>
-                                <Trash2 />
-                                {t("faqManage.delete")}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

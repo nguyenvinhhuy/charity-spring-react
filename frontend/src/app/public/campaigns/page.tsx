@@ -28,7 +28,7 @@ import {
   localized,
   progressPercent,
   statusLabel,
-  STATUS_VARIANTS,
+  STATUS_BADGE_CLASSES,
 } from "@/app/campaigns/components/campaign-constants"
 
 const PAGE_SIZE = 12
@@ -127,15 +127,15 @@ export default function PublicCampaignsPage() {
                     <img
                       src={campaign.thumbnailUrl}
                       alt=""
-                      className="h-40 w-full object-cover"
+                      className="aspect-[3/2] w-full object-cover"
                     />
                   ) : (
-                    <div className="bg-muted h-40 w-full" />
+                    <div className="bg-muted aspect-[3/2] w-full" />
                   )}
                   <CardContent className="flex flex-col gap-3 py-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{categoryLabel(t, campaign.category)}</Badge>
-                      <Badge variant={STATUS_VARIANTS[campaign.status]}>
+                      <Badge className={STATUS_BADGE_CLASSES[campaign.status]}>
                         {statusLabel(t, campaign.status)}
                       </Badge>
                     </div>

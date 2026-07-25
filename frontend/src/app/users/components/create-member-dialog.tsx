@@ -199,6 +199,9 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
             />
 
             <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                {t("common.cancel")}
+              </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? t("users.dialog.submitting") : t("users.dialog.submit")}
               </Button>

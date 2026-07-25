@@ -15,7 +15,7 @@ members to manage campaigns, posts, and members.
 | Backend | Java 26, Spring Boot 4.1, Maven |
 | Database | PostgreSQL + Spring Data JPA/Hibernate, Flyway migrations |
 | Auth | Spring Security + JWT (access 15 min, refresh 7 days) |
-| Storage | MinIO (S3-compatible) |
+| Storage | Cloudinary |
 | PDF | iText 7 |
 | Frontend | React 19 + TypeScript, Vite, TailwindCSS v3, Shadcn/ui |
 | Data/forms | TanStack Query v5, React Hook Form + Zod, Zustand (auth) |
@@ -25,7 +25,10 @@ members to manage campaigns, posts, and members.
 
 ```
 charity-spring-react/
-├── docker-compose.yml      # PostgreSQL, MinIO (+ backend/frontend) for local dev
+├── docker-compose.yml      # PostgreSQL (+ backend/frontend) for local dev
+├── render.yaml             # Render Blueprint for the deployed backend
+├── .github/workflows/      # CI, deploy (Render + Vercel), keep-alive cron
+├── setup.md                # CI/CD deployment setup guide (Vercel/Render/Supabase/Cloudinary)
 ├── backend/                # Spring Boot + Java modular monolith
 └── frontend/               # React + TypeScript (Vite)
 ```
@@ -66,7 +69,10 @@ This starts:
 | Service | Port | Notes |
 |---|---|---|
 | PostgreSQL | 5432 | db `clb_charity`, user/pass `postgres`/`postgres` |
-| MinIO | 9000 (API), 9001 (console) | user/pass `minioadmin`/`minioadmin` |
+
+Image uploads go to Cloudinary (free tier) instead of a local container — create a
+free account at [cloudinary.com](https://cloudinary.com) and set the 3
+`CLOUDINARY_*` env vars below (see [setup.md](setup.md) for details).
 
 ## 2. Run the backend
 
@@ -122,8 +128,9 @@ npm run dev
 | `DB_URL` | `jdbc:postgresql://localhost:5432/clb_charity` | JDBC URL |
 | `DB_USER` / `DB_PASSWORD` | `postgres` / `postgres` | DB credentials |
 | `JWT_SECRET` | — (**required**) | Base64 HS256 secret (≥ 32 bytes) |
-| `MINIO_ENDPOINT` | `http://localhost:9000` | MinIO endpoint |
-| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | `minioadmin` / `minioadmin` | MinIO credentials |
+| `CLOUDINARY_CLOUD_NAME` | — (**required**) | Cloudinary account cloud name |
+| `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | — (**required**) | Cloudinary API credentials |
+| `CLOUDINARY_UPLOAD_FOLDER` | `clb-media` | Folder prefix for uploaded images |
 | `CORS_ORIGINS` | `http://localhost:5173` | Allowed frontend origin(s) |
 | `BANK_ACCOUNT_NO` / `BANK_ACCOUNT_NAME` | — | Default VietQR bank info |
 
@@ -203,6 +210,21 @@ registration). The backend proxies it to avoid CORS:
 ```
 https://img.vietqr.io/image/MB-{accountNo}-compact2.png?amount={amount}&addInfo={desc}&accountName={name}
 ```
+
+## Deployment & CI/CD
+
+The app deploys as: **Frontend → Vercel**, **Backend → Render**, **Database →
+Supabase (Postgres)**, **Storage → Cloudinary**. GitHub Actions
+(`.github/workflows/`) drives the whole pipeline:
+
+| Workflow | Trigger | Does |
+|---|---|---|
+| `ci.yml` | push/PR to `main` | builds + tests backend (Maven) and frontend (npm) |
+| `deploy.yml` | push to `main` | re-runs the same checks, then (only if they pass) calls the Render + Vercel deploy hooks |
+| `keepalive.yml` | cron, every 14 min | pings the backend's `/actuator/health` so Render's free tier doesn't sleep it |
+
+First-time setup (creating accounts, wiring env vars/secrets) is a one-time manual
+process — see **[setup.md](setup.md)** for the full step-by-step guide.
 
 ## Notes / out of scope
 

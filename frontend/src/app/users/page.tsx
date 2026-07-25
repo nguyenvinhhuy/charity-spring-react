@@ -1,11 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronLeft, ChevronRight, Pencil, Search, UserCheck, UserX } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Settings } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { BaseLayout } from "@/components/layouts/base-layout"
-import { listMembers, setMemberActive, updateMemberRole } from "@/api/members"
+import { listMembers } from "@/api/members"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
@@ -23,12 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Table,
   TableBody,
   TableCell,
@@ -37,21 +31,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { CreateMemberDialog } from "./components/create-member-dialog"
+import { MemberEditDialog } from "./components/member-edit-dialog"
+import { ROLE_BADGE_CLASSES, STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "./components/role-constants"
 
 const PAGE_SIZE = 10
 const ALL = "ALL"
 
 const ROLE_OPTIONS: Role[] = ["ADMIN", "CONTRIBUTOR", "MEMBER"]
-
-/** Tailwind classes giving each role a distinct, readable badge color. */
-const ROLE_BADGE_CLASSES: Record<Role, string> = {
-  ADMIN: "border-transparent bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
-  CONTRIBUTOR: "border-transparent bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
-  MEMBER: "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-}
-
-const STATUS_BADGE_ACTIVE = "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
-const STATUS_BADGE_INACTIVE = "border-transparent bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400"
 
 /**
  * Returns the first character of a name, upper-cased, for the avatar fallback.
@@ -82,6 +68,7 @@ export default function UsersPage() {
   const debouncedSearch = useDebouncedValue(search)
   const [roleFilter, setRoleFilter] = useState<Role | typeof ALL>(ALL)
   const [statusFilter, setStatusFilter] = useState<"true" | "false" | typeof ALL>(ALL)
+  const [editTarget, setEditTarget] = useState<Member | null>(null)
 
   /** Fetches the current page of members and stores it, surfacing errors as a toast. */
   const load = useCallback(async () => {
@@ -105,38 +92,6 @@ export default function UsersPage() {
   useEffect(() => {
     void load()
   }, [load])
-
-  /**
-   * Changes a member's role, then refreshes the list.
-   *
-   * @param id the member id
-   * @param role the new role
-   */
-  async function handleRoleChange(id: number, role: Role) {
-    try {
-      await updateMemberRole(id, role)
-      toast.success(t("users.roleUpdated"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
-
-  /**
-   * Toggles a member's active status, then refreshes the list.
-   *
-   * @param id the member id
-   * @param active the desired active state
-   */
-  async function handleActiveChange(id: number, active: boolean) {
-    try {
-      await setMemberActive(id, active)
-      toast.success(active ? t("users.activated") : t("users.deactivated"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
 
   const members = data?.content ?? []
 
@@ -207,12 +162,12 @@ export default function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("users.table.member")}</TableHead>
+                  <TableHead className="pl-4">{t("users.table.member")}</TableHead>
                   <TableHead>{t("users.table.role")}</TableHead>
                   <TableHead>{t("users.table.status")}</TableHead>
                   <TableHead>{t("users.table.phone")}</TableHead>
                   <TableHead>{t("users.table.createdAt")}</TableHead>
-                  <TableHead className="text-right">{t("users.table.actions")}</TableHead>
+                  <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("users.table.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -230,10 +185,9 @@ export default function UsersPage() {
                   </TableRow>
                 ) : (
                   members.map((member) => {
-                    const isSelf = member.id === currentMember?.id
                     return (
                       <TableRow key={member.id}>
-                        <TableCell>
+                        <TableCell className="pl-4">
                           <div className="flex items-center gap-3">
                             <Avatar>
                               <AvatarImage src={member.avatarUrl ?? undefined} />
@@ -259,45 +213,15 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell>{member.phone ?? "—"}</TableCell>
                         <TableCell>{formatDate(member.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end gap-1">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8"
-                                  disabled={isSelf}
-                                  title={t("users.changeRole")}
-                                >
-                                  <Pencil />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {ROLE_OPTIONS.map((role) => (
-                                  <DropdownMenuItem
-                                    key={role}
-                                    disabled={role === member.role}
-                                    onClick={() => handleRoleChange(member.id, role)}
-                                  >
-                                    {t(`role.${role}`)}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                        <TableCell className="pr-4">
+                          <div className="flex items-center justify-center">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="size-8"
-                              disabled={isSelf}
-                              title={member.isActive ? t("users.deactivate") : t("users.activate")}
-                              onClick={() => handleActiveChange(member.id, !member.isActive)}
+                              title={t("users.editDialog.trigger")}
+                              onClick={() => setEditTarget(member)}
                             >
-                              {member.isActive ? (
-                                <UserX className="text-red-600 dark:text-red-400" />
-                              ) : (
-                                <UserCheck className="text-emerald-600 dark:text-emerald-400" />
-                              )}
+                              <Settings />
                             </Button>
                           </div>
                         </TableCell>
@@ -334,6 +258,13 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      <MemberEditDialog
+        member={editTarget}
+        isSelf={editTarget?.id === currentMember?.id}
+        onOpenChange={(open) => !open && setEditTarget(null)}
+        onSaved={load}
+      />
     </BaseLayout>
   )
 }

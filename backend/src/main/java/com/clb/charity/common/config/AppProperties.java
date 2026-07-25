@@ -9,7 +9,7 @@ import java.util.List;
  * Strongly-typed binding for the {@code app.*} block in application.yml.
  */
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(Jwt jwt, Minio minio, Cors cors, Bank bank, OAuth2 oauth2) {
+public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, Bank bank, OAuth2 oauth2) {
 
     public record Jwt(
             /** Base64-encoded HS256 secret (>= 32 bytes decoded). */
@@ -21,14 +21,12 @@ public record AppProperties(Jwt jwt, Minio minio, Cors cors, Bank bank, OAuth2 o
     ) {
     }
 
-    public record Minio(
-            /** Endpoint the backend uses to reach MinIO (e.g. http://minio:9000 in Docker). */
-            String endpoint,
-            /** Base URL handed to clients for stored objects (browser-reachable). */
-            String publicEndpoint,
-            String accessKey,
-            String secretKey,
-            String bucket
+    public record Cloudinary(
+            String cloudName,
+            String apiKey,
+            String apiSecret,
+            /** Folder prefix under which every uploaded image is stored in the Cloudinary account. */
+            String uploadFolder
     ) {
     }
 

@@ -7,6 +7,7 @@ import {
   CircleUser,
   Home,
   ListChecks,
+  Mail,
   Newspaper,
   Users,
   HeartHandshake,
@@ -97,6 +98,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   title: t("nav.newsManage"),
                   url: "/dashboard/news",
                   icon: Newspaper,
+                },
+              ]
+            : []),
+          ...(canManageCampaigns
+            ? [
+                {
+                  title: t("nav.inquiriesManage"),
+                  url: "/dashboard/inquiries",
+                  icon: Mail,
                 },
               ]
             : []),

@@ -36,4 +36,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
                          Pageable pageable);
 
     List<Member> findTop10ByActiveTrueAndFullNameContainingIgnoreCase(String query);
+
+    List<Member> findByLeadershipTitleIsNotNullAndActiveTrueOrderByTeamDisplayOrderAscFullNameAsc();
 }

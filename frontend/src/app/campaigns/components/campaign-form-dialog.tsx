@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { ImageUploadField } from "@/components/image-upload-field"
 import { CATEGORY_OPTIONS, categoryLabel } from "./campaign-constants"
 
 /**
@@ -297,6 +298,20 @@ export function CampaignFormDialog({
         ) : (
           <Form {...form}>
             <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
+              <FormField
+                control={form.control}
+                name="thumbnailUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("campaigns.form.thumbnailUrlLabel")}</FormLabel>
+                    <FormControl>
+                      <ImageUploadField value={field.value ?? ""} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Bilingual content: Vietnamese is required, English is optional (falls back to VI). */}
               <Tabs defaultValue="vi">
                 <TabsList className="w-full">
@@ -485,20 +500,6 @@ export function CampaignFormDialog({
                     <FormLabel>{t("campaigns.form.thienNguyenUrlLabel")}</FormLabel>
                     <FormControl>
                       <Input placeholder={t("campaigns.form.thienNguyenUrlPlaceholder")} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="thumbnailUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("campaigns.form.thumbnailUrlLabel")}</FormLabel>
-                    <FormControl>
-                      <Input placeholder={t("campaigns.form.thumbnailUrlPlaceholder")} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

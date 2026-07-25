@@ -8,9 +8,11 @@ import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateProfileRequest;
+import com.clb.charity.member.dto.request.UpdateTeamProfileRequest;
 import com.clb.charity.member.dto.response.MemberMentionResponse;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.dto.response.MemberStatsResponse;
+import com.clb.charity.member.dto.response.TeamMemberResponse;
 import com.clb.charity.member.mapper.MemberMapper;
 import com.clb.charity.member.repository.MemberRepository;
 import com.clb.charity.member.service.MemberService;
@@ -133,5 +135,22 @@ public class MemberServiceImpl implements MemberService {
         return memberRepository.findTop10ByActiveTrueAndFullNameContainingIgnoreCase(query).stream()
                 .map(m -> new MemberMentionResponse(m.getId(), m.getFullName(), m.getAvatarUrl()))
                 .toList();
+    }
+
+    @Override
+    public List<TeamMemberResponse> listTeam() {
+        return memberRepository.findByLeadershipTitleIsNotNullAndActiveTrueOrderByTeamDisplayOrderAscFullNameAsc().stream()
+                .map(memberMapper::toTeamMemberResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public MemberResponse updateTeamProfile(Long id, UpdateTeamProfileRequest request) {
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new MemberNotFoundException(String.valueOf(id)));
+        member.setLeadershipTitle(request.leadershipTitle());
+        member.setTeamDisplayOrder(request.teamDisplayOrder());
+        return memberMapper.toResponse(memberRepository.save(member));
     }
 }

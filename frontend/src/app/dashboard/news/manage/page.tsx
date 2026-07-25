@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, MoreHorizontal, Pencil, Plus, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { BaseLayout } from "@/components/layouts/base-layout"
@@ -10,6 +10,7 @@ import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { localized } from "@/app/campaigns/components/campaign-constants"
+import { STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "@/lib/status-badges"
 import type { Page, PostSummary } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,12 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { NewsFormDialog } from "./components/news-form-dialog"
 
 const PAGE_SIZE = 10
@@ -173,11 +168,11 @@ export default function NewsManagePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("news.manage.table.title")}</TableHead>
+                  <TableHead className="pl-4">{t("news.manage.table.title")}</TableHead>
                   <TableHead>{t("news.manage.table.tags")}</TableHead>
                   <TableHead>{t("news.manage.table.status")}</TableHead>
                   <TableHead>{t("news.manage.table.publishedAt")}</TableHead>
-                  <TableHead className="w-12" />
+                  <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,8 +191,19 @@ export default function NewsManagePage() {
                 ) : (
                   posts.map((post) => (
                     <TableRow key={post.id}>
-                      <TableCell className="max-w-md">
-                        <span className="line-clamp-2">{localized(i18n.language, post.title, post.titleEn)}</span>
+                      <TableCell className="max-w-md pl-4">
+                        <div className="flex items-center gap-3">
+                          {post.thumbnailUrl ? (
+                            <img
+                              src={post.thumbnailUrl}
+                              alt=""
+                              className="size-10 shrink-0 rounded-md object-cover"
+                            />
+                          ) : (
+                            <div className="bg-muted size-10 shrink-0 rounded-md" />
+                          )}
+                          <span className="line-clamp-2">{localized(i18n.language, post.title, post.titleEn)}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex max-w-56 flex-wrap gap-1">
@@ -214,7 +220,7 @@ export default function NewsManagePage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Badge variant={post.isPublished ? "default" : "secondary"}>
+                          <Badge className={post.isPublished ? STATUS_BADGE_ACTIVE : STATUS_BADGE_INACTIVE}>
                             {post.isPublished ? t("news.manage.status.published") : t("news.manage.status.draft")}
                           </Badge>
                           {isAdmin && (
@@ -226,20 +232,15 @@ export default function NewsManagePage() {
                         </div>
                       </TableCell>
                       <TableCell>{formatDate(post.publishedAt)}</TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openEdit(post)}>
-                              <Pencil />
-                              {t("news.manage.edit")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <TableCell className="pr-4 text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={t("news.manage.edit")}
+                          onClick={() => openEdit(post)}
+                        >
+                          <Pencil />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

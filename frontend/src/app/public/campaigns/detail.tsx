@@ -23,7 +23,7 @@ import {
   localized,
   progressPercent,
   statusLabel,
-  STATUS_VARIANTS,
+  STATUS_BADGE_CLASSES,
 } from "@/app/campaigns/components/campaign-constants"
 
 /**
@@ -87,12 +87,19 @@ export default function PublicCampaignDetailPage() {
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{categoryLabel(t, campaign.category)}</Badge>
-              <Badge variant={STATUS_VARIANTS[campaign.status]}>{statusLabel(t, campaign.status)}</Badge>
+              <Badge className={STATUS_BADGE_CLASSES[campaign.status]}>{statusLabel(t, campaign.status)}</Badge>
               <ViewCountBadge count={campaign.viewCount} />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">
               {localized(i18n.language, campaign.title, campaign.titleEn)}
             </h1>
+            {campaign.thumbnailUrl && (
+              <img
+                src={campaign.thumbnailUrl}
+                alt=""
+                className="aspect-[3/2] w-full rounded-lg object-cover"
+              />
+            )}
             <ReactionBar target="campaigns" targetId={campaign.id} />
           </div>
 

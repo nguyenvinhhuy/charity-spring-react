@@ -2,6 +2,7 @@ package com.clb.charity.member.mapper;
 
 import com.clb.charity.member.domain.Member;
 import com.clb.charity.member.dto.response.MemberResponse;
+import com.clb.charity.member.dto.response.TeamMemberResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -20,4 +21,12 @@ public interface MemberMapper {
      */
     @Mapping(target = "isActive", source = "active")
     MemberResponse toResponse(Member entity);
+
+    /**
+     * Maps a member to its public-safe team representation.
+     *
+     * @param entity the source entity
+     * @return the team member DTO
+     */
+    TeamMemberResponse toTeamMemberResponse(Member entity);
 }

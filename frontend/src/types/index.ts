@@ -29,6 +29,8 @@ export interface Member {
   dateOfBirth: string | null;
   address: string | null;
   nationalId: string | null;
+  leadershipTitle: string | null;
+  teamDisplayOrder: number | null;
   isActive: boolean;
   createdAt: string;
 }
@@ -395,4 +397,43 @@ export interface Registrant {
   memberId: number;
   memberName: string;
   registeredAt: string;
+}
+
+// ---- Team (About page) ----
+
+export interface TeamMember {
+  id: number;
+  fullName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  leadershipTitle: string;
+}
+
+export interface UpdateTeamProfileRequest {
+  leadershipTitle: string | null;
+  teamDisplayOrder: number | null;
+}
+
+// ---- Inquiries (Contact form) ----
+
+export type InquiryStatus = 'NEW' | 'HANDLED';
+
+export interface Inquiry {
+  id: number;
+  fullName: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: InquiryStatus;
+  createdAt: string;
+  handledAt: string | null;
+}
+
+export interface CreateInquiryRequest {
+  fullName: string;
+  email: string;
+  subject: string;
+  message: string;
+  website?: string;
+  formRenderedAtMs?: number;
 }

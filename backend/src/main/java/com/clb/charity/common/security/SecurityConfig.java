@@ -144,16 +144,25 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, API + "/faqs/**").permitAll()
 
                         // ── Members ───────────────────────────────────────
-                        // Mention search returns only id/name/avatar (non-sensitive) — any authenticated member may
-                        // call it. Must come BEFORE "/members/*" below, which would otherwise match this path too
-                        // (single path segment) and wrongly restrict it to ADMIN.
+                        // Mention search / team listing return only non-sensitive fields — public/any-authenticated.
+                        // Both must come BEFORE "/members/*" below, which would otherwise match these paths too
+                        // (single path segment) and wrongly restrict them to ADMIN.
                         .requestMatchers(HttpMethod.GET, API + "/members/mentions").authenticated()
+                        .requestMatchers(HttpMethod.GET, API + "/members/team").permitAll()
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, API + "/members/*/team-profile").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/members").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, API + "/members").hasRole("ADMIN")
                         // Member detail can carry sensitive fields (DOB/address/national ID) — ADMIN only.
                         .requestMatchers(HttpMethod.GET, API + "/members/*").hasRole("ADMIN")
+
+                        // ── Inquiries (Contact form) ──────────────────────
+                        // Submitting is public (anonymous visitors); managing them is staff-only.
+                        .requestMatchers(HttpMethod.POST, API + "/inquiries").permitAll()
+                        .requestMatchers(HttpMethod.GET, API + "/inquiries").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, API + "/inquiries/*/handled").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, API + "/inquiries/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
 
                         // ── Reports ───────────────────────────────────────
                         .requestMatchers(HttpMethod.GET, API + "/reports/**").hasAnyRole("MEMBER", "CONTRIBUTOR", "ADMIN")

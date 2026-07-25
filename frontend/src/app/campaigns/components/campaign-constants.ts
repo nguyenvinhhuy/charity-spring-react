@@ -1,8 +1,6 @@
 import type { TFunction } from "i18next"
 import type { CampaignCategory, CampaignStatus } from "@/types"
 
-type BadgeVariant = "default" | "secondary" | "destructive" | "outline"
-
 /** All campaign statuses, in lifecycle order. */
 export const STATUS_OPTIONS: CampaignStatus[] = [
   "DRAFT",
@@ -23,13 +21,13 @@ export const CATEGORY_OPTIONS: CampaignCategory[] = [
   "OTHER",
 ]
 
-/** Badge variant used to color each status. */
-export const STATUS_VARIANTS: Record<CampaignStatus, BadgeVariant> = {
-  DRAFT: "secondary",
-  ACTIVE: "default",
-  COMPLETED: "default",
-  CLOSED: "outline",
-  ARCHIVED: "outline",
+/** Tailwind classes giving each campaign status a distinct, readable badge color. */
+export const STATUS_BADGE_CLASSES: Record<CampaignStatus, string> = {
+  DRAFT: "border-transparent bg-gray-100 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400",
+  ACTIVE: "border-transparent bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
+  COMPLETED: "border-transparent bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
+  CLOSED: "border-transparent bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+  ARCHIVED: "border-transparent bg-slate-200 text-slate-600 dark:bg-slate-500/15 dark:text-slate-400",
 }
 
 /**

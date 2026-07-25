@@ -14,6 +14,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -183,10 +184,10 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("campaigns.donations.tableDate")}</TableHead>
+                <TableHead className="pl-4">{t("campaigns.donations.tableDate")}</TableHead>
                 <TableHead>{t("campaigns.donations.tableDonor")}</TableHead>
                 <TableHead className="text-right">{t("campaigns.donations.tableAmount")}</TableHead>
-                <TableHead className="w-12" />
+                <TableHead className="w-px pr-4 text-center whitespace-nowrap">{t("common.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -205,10 +206,10 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
               ) : (
                 donations.map((d) => (
                   <TableRow key={d.id}>
-                    <TableCell>{new Date(d.donatedAt).toLocaleDateString("vi-VN")}</TableCell>
+                    <TableCell className="pl-4">{new Date(d.donatedAt).toLocaleDateString("vi-VN")}</TableCell>
                     <TableCell>{d.donorName ?? t("campaigns.donations.anonymous")}</TableCell>
                     <TableCell className="text-right font-medium">{formatVnd(d.amount)}</TableCell>
-                    <TableCell>
+                    <TableCell className="pr-4 text-center">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -224,6 +225,12 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
             </TableBody>
           </Table>
         </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.close")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

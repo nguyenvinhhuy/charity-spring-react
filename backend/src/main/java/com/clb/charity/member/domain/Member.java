@@ -68,6 +68,13 @@ public class Member {
     @Column(name = "national_id", length = 20)
     private @Nullable String nationalId;
 
+    // Non-null implies the member is featured on the public About page's team section.
+    @Column(name = "leadership_title", length = 100)
+    private @Nullable String leadershipTitle;
+
+    @Column(name = "team_display_order")
+    private @Nullable Integer teamDisplayOrder;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 

@@ -32,7 +32,7 @@ update progress manually.
 | Build | **Maven** | `backend/pom.xml`; no Gradle |
 | Migrations | Flyway | via the `spring-boot-flyway` module (not bare `flyway-core`) |
 | Auth | Spring Security + JWT | JJWT 0.12.6, access 15m / refresh 7d |
-| Storage | MinIO | 8.5.17, S3-compatible |
+| Storage | Cloudinary | `cloudinary-http5` 2.4.0 (free 25GB) |
 | PDF | iText 7 | 7.2.5 |
 | Mapping | **MapStruct** | 1.6.3 (+ `lombok-mapstruct-binding` 0.2.0) |
 | Boilerplate | **Lombok** | 1.18.46 (JDK 26 support) |
@@ -64,7 +64,7 @@ JPA relations, no cross-feature entity imports).
 ```
 com.clb.charity/
 ├── common/                       # shared kernel (no feature logic)
-│   ├── config/                   # @ConfigurationProperties, beans (OpenAPI, MinIO, RestClient)
+│   ├── config/                   # @ConfigurationProperties, beans (OpenAPI, Cloudinary, RestClient)
 │   ├── security/                 # SecurityConfig, JWT provider/filter, AuthPrincipal
 │   ├── exception/                # ApiException hierarchy + GlobalExceptionHandler (ProblemDetail)
 │   └── util/                     # pure helpers (e.g. SlugUtil)
@@ -168,7 +168,7 @@ com.clb.charity/
 ### 4.10 Tests
 - JUnit 5 + Mockito. Mock repositories and collaborators; use the **real**
   MapStruct mapper (`Mappers.getMapper(XMapper.class)`) so mapping is exercised.
-- Unit tests must not require a running DB/MinIO.
+- Unit tests must not require a running DB/Cloudinary.
 
 ---
 
@@ -199,6 +199,48 @@ com.clb.charity/
 - Target layout: `api/ components/{ui,layout,campaign,common} pages/{public,admin}
   hooks/ store/ types/ router/ lib/`.
 
+### 5.1 UI verification (STRICT — no exceptions)
+- **"It renders and the click works" is NOT "verified."** DOM structure checks
+  (`getComputedStyle`, `getBoundingClientRect`, text content, `read_page`) only prove
+  a component is functionally present — they cannot tell you whether it looks good.
+  Any change to a page, dialog, or component that affects visual layout MUST be
+  checked against a real rendered screenshot before it is reported as done.
+- If the in-app Browser tool's screenshot capability is unavailable (it has failed
+  entirely in past sessions — "the Browser pane is not displayed, so the page is
+  not compositing frames"), fall back to **Playwright**: `npx --yes
+  playwright@1.61.1` (Chromium is normally already cached locally — this does not
+  trigger a real download), a small throwaway `.mjs` script in the scratchpad
+  directory that logs in, navigates, interacts, and calls `page.screenshot()`, then
+  read the resulting PNG with the Read tool.
+- Wait **~500ms after a dialog/modal opens** before screenshotting — Radix's open
+  animation makes a mid-transition screenshot look broken (missing overlay, no
+  card/shadow) even when the fully-rendered state is completely fine. Screenshot
+  too early and you'll "find" a bug that doesn't exist, or (worse) not notice one
+  that does.
+- Actually look critically at the screenshot before calling something done: do
+  same-purpose elements (icon circles, field rows, buttons) share identical
+  alignment/spacing/border treatment across the whole component? A dialog where
+  one row uses `items-center` with a border and three rows use `items-start`
+  without one is not "verified," no matter how many DOM assertions passed.
+
+### 5.2 Admin table & dialog UI patterns
+- **Never** use a generic "..." (`MoreHorizontal`) overflow menu for row actions.
+  Every action gets its own icon button with a real, specific icon (`Pencil` =
+  edit, `Trash2` = delete, `HandCoins` = donations, `Users` = registrants, ...). A
+  dropdown triggered from an icon is fine when the icon itself represents picking
+  one of several choices (e.g. `ArrowRightLeft` for "change status" opening a list
+  of valid transitions) — it is never acceptable as a bare "show me more actions"
+  catch-all.
+- Consolidate edits to different fields of the **same** record into one Edit
+  dialog (e.g. role + active status + public display title all live in one "Edit
+  member" dialog) rather than one icon per field. Only genuinely separate
+  sub-resources (a donations ledger, a registrations roster) get their own dialog
+  and their own row icon.
+- Within one dialog, every field row uses the **same** layout primitive (e.g.
+  `flex items-center gap-3 rounded-lg border p-3` for an icon + label + control
+  row) — pick one pattern per dialog and apply it to every row in that dialog, no
+  mixing.
+
 ---
 
 ## 6. Build & run
@@ -214,6 +256,13 @@ cd frontend && npm install && npm run dev
 ```
 
 Seeded admin: `admin@clb.vn` / `Admin@123`.
+
+> ⚠️ **Known Windows/Docker Desktop quirk**: running `docker build` from `backend/`
+> on this machine has repeatedly left a stray, empty, junk folder literally named
+> `backend;C` in the repo root (root cause not fully pinned down — likely a
+> Windows PATH/WSL2 path-translation artifact). **After every `docker build` run,
+> immediately `ls` the repo root and delete any stray `*;C` folder** before
+> reporting the build result — do not wait to be told about it again.
 
 ---
 
@@ -236,4 +285,11 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
 - ❌ No Jackson 2 imports (`com.fasterxml.jackson`) — Boot 4 uses `tools.jackson`.
 - ❌ No custom response/error envelope. ❌ No `@Data` on entities. ❌ No editing applied migrations.
 - ❌ No cross-feature entity/repository imports.
+- ✅ Screenshot-verify (Playwright fallback if the Browser tool's screenshot is
+  broken) any UI change before reporting it done — see §5.1.
+- ❌ No "..." (`MoreHorizontal`) catch-all row-action menus anywhere — see §5.2.
+- ❌ No mixing layout primitives (e.g. `items-start` vs `items-center`) across
+  field rows within the same dialog — see §5.2.
+- ❌ Never leave a stray `*;C` junk folder in the repo root after `docker build`
+  — check and delete it every time, see §6.
 ```
