@@ -82,10 +82,8 @@ export function DataTableToolbar<TData>({
                   className="cursor-pointer"
                 >
                   <div className="flex items-center">
-                    {status.icon && (
-                      <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    )}
-                    {status.label}
+                    {(() => { const StatusIcon = (status as any).icon; return StatusIcon ? <StatusIcon className="mr-2 h-4 w-4 text-muted-foreground" /> : null })()}
+                          {status.label}
                   </div>
                 </SelectItem>
               ))}
@@ -131,9 +129,7 @@ export function DataTableToolbar<TData>({
                   className="cursor-pointer"
                 >
                   <div className="flex items-center">
-                    {priority.icon && (
-                      <priority.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    )}
+                    {(() => { const PriorityIcon = (priority as any).icon; return PriorityIcon ? <PriorityIcon className="mr-2 h-4 w-4 text-muted-foreground" /> : null })()}
                     {priority.label}
                   </div>
                 </SelectItem>
