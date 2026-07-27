@@ -1,4 +1,4 @@
-import { api } from '@/api/axios';
+import { api, API_BASE_URL } from '@/api/axios';
 import type {
   CampaignCategory,
   CampaignDetail,
@@ -135,6 +135,6 @@ export async function recordCampaignView(id: number): Promise<void> {
  * @returns a plain URL suitable for an <img src>
  */
 export function campaignQrUrl(slug: string, amount?: number): string {
-  const base = `/api/v1/campaigns/${slug}/qr`;
+  const base = `${API_BASE_URL}/campaigns/${slug}/qr`;
   return amount && amount > 0 ? `${base}?amount=${amount}` : base;
 }
