@@ -24,7 +24,3 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
-      - key: BANK_ACCOUNT_NO
-        sync: false
-      - key: BANK_ACCOUNT_NAME
-        sync: false

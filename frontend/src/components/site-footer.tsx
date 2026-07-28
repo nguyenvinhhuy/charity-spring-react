@@ -17,7 +17,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className="font-medium text-foreground hover:text-primary transition-colors"
             >
-              Hội Thiện Nguyện Hương Sen
+              Câu lạc bộ Thiện Nguyện Hương Sen
             </Link>
           </div>
           <p className="text-xs text-muted-foreground">

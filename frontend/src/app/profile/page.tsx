@@ -8,10 +8,10 @@ import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { toast } from "sonner"
 import { Upload } from "lucide-react"
-
 import { changeMyPassword, getMe, updateMyProfile } from "@/api/auth"
 import { uploadImage } from "@/api/media"
 import { getErrorMessage } from "@/api/axios"
+import { getNotificationPreferences, updateNotificationPreferences } from "@/api/notifications"
 import { useAuthStore } from "@/store/authStore"
 import { PublicLayout } from "@/components/layouts/public-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,7 +20,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { Logo } from "@/components/logo"
+import type { NotificationPreference, NotificationType } from "@/types/notification"
 import {
   Form,
   FormControl,
@@ -59,6 +61,17 @@ function buildPasswordSchema(t: TFunction) {
 }
 type PasswordValues = z.infer<ReturnType<typeof buildPasswordSchema>>
 
+const NOTIFICATION_TYPES: NotificationType[] = [
+  "COMMENT_MENTION",
+  "CAMPAIGN_STATUS_CHANGED",
+  "REGISTRATION_CREATED",
+  "REGISTRATION_CANCELLED",
+  "REGISTRATION_REMOVED",
+  "DONATION_RECEIVED",
+  "INQUIRY_RECEIVED",
+  "BROADCAST",
+]
+
 /** Renders the profile settings page: personal info form, avatar upload, and change-password form. */
 export default function ProfileSettingsPage() {
   const { t } = useTranslation()
@@ -69,6 +82,8 @@ export default function ProfileSettingsPage() {
   const [uploading, setUploading] = useState(false)
   const profileSchema = useMemo(() => buildProfileSchema(t), [t])
   const passwordSchema = useMemo(() => buildPasswordSchema(t), [t])
+  const [preferences, setPreferences] = useState<NotificationPreference[]>([])
+  const [savingType, setSavingType] = useState<NotificationType | null>(null)
 
   const profileForm = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
@@ -104,6 +119,40 @@ export default function ProfileSettingsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    let active = true
+    getNotificationPreferences()
+      .then((prefs) => {
+        if (active) setPreferences(prefs)
+      })
+      .catch(() => {
+        // Non-critical: toggles just default to unknown/enabled-looking until retried.
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  /**
+   * Toggles a single notification type's enabled state and persists it immediately.
+   *
+   * @param type the notification type being toggled
+   * @param enabled the new desired state
+   */
+  async function onTogglePreference(type: NotificationType, enabled: boolean) {
+    const previous = preferences
+    setPreferences((prev) => prev.map((p) => (p.type === type ? { ...p, enabled } : p)))
+    setSavingType(type)
+    try {
+      await updateNotificationPreferences([{ type, enabled }])
+    } catch (err) {
+      setPreferences(previous)
+      toast.error(getErrorMessage(err))
+    } finally {
+      setSavingType(null)
+    }
+  }
 
   /**
    * Uploads the chosen image and stores its URL for the next profile save.
@@ -377,6 +426,32 @@ export default function ProfileSettingsPage() {
             </Button>
           </form>
         </Form>
+
+        {/* Notification preferences */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("notifications.preferencesTitle")}</CardTitle>
+            <CardDescription>{t("notifications.preferencesDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2.5">
+            {NOTIFICATION_TYPES.map((type) => {
+              const pref = preferences.find((p) => p.type === type)
+              const enabled = pref?.enabled ?? true
+              return (
+                <div key={type} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{t(`notifications.preferenceLabels.${type}`)}</span>
+                  </div>
+                  <Switch
+                    checked={enabled}
+                    disabled={savingType === type}
+                    onCheckedChange={(checked) => onTogglePreference(type, checked)}
+                  />
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
       </div>
     </PublicLayout>
   )

@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { CreateFaqRequest, Faq, Page, UpdateFaqRequest } from '@/types';
+import type { Page } from "@/types/common"
+import type { CreateFaqRequest, Faq, UpdateFaqRequest } from "@/types/faq"
 
 export interface ListFaqsParams {
   published?: boolean;

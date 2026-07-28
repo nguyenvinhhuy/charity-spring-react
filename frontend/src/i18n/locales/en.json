@@ -17,7 +17,9 @@
     "faqManage": "Manage FAQs",
     "about": "About",
     "contact": "Contact",
-    "inquiriesManage": "Manage Inquiries"
+    "inquiriesManage": "Manage Inquiries",
+    "partnersManage": "Manage Partners",
+    "settings": "Settings"
   },
   "userMenu": {
     "profile": "Profile",
@@ -118,7 +120,10 @@
     "uploadImage": "Click to upload an image",
     "uploadingImage": "Uploading image...",
     "changeImage": "Change image",
-    "noImage": "No image"
+    "noImage": "No image",
+    "scrollToTop": "Scroll to top",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "campaigns": {
     "title": "Campaign management",
@@ -182,6 +187,7 @@
       "bankAccountNoPlaceholder": "0123456789",
       "bankAccountNameLabel": "Account holder",
       "bankAccountNamePlaceholder": "CLB THIEN NGUYEN",
+      "bankAccountLockedHint": "Set by the admin by default — only ADMIN can edit this.",
       "qrDescriptionLabel": "Transfer note",
       "qrDescriptionPlaceholder": "Donate to the campaign",
       "thienNguyenUrlLabel": "thiennguyen.app link",
@@ -571,6 +577,72 @@
       "deleting": "Deleting..."
     }
   },
+  "settings": {
+    "pageTitle": "Settings",
+    "pageDescription": "Configure the club's general settings",
+    "bank": {
+      "cardTitle": "Default bank account",
+      "cardDescription": "Applied to new campaigns created by non-ADMIN staff (e.g. CONTRIBUTOR)",
+      "accountNoLabel": "Account number",
+      "accountNoPlaceholder": "0123456789",
+      "accountNoRequired": "Please enter the account number",
+      "accountNameLabel": "Account holder name",
+      "accountNamePlaceholder": "CLB THIEN NGUYEN",
+      "accountNameRequired": "Please enter the account holder name",
+      "save": "Save changes",
+      "saved": "Settings saved"
+    }
+  },
+  "partnersManage": {
+    "title": "Manage Partners",
+    "description": "Manage the logos of units co-organizing activities with the club",
+    "total": "Total: {{count}}",
+    "addPartner": "Add partner",
+    "loading": "Loading...",
+    "empty": "No partners yet",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "table": {
+      "logo": "Logo",
+      "name": "Name",
+      "website": "Website",
+      "visit": "Visit",
+      "displayOrder": "Order"
+    },
+    "form": {
+      "editTitle": "Edit partner",
+      "editDescription": "Update this partner's information",
+      "createDescription": "Add a new co-organizing partner",
+      "logo": "Logo",
+      "name": "Partner name",
+      "namePlaceholder": "e.g. Hoa Xuan Ward",
+      "websiteUrl": "Website URL (optional)",
+      "websiteUrlPlaceholder": "https://...",
+      "displayOrder": "Display order (optional)",
+      "displayOrderPlaceholder": "Lower shows first",
+      "nameRequired": "Please enter the partner name",
+      "logoRequired": "Please upload a logo",
+      "saving": "Saving...",
+      "save": "Save changes"
+    },
+    "toast": {
+      "created": "Partner added",
+      "updated": "Partner updated",
+      "deleted": "Partner deleted"
+    },
+    "deleteDialog": {
+      "title": "Delete this partner?",
+      "description": "Are you sure you want to delete this partner? Its logo will no longer show on the home page.",
+      "deleting": "Deleting..."
+    }
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "madeWith": "Built by Nguyen Vinh Huy - Communications Department"
+  },
   "command": {
     "title": "Command Search",
     "placeholder": "What do you need?",
@@ -691,6 +763,8 @@
     "latestNewsBadge": "Updates",
     "latestNewsTitle": "Latest news",
     "viewAll": "View all",
+    "partnersBadge": "Partners",
+    "partnersTitle": "Co-organizing units",
     "ctaBadge": "Join hands",
     "ctaTitle": "Join hands to spread love",
     "ctaSubtitle": "Join Hương Sen Charity Club and help us bring love to the community.",
@@ -722,11 +796,11 @@
     "description": "Have a question or feedback? Don't hesitate to reach out.",
     "infoTitle": "Contact information",
     "addressLabel": "Address",
-    "addressValue": "123 Charity Street, District 1, Ho Chi Minh City",
+    "addressValue": "Duong Son, Hoa Xuan, Da Nang City",
     "phoneLabel": "Phone",
     "phoneValue": "0900 000 000",
     "emailLabel": "Email",
-    "emailValue": "contact@clb.vn",
+    "emailValue": "huongsenhoi.dn@gmail.com",
     "formTitle": "Send us a message",
     "form": {
       "fullNameLabel": "Full name",
@@ -740,6 +814,39 @@
       "emailInvalid": "Invalid email",
       "subjectRequired": "Please enter a subject",
       "messageRequired": "Please enter a message"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "someone": "Someone",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "sendBroadcast": "Send announcement",
+    "sendBroadcastDesc": "Send this announcement to every active member.",
+    "broadcastTitlePlaceholder": "Announcement title",
+    "broadcastMessagePlaceholder": "Announcement message",
+    "send": "Send",
+    "broadcastSent": "Announcement sent",
+    "preferencesTitle": "Notification preferences",
+    "preferencesDesc": "Choose which notifications you want to receive.",
+    "types": {
+      "COMMENT_MENTION": "{{actor}} mentioned you in a comment",
+      "CAMPAIGN_STATUS_CHANGED": "Campaign \"{{title}}\" changed status to {{status}}",
+      "REGISTRATION_CREATED": "{{actor}} registered for campaign \"{{title}}\"",
+      "REGISTRATION_CANCELLED": "{{actor}} cancelled their registration for \"{{title}}\"",
+      "REGISTRATION_REMOVED": "You were removed from the registration list for \"{{title}}\"",
+      "DONATION_RECEIVED": "{{actor}} donated to campaign \"{{title}}\"",
+      "INQUIRY_RECEIVED": "{{actor}} sent an inquiry: {{title}}"
+    },
+    "preferenceLabels": {
+      "COMMENT_MENTION": "Someone mentions you in a comment",
+      "CAMPAIGN_STATUS_CHANGED": "Your campaign changes status",
+      "REGISTRATION_CREATED": "Someone registers for your campaign",
+      "REGISTRATION_CANCELLED": "Someone cancels their registration",
+      "REGISTRATION_REMOVED": "You are removed from a registration list",
+      "DONATION_RECEIVED": "A new donation arrives on your campaign",
+      "INQUIRY_RECEIVED": "A new inquiry arrives",
+      "BROADCAST": "General announcements from the club"
     }
   }
 }

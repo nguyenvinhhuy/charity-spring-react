@@ -1,19 +1,13 @@
 import { api } from '@/api/axios';
-import type {
-  ChangePasswordRequest,
-  LoginRequest,
-  LoginResponse,
-  Member,
-  RegisterRequest,
-  UpdateProfileRequest,
-} from '@/types';
+import type { ChangePasswordRequest, LoginRequest, LoginResponse, RegisterRequest, UpdateProfileRequest } from "@/types/auth"
+import type { Member } from "@/types/member"
 
 /**
  * Register a new MEMBER account and log in, setting the refresh cookie server-side.
  *
  * @param payload the registration fields
  */
-export async function register(
+export async function registerAccount(
   payload: RegisterRequest,
 ): Promise<LoginResponse> {
   const { data } = await api.post<LoginResponse>('/auth/register', payload);

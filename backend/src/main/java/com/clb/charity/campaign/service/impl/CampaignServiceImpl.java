@@ -28,9 +28,15 @@ import com.clb.charity.common.model.Granularity;
 import com.clb.charity.common.util.SlugUtil;
 import com.clb.charity.comment.domain.CommentTargetType;
 import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.member.domain.Role;
+import com.clb.charity.notification.domain.NotificationReferenceType;
+import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.notification.service.NotificationService;
 import com.clb.charity.reaction.domain.ReactionTargetType;
 import com.clb.charity.reaction.service.ReactionService;
 import com.clb.charity.registration.service.RegistrationService;
+import com.clb.charity.settings.dto.response.ClubSettingsResponse;
+import com.clb.charity.settings.service.ClubSettingsService;
 import com.clb.charity.vietqr.service.VietQrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -60,6 +66,8 @@ public class CampaignServiceImpl implements CampaignService {
     private final ReactionService reactionService;
     private final CommentService commentService;
     private final RegistrationService registrationService;
+    private final ClubSettingsService clubSettingsService;
+    private final NotificationService notificationService;
 
     @Override
     public Page<CampaignSummaryResponse> list(@Nullable CampaignStatus status, @Nullable CampaignCategory category,
@@ -80,7 +88,7 @@ public class CampaignServiceImpl implements CampaignService {
 
     @Override
     @Transactional
-    public CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy) {
+    public CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy, Role requesterRole) {
         validateCapacityPairing(request.capacity(), request.eventStartDate());
         String slug = SlugUtil.slugify(request.title());
         if (campaignRepository.existsBySlug(slug)) {
@@ -89,15 +97,28 @@ public class CampaignServiceImpl implements CampaignService {
         Campaign campaign = campaignMapper.toEntity(request);
         campaign.setSlug(slug);
         campaign.setCreatedBy(createdBy);
+        if (requesterRole != Role.ADMIN) {
+            // Only ADMIN may choose the bank account; everyone else gets the club's default.
+            ClubSettingsResponse defaults = clubSettingsService.get();
+            campaign.setBankAccountNo(defaults.bankAccountNo());
+            campaign.setBankAccountName(defaults.bankAccountName());
+        }
         return campaignMapper.toDetail(campaignRepository.save(campaign));
     }
 
     @Override
     @Transactional
-    public CampaignDetailResponse update(Long id, UpdateCampaignRequest request) {
+    public CampaignDetailResponse update(Long id, UpdateCampaignRequest request, Role requesterRole) {
         validateCapacityPairing(request.capacity(), request.eventStartDate());
         Campaign campaign = loadById(id);
+        String previousBankAccountNo = campaign.getBankAccountNo();
+        String previousBankAccountName = campaign.getBankAccountName();
         campaignMapper.updateEntity(request, campaign);
+        if (requesterRole != Role.ADMIN) {
+            // Only ADMIN may change the bank account; everyone else keeps the existing value.
+            campaign.setBankAccountNo(previousBankAccountNo);
+            campaign.setBankAccountName(previousBankAccountName);
+        }
         return campaignMapper.toDetail(campaignRepository.save(campaign));
     }
 
@@ -113,7 +134,12 @@ public class CampaignServiceImpl implements CampaignService {
             throw new InvalidStatusTransitionException(current.name(), target.name());
         }
         campaign.setStatus(target);
-        return campaignMapper.toDetail(campaignRepository.save(campaign));
+        CampaignDetailResponse response = campaignMapper.toDetail(campaignRepository.save(campaign));
+        if (campaign.getCreatedBy() != null) {
+            notificationService.notify(campaign.getCreatedBy(), NotificationType.CAMPAIGN_STATUS_CHANGED, null,
+                    NotificationReferenceType.CAMPAIGN, campaign.getId(), campaign.getTitle(), target.name());
+        }
+        return response;
     }
 
     @Override
@@ -141,7 +167,8 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     public CampaignRegistrationContext getRegistrationContext(Long id) {
         Campaign campaign = loadById(id);
-        return new CampaignRegistrationContext(campaign.getCapacity(), campaign.getEventStartDate());
+        return new CampaignRegistrationContext(
+                campaign.getCapacity(), campaign.getEventStartDate(), campaign.getCreatedBy(), campaign.getTitle());
     }
 
     /** Enforces that capacity and eventStartDate are only ever set together, never one without the other. */
@@ -172,6 +199,12 @@ public class CampaignServiceImpl implements CampaignService {
         campaign.setCurrentAmount(campaign.getCurrentAmount() + request.amount());
         campaign.setDonorCount(campaign.getDonorCount() + 1);
         campaignRepository.save(campaign);
+        if (campaign.getCreatedBy() != null && !campaign.getCreatedBy().equals(createdBy)) {
+            String donorName = request.donorName() != null && !request.donorName().isBlank()
+                    ? request.donorName() : "Ẩn danh";
+            notificationService.notify(campaign.getCreatedBy(), NotificationType.DONATION_RECEIVED, donorName,
+                    NotificationReferenceType.CAMPAIGN, campaign.getId(), campaign.getTitle(), null);
+        }
         return donationMapper.toResponse(saved);
     }
 

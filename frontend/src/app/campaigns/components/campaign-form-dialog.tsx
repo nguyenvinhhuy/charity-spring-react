@@ -12,8 +12,10 @@ import {
   getCampaign,
   updateCampaign,
 } from "@/api/campaigns"
+import { getBankSettings } from "@/api/settings"
 import { getErrorMessage } from "@/api/axios"
-import type { CampaignDetail, CampaignSummary, CreateCampaignRequest } from "@/types"
+import { useAuthStore } from "@/store/authStore"
+import type { CampaignDetail, CampaignSummary, CreateCampaignRequest } from "@/types/campaign"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -76,8 +78,8 @@ function buildCampaignSchema(t: TFunction) {
     bankAccountNo: z.string().min(1, t("campaigns.form.bankAccountNoRequired")),
     bankAccountName: z.string().min(1, t("campaigns.form.bankAccountNameRequired")),
     qrDescription: z.string().max(100, t("campaigns.form.maxLength100")).optional(),
-    thienNguyenUrl: z.string().url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
-    thumbnailUrl: z.string().url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
+    thienNguyenUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
+    thumbnailUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
     startDate: z.string().min(1, t("campaigns.form.startDateRequired")),
     endDate: z.string().optional(),
     // Dates of the on-ground activity, separate from the fundraising period above; not every campaign has one.
@@ -199,6 +201,7 @@ export function CampaignFormDialog({
   const { t } = useTranslation()
   const campaignSchema = useMemo(() => buildCampaignSchema(t), [t])
   const isEdit = Boolean(campaign)
+  const isAdmin = useAuthStore((s) => s.member?.role) === "ADMIN"
   const [loadingDetail, setLoadingDetail] = useState(false)
   // Keep the existing statementUrl on edit so an update does not wipe it (the form does not expose it).
   const [statementUrl, setStatementUrl] = useState<string | null>(null)
@@ -213,7 +216,19 @@ export function CampaignFormDialog({
     if (!open) return
     if (!campaign) {
       setStatementUrl(null)
-      form.reset(EMPTY_VALUES)
+      // Pre-fill the club's default bank account; CONTRIBUTOR cannot change it (fields disabled below),
+      // and it saves ADMIN a lookup even though they are still free to override it.
+      getBankSettings()
+        .then((defaults) => {
+          form.reset({
+            ...EMPTY_VALUES,
+            bankAccountNo: defaults.bankAccountNo,
+            bankAccountName: defaults.bankAccountName,
+          })
+        })
+        .catch(() => {
+          form.reset(EMPTY_VALUES)
+        })
       return
     }
     let active = true
@@ -456,7 +471,11 @@ export function CampaignFormDialog({
                     <FormItem>
                       <FormLabel>{t("campaigns.form.bankAccountNoLabel")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("campaigns.form.bankAccountNoPlaceholder")} {...field} />
+                        <Input
+                          placeholder={t("campaigns.form.bankAccountNoPlaceholder")}
+                          disabled={!isAdmin}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -470,13 +489,22 @@ export function CampaignFormDialog({
                     <FormItem>
                       <FormLabel>{t("campaigns.form.bankAccountNameLabel")}</FormLabel>
                       <FormControl>
-                        <Input placeholder={t("campaigns.form.bankAccountNamePlaceholder")} {...field} />
+                        <Input
+                          placeholder={t("campaigns.form.bankAccountNamePlaceholder")}
+                          disabled={!isAdmin}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              {!isAdmin && (
+                <p className="text-muted-foreground -mt-2 text-xs">
+                  {t("campaigns.form.bankAccountLockedHint")}
+                </p>
+              )}
 
               <FormField
                 control={form.control}

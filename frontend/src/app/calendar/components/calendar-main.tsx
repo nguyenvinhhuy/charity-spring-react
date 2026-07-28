@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { categoryLabel, localized, statusLabel, STATUS_BADGE_CLASSES } from "@/app/campaigns/components/campaign-constants"
-import type { CampaignCategory } from "@/types"
+import type { CampaignCategory } from "@/types/campaign"
 import type { CalendarItem, EventCalendarItem } from "../types"
 import { itemsForDay } from "../lib"
 

@@ -10,6 +10,12 @@ import com.clb.charity.inquiry.mapper.InquiryMapper;
 import com.clb.charity.inquiry.repository.InquiryRepository;
 import com.clb.charity.inquiry.service.InquiryRateLimiter;
 import com.clb.charity.inquiry.service.InquiryService;
+import com.clb.charity.member.domain.Member;
+import com.clb.charity.member.domain.Role;
+import com.clb.charity.member.repository.MemberRepository;
+import com.clb.charity.notification.domain.NotificationReferenceType;
+import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -18,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -30,6 +37,8 @@ public class InquiryServiceImpl implements InquiryService {
     private final InquiryRepository inquiryRepository;
     private final InquiryMapper inquiryMapper;
     private final InquiryRateLimiter rateLimiter;
+    private final NotificationService notificationService;
+    private final MemberRepository memberRepository;
 
     @Override
     @Transactional
@@ -44,7 +53,18 @@ public class InquiryServiceImpl implements InquiryService {
         }
         Inquiry inquiry = inquiryMapper.toEntity(request);
         inquiry.setStatus(InquiryStatus.NEW);
-        return inquiryMapper.toResponse(inquiryRepository.save(inquiry));
+        Inquiry saved = inquiryRepository.save(inquiry);
+        notifyStaff(saved);
+        return inquiryMapper.toResponse(saved);
+    }
+
+    /** Notifies every active ADMIN/CONTRIBUTOR member that a new contact inquiry has arrived. */
+    private void notifyStaff(Inquiry inquiry) {
+        List<Member> staff = memberRepository.findByActiveTrueAndRoleIn(List.of(Role.ADMIN, Role.CONTRIBUTOR));
+        for (Member member : staff) {
+            notificationService.notify(member.getId(), NotificationType.INQUIRY_RECEIVED, inquiry.getFullName(),
+                    NotificationReferenceType.INQUIRY, inquiry.getId(), inquiry.getSubject(), null);
+        }
     }
 
     private static boolean isBotTrapped(CreateInquiryRequest request) {

@@ -132,7 +132,6 @@ npm run dev
 | `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | — (**required**) | Cloudinary API credentials |
 | `CLOUDINARY_UPLOAD_FOLDER` | `clb-media` | Folder prefix for uploaded images |
 | `CORS_ORIGINS` | `http://localhost:5173` | Allowed frontend origin(s) |
-| `BANK_ACCOUNT_NO` / `BANK_ACCOUNT_NAME` | — | Default VietQR bank info |
 
 ## User roles
 

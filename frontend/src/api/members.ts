@@ -1,13 +1,6 @@
 import { api } from '@/api/axios';
-import type {
-  CreateMemberRequest,
-  Member,
-  MemberMention,
-  Page,
-  Role,
-  TeamMember,
-  UpdateTeamProfileRequest,
-} from '@/types';
+import type { Page, Role } from "@/types/common"
+import type { CreateMemberRequest, Member, MemberMention, TeamMember, UpdateTeamProfileRequest } from "@/types/member"
 
 export interface ListMembersParams {
   page?: number;

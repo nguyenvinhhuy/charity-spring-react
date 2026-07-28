@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router"
 import { z } from "zod"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { register as registerAccount } from "@/api/auth"
+import { registerAccount } from "@/api/auth"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ function buildSignupFormSchema(t: TFunction) {
   return z
     .object({
       fullName: z.string().min(1, t("auth.validation.fullNameRequired")),
-      email: z.string().min(1, t("auth.validation.emailRequired")).email(t("auth.validation.emailInvalid")),
+      email: z.string().min(1, t("auth.validation.emailRequired")).pipe(z.email(t("auth.validation.emailInvalid"))),
       password: z.string().min(8, t("auth.validation.passwordMin", { min: 8 })),
       confirmPassword: z.string().min(1, t("auth.validation.confirmPasswordRequired")),
       terms: z.boolean().refine((v) => v, t("auth.validation.termsRequired")),

@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next"
-import type { CampaignCategory, CampaignStatus } from "@/types"
+import type { CampaignCategory, CampaignStatus } from "@/types/campaign"
 
 /** All campaign statuses, in lifecycle order. */
 export const STATUS_OPTIONS: CampaignStatus[] = [

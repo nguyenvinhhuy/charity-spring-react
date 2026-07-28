@@ -51,7 +51,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  /* Brand: green primary, lotus-pink accents (Hội Thiện Nguyện Hương Sen) */
+  /* Brand: green primary, lotus-pink accents (Câu lạc bộ Thiện Nguyện Hương Sen) */
   --primary: oklch(0.55 0.14 152);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.97 0.02 150);
@@ -172,4 +172,35 @@ html {
 
 .animate-logo-scroll:hover {
   animation-play-state: paused;
+}
+
+/* Partners marquee: percentage-based so it loops seamlessly for any item count/width
+   (the list is rendered twice back-to-back; translating exactly -50% of that doubled
+   track always lines the second copy up where the first started). */
+@keyframes partners-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-partners-scroll {
+  animation: partners-scroll 35s linear infinite;
+}
+
+.animate-partners-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Fades the scrolling content itself out at both edges (via mask, not an overlay tint —
+   an overlay would visibly discolor whatever card happens to be scrolling underneath it).
+   Fixed pixel widths (not %) so the fade always spans roughly half a card's width, however
+   wide the container is — a percentage-based fade is narrower than one card on typical
+   screens, so the transition finishes inside the very first card instead of easing across
+   several of them. */
+.partners-fade-mask {
+  mask-image: linear-gradient(to right, transparent, black 140px, black calc(100% - 140px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 140px, black calc(100% - 140px), transparent);
 }

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import type { RoleCount } from "@/types"
+import type { RoleCount } from "@/types/dashboard"
 import { CHART_COLORS, ROLE_ORDER } from "./dashboard-constants"
 
 interface MembersDonutProps {

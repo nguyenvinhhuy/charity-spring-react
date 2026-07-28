@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { Page, Registrant, RegistrationSummary } from '@/types';
+import type { Page } from "@/types/common"
+import type { Registrant, RegistrationSummary } from "@/types/registration"
 
 export interface ListRegistrantsParams {
   page?: number;
@@ -21,7 +22,7 @@ export async function getRegistrationSummary(campaignId: number): Promise<Regist
  *
  * @param campaignId the campaign id
  */
-export async function register(campaignId: number): Promise<RegistrationSummary> {
+export async function registerForCampaign(campaignId: number): Promise<RegistrationSummary> {
   const { data } = await api.post<RegistrationSummary>(`/campaigns/${campaignId}/registrations/me`);
   return data;
 }

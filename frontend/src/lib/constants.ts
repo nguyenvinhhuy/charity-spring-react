@@ -1,4 +1,5 @@
-import type { CampaignCategory, CampaignStatus, Role } from '@/types';
+import type { CampaignCategory, CampaignStatus } from "@/types/campaign"
+import type { Role } from "@/types/common"
 
 /** Default number of items per page for paginated lists. */
 export const DEFAULT_PAGE_SIZE = 9;

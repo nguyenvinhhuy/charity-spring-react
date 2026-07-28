@@ -196,8 +196,59 @@ com.clb.charity/
   declared at module scope can't call `t()`. This does not apply to
   user-generated bilingual *content* (e.g. a campaign's title/titleEn) — that
   continues to use the existing `localized(i18n.language, vi, en)` helper.
-- Target layout: `api/ components/{ui,layout,campaign,common} pages/{public,admin}
-  hooks/ store/ types/ router/ lib/`.
+### 5.0a Frontend architecture: feature-sliced (target — migrating incrementally)
+
+**Rationale.** The backend already organizes by feature (`com.clb.charity.<feature>/{domain,dto,repository,service,controller}`, §3). The frontend is moving to the same organizing principle — group by *domain*, not by *technical layer* — so a `campaign`'s types/api/components live together instead of being spread across a flat `types/`, `api/`, `components/`. This is a real, deliberate architecture choice, not a cosmetic rename: it makes new code land in the right place by construction, instead of drifting into flat shared folders and needing periodic manual cleanup (as happened before this rule existed).
+
+**Target layout:**
+
+```
+frontend/src/
+├── features/
+│   └── <name>/                 # campaign, member, auth, post, donation, event, faq,
+│       ├── api.ts              # partner, reaction, comment, registration, inquiry,
+│       ├── types.ts            # notification, dashboard, settings
+│       ├── components/         # feature-specific components (dialogs, cards, sections)
+│       ├── pages/              # route-level pages owned by this feature (public + admin)
+│       └── hooks.ts            # only if the feature needs its own hooks
+├── shared/
+│   ├── ui/                     # shadcn primitives (unchanged, just relocated)
+│   ├── components/             # generic, multi-feature components (logo, mode-toggle,
+│   │                            # language-toggle, notification-bell, error-boundary...)
+│   ├── layouts/                # base-layout, public-layout + their single-consumer parts
+│   │                            # (site-header, site-footer, app-sidebar, nav-main, nav-user,
+│   │                            # scroll-to-top-button, command-search, facebook-page-widget)
+│   ├── hooks/ lib/ config/ store/ types/ (common.ts, theme*.ts only) i18n/
+├── router/
+└── App.tsx / main.tsx
+```
+
+**Boundary rule** (mirrors the backend's "cross-feature by id only", §3): a feature must not
+reach into another feature's internals (`features/campaign/components/x` must not import
+`features/post/api`). Cross-feature needs go through the other feature's exported `api`
+functions, passing/returning ids — same discipline as the backend's service-interface rule.
+
+**Enforcement**: there is no lint/boundary tool wired up for this (deliberately skipped —
+not worth the setup cost at this project's size). This section of CLAUDE.md **is** the
+enforcement: every new file placed by an assistant or contributor must follow this layout;
+don't add a new flat file to the old `types/`, `api/`, or `components/` locations.
+
+**Migration policy (incremental, never a big-bang rewrite):**
+- All **new** features/files follow this layout from now on.
+- **Existing** code (still under the old flat `types/`, `api/`, `components/`, `app/`
+  layout) migrates one domain at a time, opportunistically — when a domain is touched for
+  an unrelated task, or in a dedicated small pass — never all at once.
+- Every migration batch is small (one domain, or a handful of clearly-related files),
+  followed immediately by `tsc --noEmit` + `npm run build` + a browser smoke check before
+  starting the next batch. This is a hard rule after a real incident: an earlier attempt to
+  bulk-rewrite ~67 files' imports via a single regex script silently deleted unrelated
+  import lines in 8 files (the regex's lazy quantifier backtracked across an adjacent,
+  unrelated `import` statement whenever the immediately-following text didn't match). The
+  bug was only caught because `tsc` was run right after — bulk automated rewrites across many
+  files must always be followed by an immediate full type-check, and are only ever done in
+  small, individually-verified batches, never as one large unverified pass.
+- During the transition, the codebase will have some features migrated and some not — this
+  is expected and fine; do not "fix" this by rushing a full migration.
 
 ### 5.1 UI verification (STRICT — no exceptions)
 - **"It renders and the click works" is NOT "verified."** DOM structure checks
@@ -268,16 +319,30 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
 
 ## 7. Known state / TODO
 
-- **Frontend needs cleanup**: `frontend/src/` currently contains an unrelated
-  dashboard template (`src/app/**`, `src/config`, `src/contexts`, stray build
-  artifacts). Rebuilding the frontend to the layout in §5 is a **later task** —
-  do not treat the template files as the app.
+- Frontend template cleanup is **done** — every folder under `frontend/src/app/`
+  is a real feature; `src/config`/`src/contexts` hold the app's real theme/sidebar
+  infra (not template leftovers). If a suspiciously generic-SaaS-sounding file
+  turns up again (`pricing-section.tsx`, `testimonials-section.tsx`, etc.), grep
+  for its import before assuming it's live — 14 such orphaned files were found
+  and deleted from `landing/components/` well after the initial cleanup pass.
 
 ---
 
 ## 8. Hard rules (do / don't)
 
+- ✅ **Before executing any non-trivial or multi-step task (and always before any
+  delete/rename/rewrite of existing files), list out the concrete steps you plan
+  to take and wait for the user's explicit confirmation before doing them.**
+  Don't jump straight from "I found X" to "I fixed X" — present the plan, let the
+  user say yes, then act. This applies even when the fix seems obviously correct
+  (e.g. "these files are unused, deleting them") — the user decides what counts
+  as safe to do, not the model.
 - ✅ Modular monolith, package-by-feature, cross-feature by id only.
+- ✅ **Frontend is migrating to feature-sliced** (§5.0a): new code always follows
+  `features/<name>/{api,types,components,pages}` + `shared/`; existing flat
+  `types/`/`api/`/`components/` code migrates incrementally, one small
+  verified batch at a time — never a single big-bang rewrite, and never via an
+  unverified bulk automated script (see §5.0a for why).
 - ✅ Records for DTOs (request/response); Lombok for entities + DI + logging.
 - ✅ MapStruct for all mapping; RFC 9457 ProblemDetail for all errors.
 - ✅ Return DTO / `Page<T>` directly; `@Valid` on inbound; `@Operation` on handlers.
@@ -292,4 +357,47 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
   field rows within the same dialog — see §5.2.
 - ❌ Never leave a stray `*;C` junk folder in the repo root after `docker build`
   — check and delete it every time, see §6.
+- ✅ **When asked to fix one occurrence of a text/wording/pattern, grep the whole
+  repo (source only, not `dist`/`build`) for other occurrences of the same thing
+  and surface them before finishing** — e.g. "sửa Hội → Câu lạc bộ" in one file
+  means checking i18n locales, component source, alt text, and comments for the
+  same string, not just the one spot pointed at. **"Same thing" means the same
+  category/family of issue, not just the same literal substring** — e.g. if the
+  reported instance is one deprecated API of a library (`z.string().email()`),
+  check the library's own list of deprecated APIs (its `@deprecated`-annotated
+  type defs are authoritative) for sibling deprecated methods (`.url()`,
+  `.uuid()`, `.datetime()`, ...) in the same pass, don't just grep the one
+  method name from the report. Report what else was found and fix it in the
+  same pass (still following the confirm-before-destructive-action rule above
+  where that applies) instead of waiting to be told again per spot.
+- ✅ **This applies to code-bug patterns just as much as text**: once a bug turns
+  out to be caused by a mechanical edit applied across several files in the same
+  change (e.g. wrapping mapped children in a new `motion.div`, which silently
+  breaks Tailwind `first:`/`last:`/`nth-*` selectors that assumed the old direct-
+  child structure), re-open every other file touched by that same edit in the
+  same pass and check for the identical defect — don't wait for the user to spot
+  each broken instance one at a time. State explicitly which files were re-checked
+  and what was found (even "checked, none affected, here's why") so the user
+  doesn't have to ask "did you check the others?"
+- ✅ **A UI change that "renders with no errors" is not done — critically look at
+  whether it looks intentionally designed before reporting it, and check the
+  states adjacent to the one you're fixing in the same pass**, not one at a time
+  as the user keeps catching them. Concretely, on every visual fix:
+  1. Use realistic test data shaped like the real use case (e.g. a square logo to
+     test a "logo" field) — a convenient-but-wrong placeholder (a landscape banner
+     image standing in for a logo) biases the whole design toward the wrong shape.
+  2. Screenshot it and actually critique the screenshot — does this look designed,
+     or like a rough first draft with too much bare whitespace / no visual
+     hierarchy? Don't just confirm "it rendered."
+  3. In that same pass, check the states next to the one just fixed: hover state,
+     dark mode, empty/one-item/many-items, and whichever edge (top/bottom vs
+     left/right, first vs last) mirrors the one that was just fixed — a fix that
+     only addresses horizontal fade/spacing without checking vertical, or light
+     mode without dark mode, leaves the identical class of bug for the user to
+     find next.
+  4. When a decision is genuinely subjective (spacing density, how much
+     decoration, layout balance) and you're not confident it matches what the
+     user pictures, ask before implementing — don't silently pick one
+     interpretation and make the user spend several turns pointing out, one at a
+     time, that it "looks off."
 ```

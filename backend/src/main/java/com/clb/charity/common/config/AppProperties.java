@@ -9,7 +9,7 @@ import java.util.List;
  * Strongly-typed binding for the {@code app.*} block in application.yml.
  */
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, Bank bank, OAuth2 oauth2) {
+public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, OAuth2 oauth2) {
 
     public record Jwt(
             /** Base64-encoded HS256 secret (>= 32 bytes decoded). */
@@ -40,9 +40,6 @@ public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, Bank bank
                     .filter(s -> !s.isEmpty())
                     .toList();
         }
-    }
-
-    public record Bank(String accountNo, String accountName) {
     }
 
     public record OAuth2(

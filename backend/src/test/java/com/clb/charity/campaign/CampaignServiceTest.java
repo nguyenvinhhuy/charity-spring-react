@@ -4,6 +4,7 @@ import com.clb.charity.campaign.domain.Campaign;
 import com.clb.charity.campaign.domain.CampaignCategory;
 import com.clb.charity.campaign.domain.CampaignStatus;
 import com.clb.charity.campaign.dto.request.CreateCampaignRequest;
+import com.clb.charity.campaign.dto.request.UpdateCampaignRequest;
 import com.clb.charity.campaign.dto.response.CampaignDetailResponse;
 import com.clb.charity.campaign.mapper.CampaignMapper;
 import com.clb.charity.campaign.mapper.DonationMapper;
@@ -15,8 +16,12 @@ import com.clb.charity.common.exception.CampaignNotFoundException;
 import com.clb.charity.common.exception.DuplicateSlugException;
 import com.clb.charity.common.exception.InvalidStatusTransitionException;
 import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.member.domain.Role;
+import com.clb.charity.notification.service.NotificationService;
 import com.clb.charity.reaction.service.ReactionService;
 import com.clb.charity.registration.service.RegistrationService;
+import com.clb.charity.settings.dto.response.ClubSettingsResponse;
+import com.clb.charity.settings.service.ClubSettingsService;
 import com.clb.charity.vietqr.service.VietQrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,6 +61,12 @@ class CampaignServiceTest {
     @Mock
     private RegistrationService registrationService;
 
+    @Mock
+    private ClubSettingsService clubSettingsService;
+
+    @Mock
+    private NotificationService notificationService;
+
     // Use the real generated MapStruct mappers so slug/status mapping is exercised.
     private final CampaignMapper campaignMapper = Mappers.getMapper(CampaignMapper.class);
     private final DonationMapper donationMapper = Mappers.getMapper(DonationMapper.class);
@@ -66,7 +77,7 @@ class CampaignServiceTest {
     void setUp() {
         campaignService = new CampaignServiceImpl(
                 campaignRepository, donationRepository, campaignMapper, donationMapper, vietQrService,
-                reactionService, commentService, registrationService);
+                reactionService, commentService, registrationService, clubSettingsService, notificationService);
     }
 
     private CreateCampaignRequest sampleRequest() {
@@ -90,7 +101,7 @@ class CampaignServiceTest {
         when(campaignRepository.existsBySlug("ao-am-vung-cao")).thenReturn(false);
         when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CampaignDetailResponse result = campaignService.create(sampleRequest(), 1L);
+        CampaignDetailResponse result = campaignService.create(sampleRequest(), 1L, Role.ADMIN);
 
         assertEquals("ao-am-vung-cao", result.slug());
         assertEquals(CampaignStatus.DRAFT, result.status());
@@ -101,8 +112,41 @@ class CampaignServiceTest {
     void create_throwsWhenSlugExists() {
         when(campaignRepository.existsBySlug("ao-am-vung-cao")).thenReturn(true);
 
-        assertThrows(DuplicateSlugException.class, () -> campaignService.create(sampleRequest(), 1L));
+        assertThrows(DuplicateSlugException.class,
+                () -> campaignService.create(sampleRequest(), 1L, Role.ADMIN));
         verify(campaignRepository, never()).save(any());
+    }
+
+    @Test
+    void create_nonAdminIgnoresRequestedBankAccountAndUsesClubDefault() {
+        when(campaignRepository.existsBySlug("ao-am-vung-cao")).thenReturn(false);
+        when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(clubSettingsService.get()).thenReturn(new ClubSettingsResponse("9999999999", "CLB Default"));
+
+        CampaignDetailResponse result = campaignService.create(sampleRequest(), 1L, Role.CONTRIBUTOR);
+
+        assertEquals("9999999999", result.bankAccountNo());
+        assertEquals("CLB Default", result.bankAccountName());
+    }
+
+    @Test
+    void update_nonAdminKeepsExistingBankAccount() {
+        Campaign campaign = draftCampaign();
+        when(campaignRepository.findById(1L)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.save(any(Campaign.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateCampaignRequest request = new UpdateCampaignRequest(
+                "Áo ấm vùng cao", "summary", "<p>desc</p>",
+                null, null, null,
+                null, null,
+                50_000_000L, "0000000000", "Hacker Account", "ung ho", null, null,
+                CampaignCategory.CHILDREN, LocalDate.of(2026, 1, 1), null, null, null, null);
+
+        CampaignDetailResponse result = campaignService.update(1L, request, Role.CONTRIBUTOR);
+
+        assertEquals("1234567890", result.bankAccountNo());
+        assertEquals("CLB Thiện Nguyện", result.bankAccountName());
+        verify(clubSettingsService, never()).get();
     }
 
     @Test

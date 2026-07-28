@@ -1,5 +1,5 @@
-import { shadcnThemePresets } from '@/utils/shadcn-ui-theme-presets'
-import { tweakcnPresets } from '@/utils/tweakcn-theme-presets'
+import { shadcnThemePresets } from '@/config/shadcn-ui-theme-presets'
+import { tweakcnPresets } from '@/config/tweakcn-theme-presets'
 import type { ColorTheme } from '@/types/theme-customizer'
 
 // Tweakcn theme presets for the dropdown - convert from tweakcnPresets

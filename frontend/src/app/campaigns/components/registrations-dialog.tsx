@@ -6,7 +6,8 @@ import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { listRegistrants, removeRegistrant } from "@/api/registrations"
 import { getErrorMessage } from "@/api/axios"
-import type { CampaignSummary, Registrant } from "@/types"
+import type { CampaignSummary } from "@/types/campaign"
+import type { Registrant } from "@/types/registration"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

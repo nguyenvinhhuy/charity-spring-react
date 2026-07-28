@@ -1,6 +1,6 @@
 import { lazy } from 'react'
 import { Navigate } from 'react-router'
-import type { Role } from '@/types'
+import type { Role } from "@/types/common"
 
 // Lazy load components for better performance
 const Landing = lazy(() => import('@/app/landing/page'))
@@ -12,6 +12,8 @@ const FAQs = lazy(() => import('@/app/faqs/page'))
 const FaqManage = lazy(() => import('@/app/faqs/manage/page'))
 const NewsManage = lazy(() => import('@/app/dashboard/news/manage/page'))
 const InquiriesManage = lazy(() => import('@/app/dashboard/inquiries/page'))
+const PartnersManage = lazy(() => import('@/app/dashboard/partners/page'))
+const Settings = lazy(() => import('@/app/dashboard/settings/page'))
 
 // Public content pages (Phase 2)
 const PublicCampaigns = lazy(() => import('@/app/public/campaigns/page'))
@@ -138,6 +140,16 @@ export const routes: RouteConfig[] = [
     path: "/dashboard/inquiries",
     element: <InquiriesManage />,
     requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+  },
+  {
+    path: "/dashboard/partners",
+    element: <PartnersManage />,
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+  },
+  {
+    path: "/dashboard/settings",
+    element: <Settings />,
+    requiredRole: "ADMIN"
   },
 
   // Authentication Routes (public)

@@ -5,7 +5,7 @@ import { AppRouter } from '@/router/app-router'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { Toaster } from '@/components/ui/sonner'
 import { useEffect } from 'react'
-import { initGTM } from '@/utils/analytics'
+import { initGTM } from '@/lib/analytics'
 
 // Get basename from environment (for deployment) or use empty string for development
 const basename = import.meta.env.VITE_BASENAME || ''

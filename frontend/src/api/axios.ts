@@ -4,8 +4,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { useAuthStore } from '@/store/authStore';
-import type { ProblemDetail } from '@/types';
+import type { ProblemDetail } from "@/types/common"
 
+/** The backend's base URL — also used directly by callers that build raw (non-axios) request URLs, e.g. `<img src>`. */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 /** Shared axios instance for all backend calls. */

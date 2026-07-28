@@ -49,9 +49,6 @@ app:
     upload-folder: ${CLOUDINARY_UPLOAD_FOLDER:clb-media}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
-  bank:
-    account-no: ${BANK_ACCOUNT_NO:1234567890}
-    account-name: ${BANK_ACCOUNT_NAME:CLB Thien Nguyen}
   oauth2:
     # Frontend URLs the backend redirects the browser to after social login.
     success-redirect: ${OAUTH2_SUCCESS_REDIRECT:http://localhost:5173/auth/callback}

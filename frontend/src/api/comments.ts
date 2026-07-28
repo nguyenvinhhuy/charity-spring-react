@@ -1,6 +1,7 @@
 import { api } from '@/api/axios';
 import type { ReactionTarget } from '@/api/reactions';
-import type { Comment, CreateCommentRequest, Page, UpdateCommentRequest } from '@/types';
+import type { Comment, CreateCommentRequest, UpdateCommentRequest } from "@/types/comment"
+import type { Page } from "@/types/common"
 
 export interface ListCommentsParams {
   page?: number;

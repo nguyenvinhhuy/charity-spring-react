@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { ChartConfig } from "@/components/ui/chart"
-import type { CampaignProgressItem } from "@/types"
+import type { CampaignProgressItem } from "@/types/dashboard"
 import { localized } from "@/app/campaigns/components/campaign-constants"
 
 interface CampaignProgressChartProps {

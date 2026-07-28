@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { CreateEventRequest, Event, Page, UpdateEventRequest } from '@/types';
+import type { Page } from "@/types/common"
+import type { CreateEventRequest, Event, UpdateEventRequest } from "@/types/event"
 
 export interface ListEventsParams {
   page?: number;

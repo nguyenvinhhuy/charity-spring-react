@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { CreateInquiryRequest, Inquiry, InquiryStatus, Page } from '@/types';
+import type { Page } from "@/types/common"
+import type { CreateInquiryRequest, Inquiry, InquiryStatus } from "@/types/inquiry"
 
 export interface ListInquiriesParams {
   page?: number;

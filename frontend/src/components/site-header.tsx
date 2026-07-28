@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { CommandSearch, SearchTrigger } from "@/components/command-search"
 import { ModeToggle } from "@/components/mode-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
+import { NotificationBell } from "@/components/notification-bell"
 
 /** Renders the app header with the sidebar trigger, command search, language toggle and theme toggle. */
 export function SiteHeader() {
@@ -38,6 +39,7 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center gap-2">
             <LanguageToggle />
             <ModeToggle />
+            <NotificationBell />
           </div>
         </div>
       </header>

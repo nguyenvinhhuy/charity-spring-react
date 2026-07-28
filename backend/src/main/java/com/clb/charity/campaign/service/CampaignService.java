@@ -12,6 +12,7 @@ import com.clb.charity.campaign.dto.response.CampaignSummaryResponse;
 import com.clb.charity.campaign.dto.response.DonationResponse;
 import com.clb.charity.campaign.dto.response.PublicCampaignStatsResponse;
 import com.clb.charity.common.model.Granularity;
+import com.clb.charity.member.domain.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.Nullable;
@@ -42,22 +43,28 @@ public interface CampaignService {
     CampaignDetailResponse getBySlug(String slug);
 
     /**
-     * Creates a campaign in DRAFT status from the given request.
+     * Creates a campaign in DRAFT status from the given request. Non-ADMIN callers cannot set the
+     * bank account fields — the club's default bank account is used instead, regardless of what
+     * the request carries.
      *
      * @param request the campaign fields
      * @param createdBy id of the authoring member
+     * @param requesterRole role of the authenticated caller
      * @return the created campaign detail
      */
-    CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy);
+    CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy, Role requesterRole);
 
     /**
-     * Updates the editable fields of an existing campaign.
+     * Updates the editable fields of an existing campaign. Non-ADMIN callers cannot change the
+     * bank account fields — the campaign's existing values are kept regardless of what the
+     * request carries.
      *
      * @param id the campaign id
      * @param request the new field values
+     * @param requesterRole role of the authenticated caller
      * @return the updated campaign detail
      */
-    CampaignDetailResponse update(Long id, UpdateCampaignRequest request);
+    CampaignDetailResponse update(Long id, UpdateCampaignRequest request, Role requesterRole);
 
     /**
      * Transitions a campaign to the target status when the transition is allowed.

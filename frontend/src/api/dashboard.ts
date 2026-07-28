@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { DashboardSummary, Granularity } from '@/types';
+import type { Granularity } from "@/types/common"
+import type { DashboardSummary } from "@/types/dashboard"
 
 /**
  * Fetch the aggregated dashboard summary, with the donation series bucketed by granularity.

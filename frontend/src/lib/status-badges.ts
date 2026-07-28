@@ -1,4 +1,4 @@
-import type { InquiryStatus } from "@/types"
+import type { InquiryStatus } from "@/types/inquiry"
 
 /** Shared Tailwind classes for simple two-state (active/inactive, published/draft) status badges. */
 export const STATUS_BADGE_ACTIVE =

@@ -157,6 +157,12 @@ public class SecurityConfig {
                         // Member detail can carry sensitive fields (DOB/address/national ID) — ADMIN only.
                         .requestMatchers(HttpMethod.GET, API + "/members/*").hasRole("ADMIN")
 
+                        // ── Partners (co-organizing units) ────────────────
+                        .requestMatchers(HttpMethod.DELETE, API + "/partners/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, API + "/partners").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, API + "/partners/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, API + "/partners").permitAll()
+
                         // ── Inquiries (Contact form) ──────────────────────
                         // Submitting is public (anonymous visitors); managing them is staff-only.
                         .requestMatchers(HttpMethod.POST, API + "/inquiries").permitAll()
@@ -164,12 +170,22 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, API + "/inquiries/*/handled").hasAnyRole("CONTRIBUTOR", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, API + "/inquiries/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
 
+                        // ── Settings ──────────────────────────────────────
+                        // Reading the default bank account is staff-only (pre-fills the campaign form);
+                        // changing it is ADMIN-only.
+                        .requestMatchers(HttpMethod.GET, API + "/settings/bank").hasAnyRole("CONTRIBUTOR", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, API + "/settings/bank").hasRole("ADMIN")
+
                         // ── Reports ───────────────────────────────────────
                         .requestMatchers(HttpMethod.GET, API + "/reports/**").hasAnyRole("MEMBER", "CONTRIBUTOR", "ADMIN")
 
                         // ── Media upload ──────────────────────────────────
                         // Any authenticated member may upload (e.g. their own avatar).
                         .requestMatchers(HttpMethod.POST, API + "/media/**").authenticated()
+
+                        // ── Notifications ─────────────────────────────────
+                        .requestMatchers(HttpMethod.POST, API + "/notifications/broadcast").hasRole("ADMIN")
+                        .requestMatchers(API + "/notifications/**").authenticated()
 
                         // ── Everything else requires authentication ───────
                         .anyRequest().authenticated())

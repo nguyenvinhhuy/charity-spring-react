@@ -1,4 +1,4 @@
-import type { Role } from "@/types"
+import type { Role } from "@/types/common"
 
 /** Display order for roles: highest privilege first. */
 export const ROLE_ORDER: Record<Role, number> = {

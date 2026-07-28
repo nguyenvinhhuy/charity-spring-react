@@ -20,6 +20,10 @@ import com.clb.charity.comment.dto.response.CommentResponse;
 import com.clb.charity.comment.service.CommentService;
 import com.clb.charity.common.exception.RegistrationRequestException;
 import com.clb.charity.common.security.AuthPrincipal;
+import com.clb.charity.member.service.MemberService;
+import com.clb.charity.notification.domain.NotificationReferenceType;
+import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.notification.service.NotificationService;
 import com.clb.charity.reaction.domain.ReactionTargetType;
 import com.clb.charity.reaction.dto.request.SetReactionRequest;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
@@ -48,6 +52,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/v1/campaigns")
 @RequiredArgsConstructor
@@ -57,6 +63,8 @@ public class CampaignController {
     private final ReactionService reactionService;
     private final CommentService commentService;
     private final RegistrationService registrationService;
+    private final NotificationService notificationService;
+    private final MemberService memberService;
 
     /**
      * Lists campaigns with optional status, category, and title search filters.
@@ -127,7 +135,7 @@ public class CampaignController {
     public ResponseEntity<CampaignDetailResponse> create(
             @Valid @RequestBody CreateCampaignRequest request,
             @AuthenticationPrincipal AuthPrincipal principal) {
-        CampaignDetailResponse created = campaignService.create(request, principal.memberId());
+        CampaignDetailResponse created = campaignService.create(request, principal.memberId(), principal.role());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -136,12 +144,14 @@ public class CampaignController {
      *
      * @param id the campaign id
      * @param request the new field values
+     * @param principal the authenticated principal
      * @return the updated campaign detail
      */
     @Operation(summary = "Update a campaign")
     @PutMapping("/{id}")
-    public CampaignDetailResponse update(@PathVariable Long id, @Valid @RequestBody UpdateCampaignRequest request) {
-        return campaignService.update(id, request);
+    public CampaignDetailResponse update(@PathVariable Long id, @Valid @RequestBody UpdateCampaignRequest request,
+                                         @AuthenticationPrincipal AuthPrincipal principal) {
+        return campaignService.update(id, request, principal.role());
     }
 
     /**
@@ -380,6 +390,11 @@ public class CampaignController {
         CampaignRegistrationContext ctx = requireRegistrationOpen(id);
         RegistrationSummaryResponse summary =
                 registrationService.register(id, ctx.capacity(), ctx.eventStartDate(), principal.memberId());
+        if (ctx.createdBy() != null && !ctx.createdBy().equals(principal.memberId())) {
+            String registrantName = memberService.namesByIds(Set.of(principal.memberId())).get(principal.memberId());
+            notificationService.notify(ctx.createdBy(), NotificationType.REGISTRATION_CREATED, registrantName,
+                    NotificationReferenceType.CAMPAIGN, id, ctx.title(), null);
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(summary);
     }
 
@@ -395,6 +410,11 @@ public class CampaignController {
     public ResponseEntity<Void> cancelRegistration(@PathVariable Long id, @AuthenticationPrincipal AuthPrincipal principal) {
         CampaignRegistrationContext ctx = requireRegistrationOpen(id);
         registrationService.cancel(id, ctx.eventStartDate(), principal.memberId());
+        if (ctx.createdBy() != null && !ctx.createdBy().equals(principal.memberId())) {
+            String registrantName = memberService.namesByIds(Set.of(principal.memberId())).get(principal.memberId());
+            notificationService.notify(ctx.createdBy(), NotificationType.REGISTRATION_CANCELLED, registrantName,
+                    NotificationReferenceType.CAMPAIGN, id, ctx.title(), null);
+        }
         return ResponseEntity.noContent().build();
     }
 
@@ -422,6 +442,9 @@ public class CampaignController {
     @DeleteMapping("/{id}/registrations/{memberId}")
     public ResponseEntity<Void> removeRegistrant(@PathVariable Long id, @PathVariable Long memberId) {
         registrationService.adminRemove(id, memberId);
+        CampaignRegistrationContext ctx = campaignService.getRegistrationContext(id);
+        notificationService.notify(memberId, NotificationType.REGISTRATION_REMOVED, null,
+                NotificationReferenceType.CAMPAIGN, id, ctx.title(), null);
         return ResponseEntity.noContent().build();
     }
 

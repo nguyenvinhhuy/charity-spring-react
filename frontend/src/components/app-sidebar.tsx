@@ -5,10 +5,12 @@ import {
   LayoutDashboard,
   Calendar,
   CircleUser,
+  Handshake,
   Home,
   ListChecks,
   Mail,
   Newspaper,
+  Settings,
   Users,
   HeartHandshake,
 } from "lucide-react"
@@ -107,6 +109,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   title: t("nav.inquiriesManage"),
                   url: "/dashboard/inquiries",
                   icon: Mail,
+                },
+              ]
+            : []),
+          ...(canManageCampaigns
+            ? [
+                {
+                  title: t("nav.partnersManage"),
+                  url: "/dashboard/partners",
+                  icon: Handshake,
+                },
+              ]
+            : []),
+          ...(isAdmin
+            ? [
+                {
+                  title: t("nav.settings"),
+                  url: "/dashboard/settings",
+                  icon: Settings,
                 },
               ]
             : []),

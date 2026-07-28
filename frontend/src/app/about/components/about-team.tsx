@@ -4,23 +4,27 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Users } from "lucide-react"
 import { listTeam } from "@/api/members"
-import type { TeamMember } from "@/types"
+import type { TeamMember } from "@/types/member"
 import { colorOf, initialsOf } from "@/lib/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { DotPattern } from "@/components/dot-pattern"
 
 /** Renders one team member as a centered card: avatar, name, leadership title badge, and a short bio. */
 function TeamMemberCard({ member }: { member: TeamMember }) {
   return (
     <Card className="h-full">
       <CardContent className="flex flex-col items-center gap-3 pt-6 text-center">
-        <Avatar className="size-20">
-          {member.avatarUrl && <AvatarImage src={member.avatarUrl} alt="" />}
-          <AvatarFallback className={`text-lg font-semibold ${colorOf(member.fullName)}`}>
-            {initialsOf(member.fullName)}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative flex size-28 items-center justify-center">
+          <DotPattern size="sm" opacity="medium" fadeStyle="circle" />
+          <Avatar className="border-background relative size-20 border-2 shadow-sm">
+            {member.avatarUrl && <AvatarImage src={member.avatarUrl} alt="" />}
+            <AvatarFallback className={`text-lg font-semibold ${colorOf(member.fullName)}`}>
+              {initialsOf(member.fullName)}
+            </AvatarFallback>
+          </Avatar>
+        </div>
         <div>
           <h3 className="font-semibold">{member.fullName}</h3>
           <Badge variant="secondary" className="mt-1">

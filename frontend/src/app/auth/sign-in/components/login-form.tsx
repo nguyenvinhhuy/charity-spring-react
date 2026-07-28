@@ -26,7 +26,7 @@ import { SocialLoginButtons } from "@/components/social-login-buttons"
 
 function buildLoginFormSchema(t: TFunction) {
   return z.object({
-    email: z.string().min(1, t("auth.validation.emailRequired")).email(t("auth.validation.emailInvalid")),
+    email: z.string().min(1, t("auth.validation.emailRequired")).pipe(z.email(t("auth.validation.emailInvalid"))),
     password: z.string().min(1, t("auth.validation.passwordRequired")),
   })
 }

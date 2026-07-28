@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Navigate, useLocation } from "react-router"
 import { getMe } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
-import type { Role } from "@/types"
+import type { Role } from "@/types/common"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 
 interface ProtectedRouteProps {

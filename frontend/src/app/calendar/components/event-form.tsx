@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import type { CreateEventRequest } from "@/types"
+import type { CreateEventRequest } from "@/types/event"
 import type { EventCalendarItem } from "../types"
 
 interface EventFormValues {

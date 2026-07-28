@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { HeartHandshake } from "lucide-react"
+import { motion } from "motion/react"
 import { listCampaigns } from "@/api/campaigns"
-import type { CampaignSummary } from "@/types"
+import type { CampaignSummary } from "@/types/campaign"
 import { cn } from "@/lib/utils"
+import { fadeInUp, revealOnce, staggerChildren } from "@/lib/motion"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -97,17 +99,23 @@ export function HomeFeaturedCampaigns() {
         </Button>
       </div>
 
-      <div
+      <motion.div
         className={cn(
           "grid grid-cols-1 gap-6",
           campaigns.length >= 2 && "sm:grid-cols-2",
           campaigns.length >= 3 && "lg:grid-cols-3"
         )}
+        initial="hidden"
+        whileInView="show"
+        viewport={revealOnce}
+        variants={staggerChildren}
       >
         {campaigns.map((campaign) => (
-          <FeaturedCampaignCard key={campaign.id} campaign={campaign} />
+          <motion.div key={campaign.id} variants={fadeInUp}>
+            <FeaturedCampaignCard campaign={campaign} />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </section>
   )
 }

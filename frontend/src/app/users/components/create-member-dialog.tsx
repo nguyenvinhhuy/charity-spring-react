@@ -50,7 +50,7 @@ function buildCreateMemberSchema(t: TFunction) {
     email: z
       .string()
       .min(1, t("users.validation.emailRequired"))
-      .email(t("users.validation.emailInvalid")),
+      .pipe(z.email(t("users.validation.emailInvalid"))),
     password: z
       .string()
       .min(PASSWORD_MIN_LENGTH, t("users.validation.passwordMin", { min: PASSWORD_MIN_LENGTH })),

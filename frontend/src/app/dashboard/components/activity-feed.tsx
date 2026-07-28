@@ -1,11 +1,10 @@
 "use client"
 
-import { FileText, HandCoins, Megaphone } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { FileText, HandCoins, Megaphone, type LucideIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { ActivityItem, ActivityType } from "@/types"
+import type { ActivityItem, ActivityType } from "@/types/dashboard"
 import { formatVnd } from "@/app/campaigns/components/campaign-constants"
 
 interface ActivityFeedProps {

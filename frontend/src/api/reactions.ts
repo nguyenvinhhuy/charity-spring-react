@@ -1,5 +1,5 @@
 import { api } from '@/api/axios';
-import type { ReactionSummary, ReactionType } from '@/types';
+import type { ReactionSummary, ReactionType } from "@/types/reaction"
 
 export type ReactionTarget = 'campaigns' | 'posts';
 

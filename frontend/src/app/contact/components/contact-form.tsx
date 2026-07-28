@@ -29,7 +29,7 @@ import {
 function buildContactSchema(t: TFunction) {
   return z.object({
     fullName: z.string().min(1, t("contactPublic.form.fullNameRequired")),
-    email: z.string().email(t("contactPublic.form.emailInvalid")),
+    email: z.email(t("contactPublic.form.emailInvalid")),
     subject: z.string().min(1, t("contactPublic.form.subjectRequired")),
     message: z.string().min(1, t("contactPublic.form.messageRequired")),
     // Honeypot: never shown to real users; a bot that autofills every input trips this.

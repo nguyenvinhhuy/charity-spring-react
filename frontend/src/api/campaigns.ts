@@ -1,14 +1,6 @@
 import { api, API_BASE_URL } from '@/api/axios';
-import type {
-  CampaignCategory,
-  CampaignDetail,
-  CampaignStatus,
-  CampaignSummary,
-  CreateCampaignRequest,
-  Page,
-  PublicCampaignStats,
-  UpdateCampaignRequest,
-} from '@/types';
+import type { CampaignCategory, CampaignDetail, CampaignStatus, CampaignSummary, CreateCampaignRequest, PublicCampaignStats, UpdateCampaignRequest } from "@/types/campaign"
+import type { Page } from "@/types/common"
 
 export interface ListCampaignsParams {
   status?: CampaignStatus;

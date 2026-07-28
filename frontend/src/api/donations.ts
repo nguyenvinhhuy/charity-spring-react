@@ -1,5 +1,6 @@
 import { api } from '@/api/axios';
-import type { CreateDonationRequest, Donation, Page } from '@/types';
+import type { Page } from "@/types/common"
+import type { CreateDonationRequest, Donation } from "@/types/donation"
 
 export interface ListDonationsParams {
   page?: number;

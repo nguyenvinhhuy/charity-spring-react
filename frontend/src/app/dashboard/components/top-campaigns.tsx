@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import type { CampaignProgressItem } from "@/types"
+import type { CampaignProgressItem } from "@/types/dashboard"
 import {
   formatVnd,
   localized,

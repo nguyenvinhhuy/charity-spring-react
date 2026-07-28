@@ -17,7 +17,9 @@
     "faqManage": "Quản lý FAQ",
     "about": "Giới thiệu",
     "contact": "Liên hệ",
-    "inquiriesManage": "Quản lý liên hệ"
+    "inquiriesManage": "Quản lý liên hệ",
+    "partnersManage": "Quản lý đơn vị kết hợp",
+    "settings": "Cài đặt"
   },
   "userMenu": {
     "profile": "Hồ sơ",
@@ -44,7 +46,7 @@
     "termsNotice": "Khi tiếp tục, bạn đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.",
     "tagline": "Góp nhặt yêu thương, gieo trồng hạnh phúc",
     "taglineSignup": "Cùng nhau tạo nên những điều tử tế.",
-    "orgName": "Hội Thiện Nguyện Hương Sen",
+    "orgName": "Câu lạc bộ Thiện Nguyện Hương Sen",
     "loginSuccess": "Xin chào {{name}}",
     "signupSuccess": "Tạo tài khoản thành công",
     "socialFailed": "Đăng nhập bằng mạng xã hội thất bại",
@@ -118,7 +120,10 @@
     "uploadImage": "Nhấn để tải ảnh lên",
     "uploadingImage": "Đang tải ảnh lên...",
     "changeImage": "Đổi ảnh khác",
-    "noImage": "Chưa có ảnh"
+    "noImage": "Chưa có ảnh",
+    "scrollToTop": "Lên đầu trang",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu"
   },
   "campaigns": {
     "title": "Quản lý chiến dịch",
@@ -182,6 +187,7 @@
       "bankAccountNoPlaceholder": "0123456789",
       "bankAccountNameLabel": "Chủ tài khoản",
       "bankAccountNamePlaceholder": "CLB THIEN NGUYEN",
+      "bankAccountLockedHint": "Mặc định do quản trị viên thiết lập — chỉ ADMIN mới có thể chỉnh sửa.",
       "qrDescriptionLabel": "Nội dung chuyển khoản",
       "qrDescriptionPlaceholder": "Ung ho chien dich",
       "thienNguyenUrlLabel": "Đường dẫn thiennguyen.app",
@@ -571,6 +577,72 @@
       "deleting": "Đang xóa..."
     }
   },
+  "settings": {
+    "pageTitle": "Cài đặt",
+    "pageDescription": "Cấu hình các thiết lập chung của CLB",
+    "bank": {
+      "cardTitle": "Tài khoản ngân hàng mặc định",
+      "cardDescription": "Áp dụng cho các chiến dịch mới do người khác ngoài ADMIN tạo (VD: CTV)",
+      "accountNoLabel": "Số tài khoản",
+      "accountNoPlaceholder": "0123456789",
+      "accountNoRequired": "Vui lòng nhập số tài khoản",
+      "accountNameLabel": "Chủ tài khoản",
+      "accountNamePlaceholder": "CLB THIEN NGUYEN",
+      "accountNameRequired": "Vui lòng nhập tên chủ tài khoản",
+      "save": "Lưu thay đổi",
+      "saved": "Đã lưu cài đặt"
+    }
+  },
+  "partnersManage": {
+    "title": "Quản lý đơn vị kết hợp",
+    "description": "Quản lý logo các đơn vị đồng hành, phối hợp tổ chức hoạt động cùng CLB",
+    "total": "Tổng: {{count}}",
+    "addPartner": "Thêm đơn vị",
+    "loading": "Đang tải...",
+    "empty": "Chưa có đơn vị kết hợp nào",
+    "cancel": "Hủy",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "table": {
+      "logo": "Logo",
+      "name": "Tên đơn vị",
+      "website": "Website",
+      "visit": "Xem",
+      "displayOrder": "Thứ tự"
+    },
+    "form": {
+      "editTitle": "Sửa đơn vị kết hợp",
+      "editDescription": "Cập nhật thông tin đơn vị kết hợp",
+      "createDescription": "Thêm một đơn vị đồng hành mới",
+      "logo": "Logo",
+      "name": "Tên đơn vị",
+      "namePlaceholder": "VD: Phường Hòa Xuân",
+      "websiteUrl": "Đường dẫn website (tùy chọn)",
+      "websiteUrlPlaceholder": "https://...",
+      "displayOrder": "Thứ tự hiển thị (tùy chọn)",
+      "displayOrderPlaceholder": "Số nhỏ hơn hiện trước",
+      "nameRequired": "Vui lòng nhập tên đơn vị",
+      "logoRequired": "Vui lòng tải lên logo",
+      "saving": "Đang lưu...",
+      "save": "Lưu thay đổi"
+    },
+    "toast": {
+      "created": "Đã thêm đơn vị kết hợp",
+      "updated": "Đã cập nhật đơn vị kết hợp",
+      "deleted": "Đã xóa đơn vị kết hợp"
+    },
+    "deleteDialog": {
+      "title": "Xóa đơn vị kết hợp?",
+      "description": "Bạn có chắc muốn xóa đơn vị này? Logo sẽ không còn hiển thị ở trang chủ.",
+      "deleting": "Đang xóa..."
+    }
+  },
+  "footer": {
+    "quickLinks": "Liên kết nhanh",
+    "contact": "Liên hệ",
+    "followUs": "Theo dõi chúng tôi",
+    "madeWith": "Phát triển bởi: Nguyễn Vinh Huy - Ban Truyền thông"
+  },
   "command": {
     "title": "Tìm kiếm nhanh",
     "placeholder": "Bạn cần gì?",
@@ -691,6 +763,8 @@
     "latestNewsBadge": "Cập nhật",
     "latestNewsTitle": "Tin tức mới nhất",
     "viewAll": "Xem tất cả",
+    "partnersBadge": "Đồng hành",
+    "partnersTitle": "Đơn vị kết hợp",
     "ctaBadge": "Cùng chung tay",
     "ctaTitle": "Cùng chung tay lan tỏa yêu thương",
     "ctaSubtitle": "Tham gia CLB Hương Sen để cùng chúng tôi mang yêu thương đến với cộng đồng.",
@@ -722,11 +796,11 @@
     "description": "Mọi thắc mắc hoặc góp ý, đừng ngần ngại gửi cho chúng tôi.",
     "infoTitle": "Thông tin liên hệ",
     "addressLabel": "Địa chỉ",
-    "addressValue": "123 Đường Thiện Nguyện, Quận 1, TP. Hồ Chí Minh",
+    "addressValue": "Dương Sơn, Hòa Xuân, TP Đà Nẵng",
     "phoneLabel": "Điện thoại",
     "phoneValue": "0900 000 000",
     "emailLabel": "Email",
-    "emailValue": "lienhe@clb.vn",
+    "emailValue": "huongsenhoi.dn@gmail.com",
     "formTitle": "Gửi tin nhắn cho chúng tôi",
     "form": {
       "fullNameLabel": "Họ và tên",
@@ -740,6 +814,39 @@
       "emailInvalid": "Email không hợp lệ",
       "subjectRequired": "Vui lòng nhập chủ đề",
       "messageRequired": "Vui lòng nhập nội dung"
+    }
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "someone": "Ai đó",
+    "empty": "Chưa có thông báo nào",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "sendBroadcast": "Gửi thông báo",
+    "sendBroadcastDesc": "Gửi thông báo này cho toàn bộ thành viên đang hoạt động.",
+    "broadcastTitlePlaceholder": "Tiêu đề thông báo",
+    "broadcastMessagePlaceholder": "Nội dung thông báo",
+    "send": "Gửi",
+    "broadcastSent": "Đã gửi thông báo",
+    "preferencesTitle": "Tùy chọn thông báo",
+    "preferencesDesc": "Chọn loại thông báo bạn muốn nhận.",
+    "types": {
+      "COMMENT_MENTION": "{{actor}} đã nhắc đến bạn trong một bình luận",
+      "CAMPAIGN_STATUS_CHANGED": "Chiến dịch \"{{title}}\" đã chuyển sang trạng thái {{status}}",
+      "REGISTRATION_CREATED": "{{actor}} đã đăng ký tham gia chiến dịch \"{{title}}\"",
+      "REGISTRATION_CANCELLED": "{{actor}} đã hủy đăng ký chiến dịch \"{{title}}\"",
+      "REGISTRATION_REMOVED": "Bạn đã bị xóa khỏi danh sách đăng ký chiến dịch \"{{title}}\"",
+      "DONATION_RECEIVED": "{{actor}} đã quyên góp cho chiến dịch \"{{title}}\"",
+      "INQUIRY_RECEIVED": "{{actor}} đã gửi liên hệ: {{title}}"
+    },
+    "preferenceLabels": {
+      "COMMENT_MENTION": "Có người nhắc đến bạn trong bình luận",
+      "CAMPAIGN_STATUS_CHANGED": "Chiến dịch của bạn đổi trạng thái",
+      "REGISTRATION_CREATED": "Có người đăng ký tham gia chiến dịch của bạn",
+      "REGISTRATION_CANCELLED": "Có người hủy đăng ký chiến dịch của bạn",
+      "REGISTRATION_REMOVED": "Bạn bị xóa khỏi danh sách đăng ký",
+      "DONATION_RECEIVED": "Có quyên góp mới vào chiến dịch của bạn",
+      "INQUIRY_RECEIVED": "Có liên hệ mới gửi tới",
+      "BROADCAST": "Thông báo chung từ CLB"
     }
   }
 }

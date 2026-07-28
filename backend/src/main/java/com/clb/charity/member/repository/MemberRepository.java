@@ -38,4 +38,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Member> findTop10ByActiveTrueAndFullNameContainingIgnoreCase(String query);
 
     List<Member> findByLeadershipTitleIsNotNullAndActiveTrueOrderByTeamDisplayOrderAscFullNameAsc();
+
+    List<Member> findByActiveTrue();
+
+    List<Member> findByActiveTrueAndRoleIn(List<Role> roles);
 }

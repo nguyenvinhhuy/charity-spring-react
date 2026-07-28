@@ -11,6 +11,9 @@ import com.clb.charity.common.exception.CommentAccessDeniedException;
 import com.clb.charity.common.exception.CommentNotFoundException;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.service.MemberService;
+import com.clb.charity.notification.domain.NotificationReferenceType;
+import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -20,8 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,8 +37,12 @@ public class CommentServiceImpl implements CommentService {
 
     private static final Duration EDIT_WINDOW = Duration.ofMinutes(15);
 
+    /** Matches the react-mentions markup embedded in comment content, e.g. {@code @[Nguyễn Văn A](12)}. */
+    private static final Pattern MENTION_PATTERN = Pattern.compile("@\\[([^\\]]+)\\]\\((\\d+)\\)");
+
     private final CommentRepository commentRepository;
     private final MemberService memberService;
+    private final NotificationService notificationService;
 
     @Override
     public Page<CommentResponse> list(CommentTargetType targetType, Long targetId, Pageable pageable,
@@ -55,7 +65,25 @@ public class CommentServiceImpl implements CommentService {
         comment.setContent(request.content());
         Comment saved = commentRepository.save(comment);
         String authorName = memberService.namesByIds(Set.of(memberId)).get(memberId);
+        notifyMentionedMembers(request.content(), memberId, authorName, targetType, targetId);
         return toResponse(saved, authorName, memberId, null);
+    }
+
+    /** Parses {@code @[Name](id)} mentions out of new comment content and notifies each mentioned member. */
+    private void notifyMentionedMembers(String content, Long authorId, @Nullable String authorName,
+                                        CommentTargetType targetType, Long targetId) {
+        NotificationReferenceType referenceType = targetType == CommentTargetType.CAMPAIGN
+                ? NotificationReferenceType.CAMPAIGN : NotificationReferenceType.POST;
+        Matcher matcher = MENTION_PATTERN.matcher(content);
+        Set<Long> notified = new HashSet<>();
+        while (matcher.find()) {
+            Long mentionedId = Long.valueOf(matcher.group(2));
+            if (mentionedId.equals(authorId) || !notified.add(mentionedId)) {
+                continue;
+            }
+            notificationService.notify(mentionedId, NotificationType.COMMENT_MENTION, authorName,
+                    referenceType, targetId, null, null);
+        }
     }
 
     @Override

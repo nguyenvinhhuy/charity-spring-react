@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Member } from '@/types';
+import type { Member } from "@/types/member"
 
 interface AuthState {
   /** JWT access token, kept in memory only (never persisted). */

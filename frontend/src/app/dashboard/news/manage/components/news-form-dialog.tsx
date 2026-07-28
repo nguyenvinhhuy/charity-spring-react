@@ -9,7 +9,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { createPost, getPost, updatePost } from "@/api/posts"
 import { getErrorMessage } from "@/api/axios"
-import type { CreatePostRequest, PostDetail, PostSummary } from "@/types"
+import type { CreatePostRequest, PostDetail, PostSummary } from "@/types/post"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { ImageUploadField } from "@/components/image-upload-field"
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,7 @@ function buildNewsSchema(t: TFunction) {
     titleEn: z.string().optional(),
     summaryEn: z.string().optional(),
     contentEn: z.string().optional(),
-    thumbnailUrl: z.string().url(t("news.manage.form.invalidUrl")).or(z.literal("")).optional(),
+    thumbnailUrl: z.url(t("news.manage.form.invalidUrl")).or(z.literal("")).optional(),
     // Comma-separated tags, split into a string[] only when building the submit payload.
     tags: z.string().optional(),
   })

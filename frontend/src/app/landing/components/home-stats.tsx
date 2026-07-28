@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { HandCoins, HeartHandshake, Users } from "lucide-react"
+import { motion } from "motion/react"
 import { getPublicCampaignStats } from "@/api/campaigns"
-import type { PublicCampaignStats } from "@/types"
+import type { PublicCampaignStats } from "@/types/campaign"
 import { Card, CardContent } from "@/components/ui/card"
 import { DotPattern } from "@/components/dot-pattern"
 import { formatVnd } from "@/app/campaigns/components/campaign-constants"
+import { fadeInUp, revealOnce, staggerChildren } from "@/lib/motion"
 
 /** Renders the home page's public donation/campaign totals, fetched from the public stats endpoint. */
 export function HomeStats() {
@@ -42,21 +44,29 @@ export function HomeStats() {
       <DotPattern className="opacity-75" size="md" fadeStyle="circle" />
 
       <div className="relative mx-auto max-w-6xl px-4 lg:px-6">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 md:gap-8">
+        <motion.div
+          className="grid grid-cols-1 gap-6 sm:grid-cols-3 md:gap-8"
+          initial="hidden"
+          whileInView="show"
+          viewport={revealOnce}
+          variants={staggerChildren}
+        >
           {items.map((item) => (
-            <Card key={item.label} className="border-border/50 bg-background/60 py-0 text-center backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="mb-4 flex justify-center">
-                  <div className="rounded-xl bg-primary/10 p-3">
-                    <item.icon className="h-6 w-6 text-primary" />
+            <motion.div key={item.label} variants={fadeInUp}>
+              <Card className="border-border/50 bg-background/60 py-0 text-center backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex justify-center">
+                    <div className="rounded-xl bg-primary/10 p-3">
+                      <item.icon className="h-6 w-6 text-primary" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-2xl font-bold tracking-tight sm:text-3xl">{item.value}</p>
-                <p className="text-muted-foreground mt-1 text-sm">{item.label}</p>
-              </CardContent>
-            </Card>
+                  <p className="text-2xl font-bold tracking-tight sm:text-3xl">{item.value}</p>
+                  <p className="text-muted-foreground mt-1 text-sm">{item.label}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

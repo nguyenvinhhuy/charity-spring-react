@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { listCampaigns } from "@/api/campaigns"
 import { createEvent, deleteEvent, listEvents, updateEvent } from "@/api/events"
 import { getErrorMessage } from "@/api/axios"
-import type { CreateEventRequest } from "@/types"
+import type { CreateEventRequest } from "@/types/event"
 import type { CalendarItem, EventCalendarItem } from "./types"
 
 const FETCH_SIZE = 100

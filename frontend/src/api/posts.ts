@@ -1,11 +1,6 @@
 import { api } from '@/api/axios';
-import type {
-  CreatePostRequest,
-  Page,
-  PostDetail,
-  PostSummary,
-  UpdatePostRequest,
-} from '@/types';
+import type { Page } from "@/types/common"
+import type { CreatePostRequest, PostDetail, PostSummary, UpdatePostRequest } from "@/types/post"
 
 export interface ListPostsParams {
   published?: boolean;

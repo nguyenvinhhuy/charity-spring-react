@@ -3,7 +3,7 @@
 import { HandCoins, HeartHandshake, Megaphone, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import type { DashboardSummary } from "@/types"
+import type { DashboardSummary } from "@/types/dashboard"
 import { formatVnd } from "@/app/campaigns/components/campaign-constants"
 
 interface StatCardsProps {

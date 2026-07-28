@@ -6,7 +6,7 @@ interface LogoProps {
 }
 
 /**
- * Renders the club's official logo image (Hội Thiện Nguyện Hương Sen emblem).
+ * Renders the club's official logo image (Câu lạc bộ Thiện Nguyện Hương Sen emblem).
  *
  * @param size pixel width and height of the rendered image
  * @param className optional CSS classes applied to the image element
@@ -17,7 +17,7 @@ export function Logo({ size = 28, className }: LogoProps) {
       src={logoUrl}
       width={size}
       height={size}
-      alt="Hội Thiện Nguyện Hương Sen"
+      alt="Câu lạc bộ Thiện Nguyện Hương Sen"
       className={className}
       style={{ objectFit: 'contain' }}
     />

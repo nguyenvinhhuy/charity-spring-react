@@ -1,4 +1,4 @@
-import type { Role } from "@/types"
+import type { Role } from "@/types/common"
 
 export { STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "@/lib/status-badges"
 

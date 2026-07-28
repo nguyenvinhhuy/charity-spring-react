@@ -31,8 +31,6 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CORS_ORIGINS: http://localhost:5173
       JWT_SECRET: ${JWT_SECRET}
-      BANK_ACCOUNT_NO: ${BANK_ACCOUNT_NO}
-      BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME}
     ports:
       - "8080:8080"
     depends_on:

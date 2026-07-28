@@ -4,8 +4,10 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { Newspaper } from "lucide-react"
+import { motion } from "motion/react"
 import { listPosts } from "@/api/posts"
-import type { PostSummary } from "@/types"
+import type { PostSummary } from "@/types/post"
+import { fadeInUp, revealOnce, staggerChildren } from "@/lib/motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { localized } from "@/app/campaigns/components/campaign-constants"
@@ -53,40 +55,44 @@ export function HomeLatestNews() {
             <Link to="/news">{t("home.viewAll")}</Link>
           </Button>
         </div>
-        <div className="divide-border/70 flex flex-col divide-y">
+        <motion.div
+          className="divide-border/70 flex flex-col divide-y"
+          initial="hidden"
+          whileInView="show"
+          viewport={revealOnce}
+          variants={staggerChildren}
+        >
           {posts.map((post) => (
-            <Link
-              key={post.id}
-              to={`/news/${post.slug}`}
-              className="group flex items-center gap-5 py-6 first:pt-0 last:pb-0"
-            >
-              <div className="bg-muted h-20 w-28 shrink-0 overflow-hidden rounded-lg sm:h-24 sm:w-36">
-                {post.thumbnailUrl ? (
-                  <img
-                    src={post.thumbnailUrl}
-                    alt=""
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center">
-                    <Newspaper className="text-muted-foreground/40 size-8" />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-1 flex-col gap-1">
-                <p className="text-muted-foreground text-xs">{formatDate(post.publishedAt ?? post.createdAt)}</p>
-                <h3 className="group-hover:text-primary line-clamp-1 font-semibold transition-colors">
-                  {localized(i18n.language, post.title, post.titleEn)}
-                </h3>
-                {post.summary && (
-                  <p className="text-muted-foreground line-clamp-2 text-sm">
-                    {localized(i18n.language, post.summary, post.summaryEn)}
-                  </p>
-                )}
-              </div>
-            </Link>
+            <motion.div key={post.id} variants={fadeInUp} className="py-6 first:pt-0 last:pb-0">
+              <Link to={`/news/${post.slug}`} className="group flex items-center gap-5">
+                <div className="bg-muted h-20 w-28 shrink-0 overflow-hidden rounded-lg sm:h-24 sm:w-36">
+                  {post.thumbnailUrl ? (
+                    <img
+                      src={post.thumbnailUrl}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Newspaper className="text-muted-foreground/40 size-8" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col gap-1">
+                  <p className="text-muted-foreground text-xs">{formatDate(post.publishedAt ?? post.createdAt)}</p>
+                  <h3 className="group-hover:text-primary line-clamp-1 font-semibold transition-colors">
+                    {localized(i18n.language, post.title, post.titleEn)}
+                  </h3>
+                  {post.summary && (
+                    <p className="text-muted-foreground line-clamp-2 text-sm">
+                      {localized(i18n.language, post.summary, post.summaryEn)}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )
