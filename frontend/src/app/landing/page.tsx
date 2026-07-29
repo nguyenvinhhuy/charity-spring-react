@@ -107,7 +107,10 @@ export default function LandingPage() {
           <motion.h2 variants={fadeInUp} className="mb-4 text-3xl font-bold tracking-tight text-balance sm:text-5xl">
             {t("home.ctaTitle")}
           </motion.h2>
-          <motion.p variants={fadeInUp} className="text-muted-foreground mx-auto mb-8 max-w-2xl text-balance lg:text-lg">
+          <motion.p
+            variants={fadeInUp}
+            className="text-muted-foreground mx-auto mb-8 max-w-2xl text-balance lg:text-lg"
+          >
             {t("home.ctaSubtitle")}
           </motion.p>
 

@@ -53,6 +53,19 @@ app:
     # Frontend URLs the backend redirects the browser to after social login.
     success-redirect: ${OAUTH2_SUCCESS_REDIRECT:http://localhost:5173/auth/callback}
     failure-redirect: ${OAUTH2_FAILURE_REDIRECT:http://localhost:5173/auth/sign-in?error=oauth}
+  render:
+    api-key: ${RENDER_API_KEY:}
+    service-id: ${RENDER_SERVICE_ID:}
+  vercel:
+    api-token: ${VERCEL_API_TOKEN:}
+    project-id: ${VERCEL_PROJECT_ID:}
+  alert:
+    resend-api-key: ${RESEND_API_KEY:}
+    email-to: ${ALERT_EMAIL_TO:nguyenvana0258@gmail.com}
+    email-from: ${ALERT_EMAIL_FROM:onboarding@resend.dev}
+    threshold-fraction: 0.8
+    database-limit-bytes: ${DB_STORAGE_LIMIT_BYTES:524288000}       # 500 MB (Supabase free tier)
+    cloudinary-limit-bytes: ${CLOUDINARY_STORAGE_LIMIT_BYTES:26843545600}  # 25 GB (Cloudinary free tier)
 
 springdoc:
   swagger-ui:

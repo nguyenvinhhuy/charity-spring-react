@@ -1,25 +1,18 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Search } from "lucide-react"
-import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { PublicLayout } from "@/components/layouts/public-layout"
 import { listFaqs } from "@/api/faqs"
-import { getErrorMessage } from "@/api/axios"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import type { Faq } from "@/types/faq"
 import { localized } from "@/app/campaigns/components/campaign-constants"
 import { faqCategoryLabel } from "@/app/faqs/manage/components/faq-constants"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 const ALL_CATEGORIES = "ALL"
 
@@ -27,28 +20,16 @@ const ALL_CATEGORIES = "ALL"
 export default function FAQsPage() {
   const { t, i18n } = useTranslation()
 
-  const [faqs, setFaqs] = useState<Faq[]>([])
-  const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState(ALL_CATEGORIES)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
 
-  /** Fetches all published FAQs (sorted by sort order); the backend has no category filter, so filtering happens client-side. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listFaqs({ published: true, size: 200 })
-      setFaqs(result.content)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  // The backend has no category filter, so filtering happens client-side below.
+  const { data: faqsPage, isLoading: loading } = useQuery({
+    queryKey: ["faqs", "public"],
+    queryFn: () => listFaqs({ published: true, size: 200 }),
+  })
+  const faqs = useMemo(() => faqsPage?.content ?? [], [faqsPage])
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>()
@@ -75,8 +56,7 @@ export default function FAQsPage() {
     })
   }, [faqs, category, debouncedSearch, i18n.language])
 
-  const selectedLabel =
-    category === ALL_CATEGORIES ? t("faqsPublic.allFaqs") : faqCategoryLabel(t, category || null)
+  const selectedLabel = category === ALL_CATEGORIES ? t("faqsPublic.allFaqs") : faqCategoryLabel(t, category || null)
 
   return (
     <PublicLayout title={t("faqsPublic.title")} description={t("faqsPublic.description")}>
@@ -101,7 +81,7 @@ export default function FAQsPage() {
                 onClick={() => setCategory(ALL_CATEGORIES)}
                 className={cn(
                   "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  category === ALL_CATEGORIES ? "bg-muted" : "hover:bg-muted/50"
+                  category === ALL_CATEGORIES ? "bg-muted" : "hover:bg-muted/50",
                 )}
               >
                 <span>{t("faqsPublic.allFaqs")}</span>
@@ -114,7 +94,7 @@ export default function FAQsPage() {
                   onClick={() => setCategory(key)}
                   className={cn(
                     "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    category === key ? "bg-muted" : "hover:bg-muted/50"
+                    category === key ? "bg-muted" : "hover:bg-muted/50",
                   )}
                 >
                   <span>{label}</span>
@@ -143,9 +123,7 @@ export default function FAQsPage() {
               <Accordion type="multiple">
                 {filteredFaqs.map((faq) => (
                   <AccordionItem key={faq.id} value={String(faq.id)}>
-                    <AccordionTrigger>
-                      {localized(i18n.language, faq.question, faq.questionEn)}
-                    </AccordionTrigger>
+                    <AccordionTrigger>{localized(i18n.language, faq.question, faq.questionEn)}</AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">
                       {localized(i18n.language, faq.answer, faq.answerEn)}
                     </AccordionContent>

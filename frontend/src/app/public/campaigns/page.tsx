@@ -1,28 +1,20 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { Link } from "react-router"
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
-import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { PublicLayout } from "@/components/layouts/public-layout"
 import { listCampaigns } from "@/api/campaigns"
-import { getErrorMessage } from "@/api/axios"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import type { CampaignStatus, CampaignSummary } from "@/types/campaign"
-import type { Page } from "@/types/common"
+import type { CampaignStatus } from "@/types/campaign"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   categoryLabel,
   formatVnd,
@@ -47,30 +39,19 @@ export default function PublicCampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<PublicCampaignStatus>("ACTIVE")
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
-  const [data, setData] = useState<Page<CampaignSummary> | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  /** Fetches the current page of public campaigns and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listCampaigns({
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["campaigns", "public", { page, statusFilter, debouncedSearch }],
+    queryFn: () =>
+      listCampaigns({
         page,
         size: PAGE_SIZE,
         status: statusFilter,
         search: debouncedSearch || undefined,
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, statusFilter, debouncedSearch])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+      }),
+    // Keeps the previous page/filter's cards on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
   const campaigns = data?.content ?? []
 
@@ -125,20 +106,14 @@ export default function PublicCampaignsPage() {
               <Link key={campaign.id} to={`/campaigns/${campaign.slug}`}>
                 <Card className="h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
                   {campaign.thumbnailUrl ? (
-                    <img
-                      src={campaign.thumbnailUrl}
-                      alt=""
-                      className="aspect-[3/2] w-full object-cover"
-                    />
+                    <img src={campaign.thumbnailUrl} alt="" className="aspect-[3/2] w-full object-cover" />
                   ) : (
                     <div className="bg-muted aspect-[3/2] w-full" />
                   )}
                   <CardContent className="flex flex-col gap-3 py-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline">{categoryLabel(t, campaign.category)}</Badge>
-                      <Badge className={STATUS_BADGE_CLASSES[campaign.status]}>
-                        {statusLabel(t, campaign.status)}
-                      </Badge>
+                      <Badge className={STATUS_BADGE_CLASSES[campaign.status]}>{statusLabel(t, campaign.status)}</Badge>
                     </div>
                     <h3 className="line-clamp-2 font-semibold">
                       {localized(i18n.language, campaign.title, campaign.titleEn)}

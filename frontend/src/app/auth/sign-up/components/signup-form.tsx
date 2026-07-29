@@ -14,14 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Logo } from "@/components/logo"
 import { SocialLoginButtons } from "@/components/social-login-buttons"
 
@@ -29,7 +22,10 @@ function buildSignupFormSchema(t: TFunction) {
   return z
     .object({
       fullName: z.string().min(1, t("auth.validation.fullNameRequired")),
-      email: z.string().min(1, t("auth.validation.emailRequired")).pipe(z.email(t("auth.validation.emailInvalid"))),
+      email: z
+        .string()
+        .min(1, t("auth.validation.emailRequired"))
+        .pipe(z.email(t("auth.validation.emailInvalid"))),
       password: z.string().min(8, t("auth.validation.passwordMin", { min: 8 })),
       confirmPassword: z.string().min(1, t("auth.validation.confirmPasswordRequired")),
       terms: z.boolean().refine((v) => v, t("auth.validation.termsRequired")),
@@ -48,10 +44,7 @@ type SignupFormValues = z.infer<ReturnType<typeof buildSignupFormSchema>>
  * @param className additional classes merged onto the root div
  * @param props remaining props spread onto the root div
  */
-export function SignupForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
@@ -106,9 +99,7 @@ export function SignupForm({
                 </div>
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">{t("auth.createAccount")}</h1>
-                  <p className="text-muted-foreground text-balance">
-                    {t("auth.signupSubtitle")}
-                  </p>
+                  <p className="text-muted-foreground text-balance">{t("auth.signupSubtitle")}</p>
                 </div>
 
                 <FormField
@@ -132,12 +123,7 @@ export function SignupForm({
                     <FormItem>
                       <FormLabel>{t("auth.email")}</FormLabel>
                       <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="ban@email.com"
-                          autoComplete="email"
-                          {...field}
-                        />
+                        <Input type="email" placeholder="ban@email.com" autoComplete="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,26 +165,16 @@ export function SignupForm({
                     <FormItem className="flex flex-col gap-1">
                       <div className="flex items-start space-x-2">
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            className="mt-0.5"
-                          />
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-0.5" />
                         </FormControl>
-                        <FormLabel className="text-sm font-normal">
-                          {t("auth.agreeTerms")}
-                        </FormLabel>
+                        <FormLabel className="text-sm font-normal">{t("auth.agreeTerms")}</FormLabel>
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button
-                  type="submit"
-                  className="w-full cursor-pointer"
-                  disabled={form.formState.isSubmitting}
-                >
+                <Button type="submit" className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? t("auth.creating") : t("auth.createAccount")}
                 </Button>
 
@@ -206,10 +182,7 @@ export function SignupForm({
 
                 <div className="text-center text-sm">
                   {t("auth.haveAccount")}{" "}
-                  <Link
-                    to="/auth/sign-in"
-                    className="underline underline-offset-4"
-                  >
+                  <Link to="/auth/sign-in" className="underline underline-offset-4">
                     {t("auth.login")}
                   </Link>
                 </div>
@@ -221,9 +194,7 @@ export function SignupForm({
             <Logo size={72} />
             <div className="text-center">
               <p className="text-lg font-semibold">{t("auth.orgName")}</p>
-              <p className="text-muted-foreground text-sm text-balance">
-                {t("auth.taglineSignup")}
-              </p>
+              <p className="text-muted-foreground text-sm text-balance">{t("auth.taglineSignup")}</p>
             </div>
           </div>
         </CardContent>

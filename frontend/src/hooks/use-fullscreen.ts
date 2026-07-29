@@ -1,6 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useSyncExternalStore } from "react"
+
+function subscribe(onChange: () => void) {
+  document.addEventListener("fullscreenchange", onChange)
+  return () => document.removeEventListener("fullscreenchange", onChange)
+}
+
+function getSnapshot() {
+  return !!document.fullscreenElement
+}
 
 /**
  * Tracks the document's fullscreen state and exposes actions to enter, exit, or toggle it.
@@ -8,22 +17,7 @@ import { useState, useEffect } from "react"
  * @returns the current fullscreen state and the actions to change it
  */
 export function useFullscreen() {
-  const [isFullscreen, setIsFullscreen] = useState(false)
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
-    }
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-    
-    // Initial check
-    setIsFullscreen(!!document.fullscreenElement)
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange)
-    }
-  }, [])
+  const isFullscreen = useSyncExternalStore(subscribe, getSnapshot)
 
   const enterFullscreen = () => {
     if (!document.fullscreenElement) {

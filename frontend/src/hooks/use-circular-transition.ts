@@ -28,12 +28,14 @@ export function useCircularTransition(): CircularTransitionHook {
     const y = (coords.y / window.innerHeight) * 100
 
     // Set the CSS variables on document element
-    document.documentElement.style.setProperty('--x', `${x}%`)
-    document.documentElement.style.setProperty('--y', `${y}%`)
+    document.documentElement.style.setProperty("--x", `${x}%`)
+    document.documentElement.style.setProperty("--y", `${y}%`)
 
     // Check if View Transitions API is supported
-    if ('startViewTransition' in document) {
-      const transition = (document as Document & { startViewTransition: (callback: () => void) => { finished: Promise<void> } }).startViewTransition(() => {
+    if ("startViewTransition" in document) {
+      const transition = (
+        document as Document & { startViewTransition: (callback: () => void) => { finished: Promise<void> } }
+      ).startViewTransition(() => {
         callback()
       })
 
@@ -49,17 +51,20 @@ export function useCircularTransition(): CircularTransitionHook {
     }
   }, [])
 
-  const toggleTheme = useCallback((event: React.MouseEvent) => {
-    // Get precise click coordinates - use clientX/clientY directly like tweakcn
-    const coords = {
-      x: event.clientX,
-      y: event.clientY
-    }
+  const toggleTheme = useCallback(
+    (event: React.MouseEvent) => {
+      // Get precise click coordinates - use clientX/clientY directly like tweakcn
+      const coords = {
+        x: event.clientX,
+        y: event.clientY,
+      }
 
-    startTransition(coords, () => {
-      setTheme(theme === "dark" ? "light" : "dark")
-    })
-  }, [theme, setTheme, startTransition])
+      startTransition(coords, () => {
+        setTheme(theme === "dark" ? "light" : "dark")
+      })
+    },
+    [theme, setTheme, startTransition],
+  )
 
   const isTransitioning = useCallback(() => {
     return isTransitioningRef.current
@@ -68,6 +73,6 @@ export function useCircularTransition(): CircularTransitionHook {
   return {
     startTransition,
     toggleTheme,
-    isTransitioning
+    isTransitioning,
   }
 }

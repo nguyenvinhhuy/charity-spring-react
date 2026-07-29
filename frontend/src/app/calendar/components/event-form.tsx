@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
@@ -53,6 +53,19 @@ function toDateInputValue(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
+/** Maps an event into the form's editable field shape. */
+function eventToFormValues(event: EventCalendarItem): EventFormValues {
+  return {
+    title: event.title,
+    titleEn: event.titleEn ?? "",
+    description: event.description ?? "",
+    descriptionEn: event.descriptionEn ?? "",
+    eventStartDate: toDateInputValue(event.eventStartDate),
+    eventEndDate: toDateInputValue(event.eventEndDate),
+    location: event.location ?? "",
+  }
+}
+
 /**
  * Dialog to create or edit a standalone internal activity (no fundraising component).
  *
@@ -67,22 +80,14 @@ export function EventForm({ event, open, onOpenChange, onSave, onDelete, saving 
   const { t } = useTranslation()
   const [form, setForm] = useState<EventFormValues>(EMPTY_VALUES)
 
-  useEffect(() => {
-    if (!open) return
-    if (event) {
-      setForm({
-        title: event.title,
-        titleEn: event.titleEn ?? "",
-        description: event.description ?? "",
-        descriptionEn: event.descriptionEn ?? "",
-        eventStartDate: toDateInputValue(event.eventStartDate),
-        eventEndDate: toDateInputValue(event.eventEndDate),
-        location: event.location ?? "",
-      })
-    } else {
-      setForm(EMPTY_VALUES)
-    }
-  }, [open, event])
+  // Resets the form the moment the dialog opens for a (possibly different) event, computed
+  // during render instead of an effect so React doesn't paint the stale values first.
+  const openKey = open ? (event?.id ?? "new") : null
+  const [lastOpenKey, setLastOpenKey] = useState<typeof openKey>(null)
+  if (openKey !== null && openKey !== lastOpenKey) {
+    setLastOpenKey(openKey)
+    setForm(event ? eventToFormValues(event) : EMPTY_VALUES)
+  }
 
   /** Validates the form and hands the payload to the parent for creation or update. */
   function handleSave() {
@@ -143,10 +148,7 @@ export function EventForm({ event, open, onOpenChange, onSave, onDelete, saving 
             <p className="text-muted-foreground text-xs">{t("calendar.enHint")}</p>
             <div className="flex flex-col gap-1.5">
               <Label>{t("calendar.titleLabel")}</Label>
-              <Input
-                value={form.titleEn}
-                onChange={(e) => setForm((f) => ({ ...f, titleEn: e.target.value }))}
-              />
+              <Input value={form.titleEn} onChange={(e) => setForm((f) => ({ ...f, titleEn: e.target.value }))} />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>{t("calendar.descriptionLabel")}</Label>
@@ -190,12 +192,7 @@ export function EventForm({ event, open, onOpenChange, onSave, onDelete, saving 
         <DialogFooter className="gap-2 sm:justify-between">
           <div>
             {event && onDelete && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => onDelete(event.id)}
-                disabled={saving}
-              >
+              <Button type="button" variant="destructive" onClick={() => onDelete(event.id)} disabled={saving}>
                 {t("calendar.delete")}
               </Button>
             )}

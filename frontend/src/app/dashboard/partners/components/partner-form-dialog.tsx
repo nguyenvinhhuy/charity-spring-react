@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { createPartner, updatePartner } from "@/api/partners"
@@ -54,7 +55,7 @@ interface PartnerFormDialogProps {
   onOpenChange: (open: boolean) => void
   /** When set, the dialog edits this partner; otherwise it creates a new one. */
   partner?: Partner | null
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 /**
@@ -69,15 +70,30 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
   const { t } = useTranslation()
   const isEdit = Boolean(partner)
   const [values, setValues] = useState<PartnerFormValues>(EMPTY_VALUES)
-  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
+  // Resets the fields the moment the dialog opens for a (possibly different) partner, computed
+  // during render instead of an effect so React doesn't paint the stale values first.
+  const openKey = open ? (partner?.id ?? "new") : null
+  const [lastOpenKey, setLastOpenKey] = useState<typeof openKey>(null)
+  if (openKey !== null && openKey !== lastOpenKey) {
+    setLastOpenKey(openKey)
     setValues(partner ? partnerToValues(partner) : EMPTY_VALUES)
-  }, [open, partner])
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreatePartnerRequest) =>
+      partner ? updatePartner(partner.id, payload) : createPartner(payload),
+    // Awaits the refetch before closing so the list behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(partner ? t("partnersManage.toast.updated") : t("partnersManage.toast.created"))
+      await onSaved()
+      onOpenChange(false)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   /** Validates the form and submits the create or update request. */
-  async function handleSave() {
+  function handleSave() {
     if (!values.name.trim()) {
       toast.error(t("partnersManage.form.nameRequired"))
       return
@@ -86,29 +102,12 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
       toast.error(t("partnersManage.form.logoRequired"))
       return
     }
-    const payload: CreatePartnerRequest = {
+    saveMutation.mutate({
       name: values.name.trim(),
       logoUrl: values.logoUrl,
       websiteUrl: orNull(values.websiteUrl),
       displayOrder: values.displayOrder.trim() ? Number(values.displayOrder) : null,
-    }
-
-    setSaving(true)
-    try {
-      if (partner) {
-        await updatePartner(partner.id, payload)
-        toast.success(t("partnersManage.toast.updated"))
-      } else {
-        await createPartner(payload)
-        toast.success(t("partnersManage.toast.created"))
-      }
-      onOpenChange(false)
-      onSaved()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return (
@@ -117,9 +116,7 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
         <DialogHeader>
           <DialogTitle>{isEdit ? t("partnersManage.form.editTitle") : t("partnersManage.addPartner")}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? t("partnersManage.form.editDescription")
-              : t("partnersManage.form.createDescription")}
+            {isEdit ? t("partnersManage.form.editDescription") : t("partnersManage.form.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -163,8 +160,8 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("partnersManage.cancel")}
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving
+          <Button type="button" onClick={handleSave} disabled={saveMutation.isPending}>
+            {saveMutation.isPending
               ? t("partnersManage.form.saving")
               : isEdit
                 ? t("partnersManage.form.save")

@@ -58,11 +58,9 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
         className={cn(
           "group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed text-center transition-colors",
           isSquare ? "aspect-square max-w-40" : "aspect-[3/2] max-w-xs",
-          value
-            ? "border-transparent"
-            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+          value ? "border-transparent" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
           isSquare && value && "bg-muted",
-          uploading && "pointer-events-none"
+          uploading && "pointer-events-none",
         )}
       >
         {value && (
@@ -70,10 +68,7 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
             <img
               src={value}
               alt=""
-              className={cn(
-                "absolute inset-0 h-full w-full",
-                isSquare ? "object-contain p-3" : "object-cover"
-              )}
+              className={cn("absolute inset-0 h-full w-full", isSquare ? "object-contain p-3" : "object-cover")}
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100">
               <span className="flex items-center gap-2 text-sm font-medium text-white">
@@ -96,7 +91,7 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
           <div
             className={cn(
               "absolute inset-0 flex items-center justify-center",
-              value ? "bg-black/50" : "bg-transparent"
+              value ? "bg-black/50" : "bg-transparent",
             )}
           >
             <span className={cn("text-sm font-medium", value ? "text-white" : "text-muted-foreground")}>

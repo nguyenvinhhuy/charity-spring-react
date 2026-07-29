@@ -1,8 +1,8 @@
-import logoUrl from '@/assets/images/logo.png';
+import logoUrl from "@/assets/images/logo.png"
 
 interface LogoProps {
-  size?: number;
-  className?: string;
+  size?: number
+  className?: string
 }
 
 /**
@@ -19,7 +19,7 @@ export function Logo({ size = 28, className }: LogoProps) {
       height={size}
       alt="Câu lạc bộ Thiện Nguyện Hương Sen"
       className={className}
-      style={{ objectFit: 'contain' }}
+      style={{ objectFit: "contain" }}
     />
-  );
+  )
 }

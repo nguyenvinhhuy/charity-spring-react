@@ -58,9 +58,7 @@ export default function NewsPage() {
   const filteredPosts = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase()
     if (!query) return posts
-    return posts.filter((post) =>
-      localized(i18n.language, post.title, post.titleEn).toLowerCase().includes(query)
-    )
+    return posts.filter((post) => localized(i18n.language, post.title, post.titleEn).toLowerCase().includes(query))
   }, [posts, debouncedSearch, i18n.language])
 
   return (

@@ -2,21 +2,20 @@
 
 import { useEffect, useRef, useState } from "react"
 
+interface FacebookSdkWindow extends Window {
+  FB?: { XFBML: { parse: (element?: HTMLElement) => void } }
+}
+
 interface FacebookPageWidgetProps {
   pageUrl: string
 }
 
 const RESIZE_THRESHOLD_PX = 12
-const WIDGET_HEIGHT = 130
 
 /**
- * Renders the Facebook Page Plugin via its raw iframe embed (not the XFBML/JS-SDK
- * embed), measuring its own container via ResizeObserver to pass an exact pixel width.
- *
- * The raw iframe is used specifically so `colorscheme=light` can be forced: the
- * XFBML embed instead follows the visitor's OS-level dark-mode setting, which
- * renders the header with a black background behind the (transparent-cornered)
- * circular page avatar.
+ * Renders the real Facebook Page Plugin (XFBML), measuring its own container via ResizeObserver
+ * and passing that exact pixel width to Facebook — its own `adapt_container_width` option does
+ * not reliably match the actual container size, so we compute and pass the width ourselves.
  *
  * @param pageUrl the Facebook page URL to embed
  */
@@ -37,32 +36,31 @@ export function FacebookPageWidget({ pageUrl }: FacebookPageWidgetProps) {
     return () => observer.disconnect()
   }, [])
 
-  const src =
-    width === null
-      ? null
-      : `https://www.facebook.com/plugins/page.php?${new URLSearchParams({
-          href: pageUrl,
-          tabs: "",
-          width: String(width),
-          height: String(WIDGET_HEIGHT),
-          small_header: "false",
-          hide_cover: "false",
-          show_facepile: "false",
-          colorscheme: "light",
-        })}`
+  useEffect(() => {
+    if (width === null) return
+    ;(window as unknown as FacebookSdkWindow).FB?.XFBML.parse(containerRef.current ?? undefined)
+  }, [width])
 
   return (
-    <div ref={containerRef} className="w-full overflow-hidden rounded-lg border">
-      {src && (
-        <iframe
+    <div ref={containerRef} className="w-full overflow-hidden rounded-lg border" style={{ colorScheme: "light" }}>
+      {width !== null && (
+        <div
           key={width}
-          src={src}
-          width={width ?? undefined}
-          height={WIDGET_HEIGHT}
-          style={{ border: "none", overflow: "hidden", display: "block" }}
-          title={`Facebook page: ${pageUrl}`}
-          allow="encrypted-media"
-        />
+          className="fb-page"
+          data-href={pageUrl}
+          data-tabs=""
+          data-width={width}
+          data-height="130"
+          data-small-header="false"
+          data-hide-cover="false"
+          data-show-facepile="false"
+        >
+          <blockquote cite={pageUrl} className="fb-xfbml-parse-ignore">
+            <a href={pageUrl} target="_blank" rel="noreferrer">
+              {pageUrl}
+            </a>
+          </blockquote>
+        </div>
       )}
     </div>
   )

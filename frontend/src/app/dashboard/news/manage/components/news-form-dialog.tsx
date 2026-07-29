@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
@@ -24,14 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 /**
  * Builds the news form's zod schema with localized validation messages.
@@ -100,7 +94,7 @@ interface NewsFormDialogProps {
   onOpenChange: (open: boolean) => void
   /** When set, the dialog edits this post; otherwise it creates a new one. */
   post?: PostSummary | null
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 /**
@@ -115,47 +109,49 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
   const { t } = useTranslation()
   const newsSchema = useMemo(() => buildNewsSchema(t), [t])
   const isEdit = Boolean(post)
-  const [loadingDetail, setLoadingDetail] = useState(false)
 
   const form = useForm<NewsFormValues>({
     resolver: zodResolver(newsSchema),
     defaultValues: EMPTY_VALUES,
   })
 
-  // When opening, reset to empty (create) or fetch and prefill the post detail (edit) — the list only
-  // carries PostSummary, which does not include content/contentEn.
+  // The list only carries PostSummary, which does not include content/contentEn, so editing needs
+  // its own detail fetch.
+  const detailQuery = useQuery({
+    queryKey: ["posts", "detail", post?.slug],
+    queryFn: () => getPost(post!.slug),
+    enabled: open && !!post,
+  })
+  const loadingDetail = detailQuery.isLoading && isEdit
+
+  // Resets to empty (create) or to the fetched detail (edit) — form.reset() is react-hook-form's own
+  // store, not a React state setter, so this effect isn't subject to the "fetch, then setState" rule.
   useEffect(() => {
     if (!open) return
     if (!post) {
       form.reset(EMPTY_VALUES)
-      return
+    } else if (detailQuery.data) {
+      form.reset(detailToValues(detailQuery.data))
     }
-    let active = true
-    setLoadingDetail(true)
-    getPost(post.slug)
-      .then((detail) => {
-        if (!active) return
-        form.reset(detailToValues(detail))
-      })
-      .catch((err) => {
-        if (active) toast.error(getErrorMessage(err))
-      })
-      .finally(() => {
-        if (active) setLoadingDetail(false)
-      })
-    return () => {
-      active = false
-    }
-    // Re-run whenever the dialog opens or the target post changes.
+  }, [open, post, detailQuery.data, form])
 
-  }, [open, post])
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreatePostRequest) => (post ? updatePost(post.id, payload) : createPost(payload)),
+    // Awaits the refetch before closing so the list behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(post ? t("news.manage.toast.updated") : t("news.manage.toast.created"))
+      await onSaved()
+      onOpenChange(false)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   /**
-   * Submits the form, creating or updating the post, then closes on success.
+   * Submits the form, creating or updating the post.
    *
    * @param values the validated form values
    */
-  async function onSubmit(values: NewsFormValues) {
+  function onSubmit(values: NewsFormValues) {
     const payload: CreatePostRequest = {
       title: values.title.trim(),
       summary: orNull(values.summary),
@@ -169,20 +165,7 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
         .map((tag) => tag.trim())
         .filter(Boolean),
     }
-
-    try {
-      if (post) {
-        await updatePost(post.id, payload)
-        toast.success(t("news.manage.toast.updated"))
-      } else {
-        await createPost(payload)
-        toast.success(t("news.manage.toast.created"))
-      }
-      onOpenChange(false)
-      onSaved()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
+    saveMutation.mutate(payload)
   }
 
   return (
@@ -191,9 +174,7 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
         <DialogHeader>
           <DialogTitle>{isEdit ? t("news.manage.form.editTitle") : t("news.manage.addPost")}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? t("news.manage.form.editDescription")
-              : t("news.manage.form.createDescription")}
+            {isEdit ? t("news.manage.form.editDescription") : t("news.manage.form.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -266,9 +247,7 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
                 </TabsContent>
 
                 <TabsContent value="en" className="mt-4 flex flex-col gap-4">
-                  <p className="text-muted-foreground text-xs">
-                    {t("news.manage.form.enHint")}
-                  </p>
+                  <p className="text-muted-foreground text-xs">{t("news.manage.form.enHint")}</p>
                   <FormField
                     control={form.control}
                     name="titleEn"
@@ -329,8 +308,8 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   {t("news.manage.cancel")}
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending
                     ? t("news.manage.form.saving")
                     : isEdit
                       ? t("news.manage.form.save")

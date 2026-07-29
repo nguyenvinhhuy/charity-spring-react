@@ -1,10 +1,10 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { CreateEventRequest, Event, UpdateEventRequest } from "@/types/event"
 
 export interface ListEventsParams {
-  page?: number;
-  size?: number;
+  page?: number
+  size?: number
 }
 
 /**
@@ -12,11 +12,9 @@ export interface ListEventsParams {
  *
  * @param params pagination options
  */
-export async function listEvents(
-  params: ListEventsParams = {},
-): Promise<Page<Event>> {
-  const { data } = await api.get<Page<Event>>('/events', { params });
-  return data;
+export async function listEvents(params: ListEventsParams = {}): Promise<Page<Event>> {
+  const { data } = await api.get<Page<Event>>("/events", { params })
+  return data
 }
 
 /**
@@ -25,8 +23,8 @@ export async function listEvents(
  * @param payload the event fields
  */
 export async function createEvent(payload: CreateEventRequest): Promise<Event> {
-  const { data } = await api.post<Event>('/events', payload);
-  return data;
+  const { data } = await api.post<Event>("/events", payload)
+  return data
 }
 
 /**
@@ -35,12 +33,9 @@ export async function createEvent(payload: CreateEventRequest): Promise<Event> {
  * @param id event id
  * @param payload the updated event fields
  */
-export async function updateEvent(
-  id: number,
-  payload: UpdateEventRequest,
-): Promise<Event> {
-  const { data } = await api.put<Event>(`/events/${id}`, payload);
-  return data;
+export async function updateEvent(id: number, payload: UpdateEventRequest): Promise<Event> {
+  const { data } = await api.put<Event>(`/events/${id}`, payload)
+  return data
 }
 
 /**
@@ -49,5 +44,5 @@ export async function updateEvent(
  * @param id event id
  */
 export async function deleteEvent(id: number): Promise<void> {
-  await api.delete(`/events/${id}`);
+  await api.delete(`/events/${id}`)
 }

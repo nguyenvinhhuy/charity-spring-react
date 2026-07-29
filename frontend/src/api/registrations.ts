@@ -1,10 +1,10 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { Registrant, RegistrationSummary } from "@/types/registration"
 
 export interface ListRegistrantsParams {
-  page?: number;
-  size?: number;
+  page?: number
+  size?: number
 }
 
 /**
@@ -13,8 +13,8 @@ export interface ListRegistrantsParams {
  * @param campaignId the campaign id
  */
 export async function getRegistrationSummary(campaignId: number): Promise<RegistrationSummary> {
-  const { data } = await api.get<RegistrationSummary>(`/campaigns/${campaignId}/registrations/summary`);
-  return data;
+  const { data } = await api.get<RegistrationSummary>(`/campaigns/${campaignId}/registrations/summary`)
+  return data
 }
 
 /**
@@ -23,8 +23,8 @@ export async function getRegistrationSummary(campaignId: number): Promise<Regist
  * @param campaignId the campaign id
  */
 export async function registerForCampaign(campaignId: number): Promise<RegistrationSummary> {
-  const { data } = await api.post<RegistrationSummary>(`/campaigns/${campaignId}/registrations/me`);
-  return data;
+  const { data } = await api.post<RegistrationSummary>(`/campaigns/${campaignId}/registrations/me`)
+  return data
 }
 
 /**
@@ -33,7 +33,7 @@ export async function registerForCampaign(campaignId: number): Promise<Registrat
  * @param campaignId the campaign id
  */
 export async function cancelRegistration(campaignId: number): Promise<void> {
-  await api.delete(`/campaigns/${campaignId}/registrations/me`);
+  await api.delete(`/campaigns/${campaignId}/registrations/me`)
 }
 
 /**
@@ -46,8 +46,8 @@ export async function listRegistrants(
   campaignId: number,
   params: ListRegistrantsParams = {},
 ): Promise<Page<Registrant>> {
-  const { data } = await api.get<Page<Registrant>>(`/campaigns/${campaignId}/registrations`, { params });
-  return data;
+  const { data } = await api.get<Page<Registrant>>(`/campaigns/${campaignId}/registrations`, { params })
+  return data
 }
 
 /**
@@ -57,5 +57,5 @@ export async function listRegistrants(
  * @param memberId the registrant's member id to remove
  */
 export async function removeRegistrant(campaignId: number, memberId: number): Promise<void> {
-  await api.delete(`/campaigns/${campaignId}/registrations/${memberId}`);
+  await api.delete(`/campaigns/${campaignId}/registrations/${memberId}`)
 }

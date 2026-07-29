@@ -1,13 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { listRegistrants, removeRegistrant } from "@/api/registrations"
 import { getErrorMessage } from "@/api/axios"
 import type { CampaignSummary } from "@/types/campaign"
-import type { Registrant } from "@/types/registration"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,14 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface RegistrationsDialogProps {
   open: boolean
@@ -43,46 +35,24 @@ interface RegistrationsDialogProps {
  */
 export function RegistrationsDialog({ open, onOpenChange, campaign }: RegistrationsDialogProps) {
   const { t } = useTranslation()
-  const [registrants, setRegistrants] = useState<Registrant[]>([])
-  const [loading, setLoading] = useState(false)
-
+  const queryClient = useQueryClient()
   const campaignId = campaign?.id ?? null
 
-  /** Loads the campaign's registrants into local state. */
-  const load = useCallback(async () => {
-    if (campaignId == null) return
-    setLoading(true)
-    try {
-      const page = await listRegistrants(campaignId, { size: 100 })
-      setRegistrants(page.content)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [campaignId])
+  const { data: registrantsPage, isLoading: loading } = useQuery({
+    queryKey: ["registrants", campaignId],
+    queryFn: () => listRegistrants(campaignId!, { size: 100 }),
+    enabled: open && campaignId != null,
+  })
+  const registrants = registrantsPage?.content ?? []
 
-  useEffect(() => {
-    if (open) {
-      void load()
-    }
-  }, [open, load])
-
-  /**
-   * Force-removes a registrant, then refreshes the list.
-   *
-   * @param memberId the registrant's member id
-   */
-  async function handleRemove(memberId: number) {
-    if (campaignId == null) return
-    try {
-      await removeRegistrant(campaignId, memberId)
+  const removeMutation = useMutation({
+    mutationFn: (memberId: number) => removeRegistrant(campaignId!, memberId),
+    onSuccess: () => {
       toast.success(t("campaigns.registrations.removed"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
+      void queryClient.invalidateQueries({ queryKey: ["registrants", campaignId] })
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,7 +97,7 @@ export function RegistrationsDialog({ open, onOpenChange, campaign }: Registrati
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleRemove(r.memberId)}
+                        onClick={() => removeMutation.mutate(r.memberId)}
                         aria-label={t("common.delete")}
                       >
                         <Trash2 className="text-destructive" />

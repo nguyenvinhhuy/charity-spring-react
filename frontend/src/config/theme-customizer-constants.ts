@@ -1,10 +1,10 @@
-import type { 
-  SidebarVariant, 
-  SidebarCollapsibleOption, 
-  SidebarSideOption, 
-  RadiusOption, 
-  BrandColor 
-} from '@/types/theme-customizer'
+import type {
+  SidebarVariant,
+  SidebarCollapsibleOption,
+  SidebarSideOption,
+  RadiusOption,
+  BrandColor,
+} from "@/types/theme-customizer"
 
 // Radius options
 export const radiusOptions: RadiusOption[] = [

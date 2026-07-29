@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { listCampaigns } from "@/api/campaigns"
@@ -10,6 +11,7 @@ import type { CreateEventRequest } from "@/types/event"
 import type { CalendarItem, EventCalendarItem } from "./types"
 
 const FETCH_SIZE = 100
+const CALENDAR_ITEMS_QUERY_KEY = ["calendar-items"]
 
 export interface UseCalendarReturn {
   selectedDate: Date
@@ -24,8 +26,43 @@ export interface UseCalendarReturn {
   handleDateSelect: (date: Date) => void
   handleNewEvent: () => void
   handleEditEvent: (item: EventCalendarItem) => void
-  handleSaveEvent: (payload: CreateEventRequest) => Promise<void>
-  handleDeleteEvent: (id: number) => Promise<void>
+  handleSaveEvent: (payload: CreateEventRequest) => void
+  handleDeleteEvent: (id: number) => void
+}
+
+/** Fetches campaigns and events, merging those with activity dates into a single calendar item list. */
+async function fetchCalendarItems(): Promise<CalendarItem[]> {
+  const [campaignsPage, eventsPage] = await Promise.all([
+    listCampaigns({ size: FETCH_SIZE }),
+    listEvents({ size: FETCH_SIZE }),
+  ])
+
+  const campaignItems: CalendarItem[] = campaignsPage.content
+    .filter((c) => c.eventStartDate)
+    .map((c) => ({
+      kind: "campaign",
+      id: c.id,
+      title: c.title,
+      titleEn: c.titleEn,
+      eventStartDate: new Date(c.eventStartDate as string),
+      eventEndDate: new Date(c.eventEndDate ?? (c.eventStartDate as string)),
+      category: c.category,
+      status: c.status,
+    }))
+
+  const eventItems: CalendarItem[] = eventsPage.content.map((e) => ({
+    kind: "event",
+    id: e.id,
+    title: e.title,
+    titleEn: e.titleEn,
+    eventStartDate: new Date(e.eventStartDate),
+    eventEndDate: new Date(e.eventEndDate ?? e.eventStartDate),
+    description: e.description,
+    descriptionEn: e.descriptionEn,
+    location: e.location,
+  }))
+
+  return [...campaignItems, ...eventItems]
 }
 
 /**
@@ -34,123 +71,65 @@ export interface UseCalendarReturn {
  */
 export function useCalendar(): UseCalendarReturn {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [showCalendarSheet, setShowCalendarSheet] = useState(false)
   const [showEventForm, setShowEventForm] = useState(false)
   const [editingEvent, setEditingEvent] = useState<EventCalendarItem | null>(null)
-  const [items, setItems] = useState<CalendarItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const hasLoadedOnce = useRef(false)
 
-  /**
-   * Fetches campaigns and events, merging those with activity dates into a single item list.
-   * Only shows the full-page loading state on the first fetch — later refreshes (after a save or
-   * delete) update `items` in place so the calendar's current month/view is not remounted.
-   */
-  const load = useCallback(async () => {
-    if (!hasLoadedOnce.current) setLoading(true)
-    try {
-      const [campaignsPage, eventsPage] = await Promise.all([
-        listCampaigns({ size: FETCH_SIZE }),
-        listEvents({ size: FETCH_SIZE }),
-      ])
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: CALENDAR_ITEMS_QUERY_KEY,
+    queryFn: fetchCalendarItems,
+  })
 
-      const campaignItems: CalendarItem[] = campaignsPage.content
-        .filter((c) => c.eventStartDate)
-        .map((c) => ({
-          kind: "campaign",
-          id: c.id,
-          title: c.title,
-          titleEn: c.titleEn,
-          eventStartDate: new Date(c.eventStartDate as string),
-          eventEndDate: new Date(c.eventEndDate ?? (c.eventStartDate as string)),
-          category: c.category,
-          status: c.status,
-        }))
-
-      const eventItems: CalendarItem[] = eventsPage.content.map((e) => ({
-        kind: "event",
-        id: e.id,
-        title: e.title,
-        titleEn: e.titleEn,
-        eventStartDate: new Date(e.eventStartDate),
-        eventEndDate: new Date(e.eventEndDate ?? e.eventStartDate),
-        description: e.description,
-        descriptionEn: e.descriptionEn,
-        location: e.location,
-      }))
-
-      setItems([...campaignItems, ...eventItems])
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      hasLoadedOnce.current = true
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  const handleDateSelect = useCallback((date: Date) => {
+  function handleDateSelect(date: Date) {
     setSelectedDate(date)
     setShowCalendarSheet(false)
-  }, [])
+  }
 
-  const handleNewEvent = useCallback(() => {
+  function handleNewEvent() {
     setEditingEvent(null)
     setShowEventForm(true)
-  }, [])
+  }
 
-  const handleEditEvent = useCallback((item: EventCalendarItem) => {
+  function handleEditEvent(item: EventCalendarItem) {
     setEditingEvent(item)
     setShowEventForm(true)
-  }, [])
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreateEventRequest) =>
+      editingEvent ? updateEvent(editingEvent.id, payload) : createEvent(payload),
+    // Awaits the refetch before closing so the calendar behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(editingEvent ? t("calendar.eventUpdated") : t("calendar.eventCreated"))
+      await queryClient.invalidateQueries({ queryKey: CALENDAR_ITEMS_QUERY_KEY })
+      setShowEventForm(false)
+      setEditingEvent(null)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteEvent(id),
+    onSuccess: async () => {
+      toast.success(t("calendar.eventDeleted"))
+      await queryClient.invalidateQueries({ queryKey: CALENDAR_ITEMS_QUERY_KEY })
+      setShowEventForm(false)
+      setEditingEvent(null)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   /** Creates or updates the internal event being edited, then refreshes the calendar. */
-  const handleSaveEvent = useCallback(
-    async (payload: CreateEventRequest) => {
-      setSaving(true)
-      try {
-        if (editingEvent) {
-          await updateEvent(editingEvent.id, payload)
-          toast.success(t("calendar.eventUpdated"))
-        } else {
-          await createEvent(payload)
-          toast.success(t("calendar.eventCreated"))
-        }
-        setShowEventForm(false)
-        setEditingEvent(null)
-        await load()
-      } catch (err) {
-        toast.error(getErrorMessage(err))
-      } finally {
-        setSaving(false)
-      }
-    },
-    [editingEvent, load, t],
-  )
+  function handleSaveEvent(payload: CreateEventRequest) {
+    saveMutation.mutate(payload)
+  }
 
   /** Deletes an internal event, then refreshes the calendar. */
-  const handleDeleteEvent = useCallback(
-    async (id: number) => {
-      setSaving(true)
-      try {
-        await deleteEvent(id)
-        toast.success(t("calendar.eventDeleted"))
-        setShowEventForm(false)
-        setEditingEvent(null)
-        await load()
-      } catch (err) {
-        toast.error(getErrorMessage(err))
-      } finally {
-        setSaving(false)
-      }
-    },
-    [load, t],
-  )
+  function handleDeleteEvent(id: number) {
+    deleteMutation.mutate(id)
+  }
 
   return {
     selectedDate,
@@ -159,7 +138,7 @@ export function useCalendar(): UseCalendarReturn {
     editingEvent,
     items,
     loading,
-    saving,
+    saving: saveMutation.isPending || deleteMutation.isPending,
     setShowCalendarSheet,
     setShowEventForm,
     handleDateSelect,

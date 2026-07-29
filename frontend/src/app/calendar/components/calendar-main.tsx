@@ -30,12 +30,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -45,7 +40,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { categoryLabel, localized, statusLabel, STATUS_BADGE_CLASSES } from "@/app/campaigns/components/campaign-constants"
+import {
+  categoryLabel,
+  localized,
+  statusLabel,
+  STATUS_BADGE_CLASSES,
+} from "@/app/campaigns/components/campaign-constants"
 import type { CampaignCategory } from "@/types/campaign"
 import type { CalendarItem, EventCalendarItem } from "../types"
 import { itemsForDay } from "../lib"
@@ -102,9 +102,7 @@ export function CalendarMain({
   const visibleItems = useMemo(() => {
     const term = search.trim().toLowerCase()
     if (!term) return items
-    return items.filter((item) =>
-      localized(i18n.language, item.title, item.titleEn).toLowerCase().includes(term),
-    )
+    return items.filter((item) => localized(i18n.language, item.title, item.titleEn).toLowerCase().includes(term))
   }, [items, search, i18n.language])
 
   const monthStart = startOfMonth(currentDate)
@@ -135,7 +133,10 @@ export function CalendarMain({
       <div className="flex-1 bg-background">
         <div className="grid grid-cols-7 border-b">
           {weekDays.map((day) => (
-            <div key={day} className="p-4 text-center font-medium text-sm text-muted-foreground border-r last:border-r-0">
+            <div
+              key={day}
+              className="p-4 text-center font-medium text-sm text-muted-foreground border-r last:border-r-0"
+            >
               {day}
             </div>
           ))}
@@ -163,14 +164,13 @@ export function CalendarMain({
                   <span
                     className={cn(
                       "text-sm font-medium",
-                      isDayToday && "bg-primary text-primary-foreground rounded-md w-6 h-6 flex items-center justify-center text-xs",
+                      isDayToday &&
+                        "bg-primary text-primary-foreground rounded-md w-6 h-6 flex items-center justify-center text-xs",
                     )}
                   >
                     {format(day, "d")}
                   </span>
-                  {dayItems.length > 2 && (
-                    <span className="text-xs text-muted-foreground">+{dayItems.length - 2}</span>
-                  )}
+                  {dayItems.length > 2 && <span className="text-xs text-muted-foreground">+{dayItems.length - 2}</span>}
                 </div>
 
                 <div className="space-y-1">

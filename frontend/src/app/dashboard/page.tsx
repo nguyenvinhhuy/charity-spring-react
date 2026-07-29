@@ -1,13 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import { toast } from "sonner"
+import { useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { BaseLayout } from "@/components/layouts/base-layout"
 import { getDashboardSummary } from "@/api/dashboard"
-import { getErrorMessage } from "@/api/axios"
 import type { Granularity } from "@/types/common"
-import type { DashboardSummary } from "@/types/dashboard"
 import { StatCards } from "./components/stat-cards"
 import { DonationsTrend } from "./components/donations-trend"
 import { CategoryDonut } from "./components/category-donut"
@@ -21,31 +19,16 @@ import { QuickActions } from "./components/quick-actions"
 export default function DashboardPage() {
   const { t } = useTranslation()
   const [granularity, setGranularity] = useState<Granularity>("MONTH")
-  const [data, setData] = useState<DashboardSummary | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  /** Fetches the dashboard summary for the current granularity, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await getDashboardSummary(granularity)
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [granularity])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["dashboard-summary", granularity],
+    queryFn: () => getDashboardSummary(granularity),
+    // Keeps the previous granularity's charts on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
   return (
-    <BaseLayout
-      title={t("dashboard.title")}
-      description={t("dashboard.description")}
-    >
+    <BaseLayout title={t("dashboard.title")} description={t("dashboard.description")}>
       <div className="@container/main flex flex-col gap-4 px-4 md:gap-6 lg:px-6">
         <div className="flex justify-end">
           <QuickActions />

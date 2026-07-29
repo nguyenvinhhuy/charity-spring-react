@@ -68,11 +68,7 @@ export function CampaignProgressChart({ items }: CampaignProgressChartProps) {
           <p className="text-muted-foreground py-10 text-center text-sm">{t("dashboard.noData")}</p>
         ) : (
           <ChartContainer config={chartConfig} style={{ height: chartHeight }} className="w-full">
-            <BarChart
-              data={data}
-              layout="vertical"
-              margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
-            >
+            <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, left: 4, bottom: 4 }}>
               <CartesianGrid horizontal={false} strokeDasharray="3 3" className="stroke-muted/30" />
               <XAxis
                 type="number"
@@ -92,9 +88,7 @@ export function CampaignProgressChart({ items }: CampaignProgressChartProps) {
               />
               <ChartTooltip
                 cursor={false}
-                content={
-                  <ChartTooltipContent formatter={(value) => `${Number(value)}%`} />
-                }
+                content={<ChartTooltipContent formatter={(value) => `${Number(value)}%`} />}
               />
               <Bar dataKey="percent" fill="var(--color-percent)" radius={[0, 4, 4, 0]} />
             </BarChart>

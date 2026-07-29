@@ -1,11 +1,11 @@
-import { api } from '@/api/axios';
-import type { ReactionTarget } from '@/api/reactions';
+import { api } from "@/api/axios"
+import type { ReactionTarget } from "@/api/reactions"
 import type { Comment, CreateCommentRequest, UpdateCommentRequest } from "@/types/comment"
 import type { Page } from "@/types/common"
 
 export interface ListCommentsParams {
-  page?: number;
-  size?: number;
+  page?: number
+  size?: number
 }
 
 /**
@@ -20,8 +20,8 @@ export async function listComments(
   id: number,
   params: ListCommentsParams = {},
 ): Promise<Page<Comment>> {
-  const { data } = await api.get<Page<Comment>>(`/${target}/${id}/comments`, { params });
-  return data;
+  const { data } = await api.get<Page<Comment>>(`/${target}/${id}/comments`, { params })
+  return data
 }
 
 /**
@@ -31,13 +31,9 @@ export async function listComments(
  * @param id the target's id
  * @param payload the comment content
  */
-export async function addComment(
-  target: ReactionTarget,
-  id: number,
-  payload: CreateCommentRequest,
-): Promise<Comment> {
-  const { data } = await api.post<Comment>(`/${target}/${id}/comments`, payload);
-  return data;
+export async function addComment(target: ReactionTarget, id: number, payload: CreateCommentRequest): Promise<Comment> {
+  const { data } = await api.post<Comment>(`/${target}/${id}/comments`, payload)
+  return data
 }
 
 /**
@@ -54,8 +50,8 @@ export async function updateComment(
   commentId: number,
   payload: UpdateCommentRequest,
 ): Promise<Comment> {
-  const { data } = await api.put<Comment>(`/${target}/${id}/comments/${commentId}`, payload);
-  return data;
+  const { data } = await api.put<Comment>(`/${target}/${id}/comments/${commentId}`, payload)
+  return data
 }
 
 /**
@@ -65,10 +61,6 @@ export async function updateComment(
  * @param id the target's id
  * @param commentId the comment id
  */
-export async function deleteComment(
-  target: ReactionTarget,
-  id: number,
-  commentId: number,
-): Promise<void> {
-  await api.delete(`/${target}/${id}/comments/${commentId}`);
+export async function deleteComment(target: ReactionTarget, id: number, commentId: number): Promise<void> {
+  await api.delete(`/${target}/${id}/comments/${commentId}`)
 }

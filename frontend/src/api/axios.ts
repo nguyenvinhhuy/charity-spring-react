@@ -1,59 +1,51 @@
-import axios, {
-  AxiosError,
-  type AxiosInstance,
-  type InternalAxiosRequestConfig,
-} from 'axios';
-import { useAuthStore } from '@/store/authStore';
+import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from "axios"
+import { useAuthStore } from "@/store/authStore"
 import type { ProblemDetail } from "@/types/common"
 
 /** The backend's base URL — also used directly by callers that build raw (non-axios) request URLs, e.g. `<img src>`. */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1"
 
 /** Shared axios instance for all backend calls. */
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  headers: { 'Content-Type': 'application/json' },
-});
+  headers: { "Content-Type": "application/json" },
+})
 
 // Attach the bearer token from the auth store to every request.
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+  const token = useAuthStore.getState().accessToken
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
 // ---- Single-flight refresh handling ----
 
 interface RefreshResult {
-  accessToken: string;
-  expiresIn: number;
+  accessToken: string
+  expiresIn: number
 }
 
-let refreshPromise: Promise<string> | null = null;
+let refreshPromise: Promise<string> | null = null
 
 /** Perform (or join) a single in-flight refresh call. */
 function refreshAccessToken(): Promise<string> {
   // Concurrent 401s all await the same promise so only one refresh request is issued.
   if (!refreshPromise) {
     refreshPromise = axios
-      .post<RefreshResult>(
-        `${API_BASE_URL}/auth/refresh`,
-        {},
-        { withCredentials: true },
-      )
+      .post<RefreshResult>(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true })
       .then((res) => {
-        const token = res.data.accessToken;
-        useAuthStore.getState().setAccessToken(token);
-        return token;
+        const token = res.data.accessToken
+        useAuthStore.getState().setAccessToken(token)
+        return token
       })
       .finally(() => {
-        refreshPromise = null;
-      });
+        refreshPromise = null
+      })
   }
-  return refreshPromise;
+  return refreshPromise
 }
 
 /**
@@ -63,45 +55,44 @@ function refreshAccessToken(): Promise<string> {
  */
 export function bootstrapAccessToken(): Promise<void> {
   if (!useAuthStore.getState().member) {
-    return Promise.resolve();
+    return Promise.resolve()
   }
   return refreshAccessToken()
     .then(() => undefined)
-    .catch(() => undefined);
+    .catch(() => undefined)
 }
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean;
+  _retry?: boolean
 }
 
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const original = error.config as RetriableConfig | undefined;
-    const status = error.response?.status;
-    const url = original?.url ?? '';
+    const original = error.config as RetriableConfig | undefined
+    const status = error.response?.status
+    const url = original?.url ?? ""
 
-    const isAuthEndpoint =
-      url.includes('/auth/refresh') || url.includes('/auth/login');
+    const isAuthEndpoint = url.includes("/auth/refresh") || url.includes("/auth/login")
 
     if (status === 401 && original && !original._retry && !isAuthEndpoint) {
-      original._retry = true;
+      original._retry = true
       try {
-        const token = await refreshAccessToken();
-        original.headers.Authorization = `Bearer ${token}`;
-        return api(original);
+        const token = await refreshAccessToken()
+        original.headers.Authorization = `Bearer ${token}`
+        return api(original)
       } catch (refreshError) {
-        useAuthStore.getState().clear();
-        if (typeof window !== 'undefined') {
-          window.location.assign('/auth/sign-in');
+        useAuthStore.getState().clear()
+        if (typeof window !== "undefined") {
+          window.location.assign("/auth/sign-in")
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(refreshError)
       }
     }
 
-    return Promise.reject(error);
+    return Promise.reject(error)
   },
-);
+)
 
 /**
  * Extract a ProblemDetail from an AxiosError, falling back to a generic
@@ -111,23 +102,23 @@ api.interceptors.response.use(
  */
 export function getProblemDetail(error: unknown): ProblemDetail {
   const fallback: ProblemDetail = {
-    type: 'about:blank',
-    title: 'Lỗi',
+    type: "about:blank",
+    title: "Lỗi",
     status: 0,
-    detail: 'Đã xảy ra lỗi. Vui lòng thử lại.',
-    instance: '',
+    detail: "Đã xảy ra lỗi. Vui lòng thử lại.",
+    instance: "",
     timestamp: new Date().toISOString(),
-  };
-
-  if (error instanceof AxiosError && error.response?.data) {
-    const data = error.response.data as Partial<ProblemDetail>;
-    if (typeof data.detail === 'string') {
-      return { ...fallback, ...data } as ProblemDetail;
-    }
-    return { ...fallback, status: error.response.status };
   }
 
-  return fallback;
+  if (error instanceof AxiosError && error.response?.data) {
+    const data = error.response.data as Partial<ProblemDetail>
+    if (typeof data.detail === "string") {
+      return { ...fallback, ...data } as ProblemDetail
+    }
+    return { ...fallback, status: error.response.status }
+  }
+
+  return fallback
 }
 
 /**
@@ -136,5 +127,5 @@ export function getProblemDetail(error: unknown): ProblemDetail {
  * @param error the caught error
  */
 export function getErrorMessage(error: unknown): string {
-  return getProblemDetail(error).detail;
+  return getProblemDetail(error).detail
 }

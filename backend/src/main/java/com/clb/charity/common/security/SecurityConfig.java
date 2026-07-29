@@ -187,6 +187,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, API + "/notifications/broadcast").hasRole("ADMIN")
                         .requestMatchers(API + "/notifications/**").authenticated()
 
+                        // ── Monitoring (system dashboard) ─────────────────
+                        .requestMatchers(API + "/monitoring/**").hasRole("ADMIN")
+
                         // ── Everything else requires authentication ───────
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

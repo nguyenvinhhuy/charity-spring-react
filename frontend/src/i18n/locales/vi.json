@@ -19,7 +19,8 @@
     "contact": "Liên hệ",
     "inquiriesManage": "Quản lý liên hệ",
     "partnersManage": "Quản lý đơn vị kết hợp",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt",
+    "monitoring": "Giám sát hệ thống"
   },
   "userMenu": {
     "profile": "Hồ sơ",
@@ -591,6 +592,55 @@
       "accountNameRequired": "Vui lòng nhập tên chủ tài khoản",
       "save": "Lưu thay đổi",
       "saved": "Đã lưu cài đặt"
+    }
+  },
+  "monitoring": {
+    "title": "Giám sát hệ thống",
+    "description": "Trạng thái Render, Vercel, Database và Cloudinary",
+    "loading": "Đang tải...",
+    "empty": "Không có dữ liệu",
+    "noData": "Chưa có dữ liệu",
+    "notConfigured": "Chưa cấu hình",
+    "refresh": "Làm mới",
+    "lastUpdated": "Cập nhật lúc {{time}}",
+    "autoRefreshNote": "Tự động làm mới mỗi 60 giây",
+    "bytesLabel": "Dung lượng",
+    "range": {
+      "ONE_DAY": "1 ngày",
+      "SEVEN_DAYS": "7 ngày",
+      "ONE_MONTH": "1 tháng",
+      "ALL": "Tất cả"
+    },
+    "status": {
+      "OK": "Hoạt động tốt",
+      "DEGRADED": "Cảnh báo",
+      "ERROR": "Lỗi",
+      "NOT_CONFIGURED": "Chưa cấu hình"
+    },
+    "render": {
+      "title": "Render (Backend)",
+      "description": "Trạng thái hosting backend",
+      "cpu": "CPU",
+      "memory": "Bộ nhớ",
+      "lastDeploy": "Lần deploy gần nhất: {{status}}",
+      "metricsNote": "CPU & RAM đo mỗi phút trong 1 giờ gần nhất — phản ánh tải thực tế (kể cả khi lượng truy cập tăng đột biến), không phụ thuộc vào lần deploy gần nhất."
+    },
+    "vercel": {
+      "title": "Vercel (Frontend)",
+      "description": "Trạng thái hosting frontend",
+      "buildDuration": "Thời gian build (giây)",
+      "lastDeploy": "Deploy gần nhất",
+      "metricsNote": "Vercel (gói miễn phí) không có API đo tải/băng thông theo thời gian thực, nên biểu đồ này chỉ thể hiện thời gian build của các lần deploy gần đây."
+    },
+    "database": {
+      "title": "Supabase (Database)",
+      "description": "Dung lượng Postgres",
+      "connections": "{{count}} kết nối đang hoạt động"
+    },
+    "cloudinary": {
+      "title": "Cloudinary",
+      "description": "Dung lượng lưu trữ ảnh",
+      "bandwidth": "Băng thông đã dùng: {{used}}"
     }
   },
   "partnersManage": {

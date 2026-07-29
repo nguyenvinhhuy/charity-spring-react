@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { createFaq, updateFaq } from "@/api/faqs"
@@ -19,13 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FAQ_CATEGORIES, faqCategoryLabel } from "./faq-constants"
 
 /** Sentinel Select value for "pick a custom category" — never sent to the backend as-is. */
@@ -72,7 +67,7 @@ interface FaqFormDialogProps {
   onOpenChange: (open: boolean) => void
   /** When set, the dialog edits this FAQ; otherwise it creates a new one. */
   faq?: Faq | null
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 /**
@@ -89,15 +84,29 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
   const [values, setValues] = useState<FaqFormValues>(EMPTY_VALUES)
   const isKnownCategory = (FAQ_CATEGORIES as readonly string[]).includes(values.category)
   const categorySelectValue = isKnownCategory ? values.category : OTHER_CATEGORY
-  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
+  // Resets the fields the moment the dialog opens for a (possibly different) FAQ, computed during
+  // render instead of an effect so React doesn't paint the stale values first.
+  const openKey = open ? (faq?.id ?? "new") : null
+  const [lastOpenKey, setLastOpenKey] = useState<typeof openKey>(null)
+  if (openKey !== null && openKey !== lastOpenKey) {
+    setLastOpenKey(openKey)
     setValues(faq ? faqToValues(faq) : EMPTY_VALUES)
-  }, [open, faq])
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreateFaqRequest) => (faq ? updateFaq(faq.id, payload) : createFaq(payload)),
+    // Awaits the refetch before closing so the list behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(faq ? t("faqManage.toast.updated") : t("faqManage.toast.created"))
+      await onSaved()
+      onOpenChange(false)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   /** Validates the form and submits the create or update request. */
-  async function handleSave() {
+  function handleSave() {
     if (!values.question.trim()) {
       toast.error(t("faqManage.form.questionRequired"))
       return
@@ -106,31 +115,14 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
       toast.error(t("faqManage.form.answerRequired"))
       return
     }
-    const payload: CreateFaqRequest = {
+    saveMutation.mutate({
       question: values.question.trim(),
       answer: values.answer.trim(),
       questionEn: orNull(values.questionEn),
       answerEn: orNull(values.answerEn),
       category: orNull(values.category),
       sortOrder: Number(values.sortOrder) || 0,
-    }
-
-    setSaving(true)
-    try {
-      if (faq) {
-        await updateFaq(faq.id, payload)
-        toast.success(t("faqManage.toast.updated"))
-      } else {
-        await createFaq(payload)
-        toast.success(t("faqManage.toast.created"))
-      }
-      onOpenChange(false)
-      onSaved()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return (
@@ -139,9 +131,7 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
         <DialogHeader>
           <DialogTitle>{isEdit ? t("faqManage.form.editTitle") : t("faqManage.addQuestion")}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? t("faqManage.form.editDescription")
-              : t("faqManage.form.createDescription")}
+            {isEdit ? t("faqManage.form.editDescription") : t("faqManage.form.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -172,9 +162,7 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
           </TabsContent>
 
           <TabsContent value="en" className="mt-4 flex flex-col gap-4">
-            <p className="text-muted-foreground text-xs">
-              {t("faqManage.form.enHint")}
-            </p>
+            <p className="text-muted-foreground text-xs">{t("faqManage.form.enHint")}</p>
             <div className="flex flex-col gap-1.5">
               <Label>{t("faqManage.form.question")}</Label>
               <Input
@@ -240,8 +228,12 @@ export function FaqFormDialog({ open, onOpenChange, faq, onSaved }: FaqFormDialo
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("faqManage.cancel")}
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saving}>
-            {saving ? t("faqManage.form.saving") : isEdit ? t("faqManage.form.save") : t("faqManage.addQuestion")}
+          <Button type="button" onClick={handleSave} disabled={saveMutation.isPending}>
+            {saveMutation.isPending
+              ? t("faqManage.form.saving")
+              : isEdit
+                ? t("faqManage.form.save")
+                : t("faqManage.addQuestion")}
           </Button>
         </DialogFooter>
       </DialogContent>

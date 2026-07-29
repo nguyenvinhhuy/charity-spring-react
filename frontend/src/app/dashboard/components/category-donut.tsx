@@ -30,9 +30,7 @@ export function CategoryDonut({ items }: CategoryDonutProps) {
 
   const chartConfig: ChartConfig = {
     amount: { label: t("dashboard.categoryDonut.amountLabel") },
-    ...Object.fromEntries(
-      data.map((d) => [d.key, { label: d.label, color: d.fill }]),
-    ),
+    ...Object.fromEntries(data.map((d) => [d.key, { label: d.label, color: d.fill }])),
   }
 
   return (
@@ -50,12 +48,7 @@ export function CategoryDonut({ items }: CategoryDonutProps) {
               <PieChart>
                 <ChartTooltip
                   cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      nameKey="key"
-                      formatter={(value) => formatVnd(Number(value))}
-                    />
-                  }
+                  content={<ChartTooltipContent nameKey="key" formatter={(value) => formatVnd(Number(value))} />}
                 />
                 <Pie
                   data={data}
@@ -72,10 +65,7 @@ export function CategoryDonut({ items }: CategoryDonutProps) {
               {data.map((item) => (
                 <li key={item.key} className="flex items-center justify-between gap-2 text-sm">
                   <span className="flex items-center gap-2">
-                    <span
-                      className="size-3 shrink-0 rounded-[2px]"
-                      style={{ backgroundColor: item.fill }}
-                    />
+                    <span className="size-3 shrink-0 rounded-[2px]" style={{ backgroundColor: item.fill }} />
                     {item.label}
                   </span>
                   <span className="text-muted-foreground tabular-nums">{formatVnd(item.amount)}</span>

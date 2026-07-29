@@ -5,12 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { CampaignProgressItem } from "@/types/dashboard"
-import {
-  formatVnd,
-  localized,
-  statusLabel,
-  STATUS_BADGE_CLASSES,
-} from "@/app/campaigns/components/campaign-constants"
+import { formatVnd, localized, statusLabel, STATUS_BADGE_CLASSES } from "@/app/campaigns/components/campaign-constants"
 
 interface TopCampaignsProps {
   items: CampaignProgressItem[]
@@ -44,9 +39,7 @@ export function TopCampaigns({ items }: TopCampaignsProps) {
               </span>
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-medium">
-                    {localized(i18n.language, item.title, item.titleEn)}
-                  </span>
+                  <span className="truncate font-medium">{localized(i18n.language, item.title, item.titleEn)}</span>
                   <Badge className={`shrink-0 ${STATUS_BADGE_CLASSES[item.status]}`}>
                     {statusLabel(t, item.status)}
                   </Badge>

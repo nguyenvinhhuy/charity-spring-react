@@ -14,10 +14,7 @@ import { Logo } from "@/components/logo"
  * @param className additional classes merged onto the root div
  * @param props remaining props spread onto the root div
  */
-export function ForgotPasswordForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
   const { t } = useTranslation()
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -35,18 +32,11 @@ export function ForgotPasswordForm({
               </div>
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">{t("auth.forgotPassword")}</h1>
-                <p className="text-muted-foreground text-balance">
-                  {t("auth.forgotPasswordDesc")}
-                </p>
+                <p className="text-muted-foreground text-balance">{t("auth.forgotPasswordDesc")}</p>
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="email">{t("auth.email")}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
+                <Input id="email" type="email" placeholder="m@example.com" required />
               </div>
               <Button type="submit" className="w-full cursor-pointer">
                 {t("auth.sendResetLink")}

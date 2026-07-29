@@ -55,9 +55,7 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
       </CardHeader>
       <CardContent className="flex-1">
         {items.length === 0 ? (
-          <p className="text-muted-foreground py-10 text-center text-sm">
-            {t("dashboard.activityFeed.empty")}
-          </p>
+          <p className="text-muted-foreground py-10 text-center text-sm">{t("dashboard.activityFeed.empty")}</p>
         ) : (
           <ul className="flex max-h-[360px] flex-col gap-4 overflow-y-auto pr-1">
             {items.map((item, index) => {
@@ -70,11 +68,8 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                   </span>
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <p className="text-sm leading-snug">
-                      <span className="font-medium">
-                        {item.actorName ?? t("dashboard.activityFeed.systemActor")}
-                      </span>{" "}
-                      {actionText(t, item)}{" "}
-                      <span className="text-muted-foreground">"{item.title}"</span>
+                      <span className="font-medium">{item.actorName ?? t("dashboard.activityFeed.systemActor")}</span>{" "}
+                      {actionText(t, item)} <span className="text-muted-foreground">"{item.title}"</span>
                     </p>
                     {when && <span className="text-muted-foreground text-xs">{when}</span>}
                   </div>

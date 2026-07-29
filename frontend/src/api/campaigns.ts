@@ -1,13 +1,21 @@
-import { api, API_BASE_URL } from '@/api/axios';
-import type { CampaignCategory, CampaignDetail, CampaignStatus, CampaignSummary, CreateCampaignRequest, PublicCampaignStats, UpdateCampaignRequest } from "@/types/campaign"
+import { api, API_BASE_URL } from "@/api/axios"
+import type {
+  CampaignCategory,
+  CampaignDetail,
+  CampaignStatus,
+  CampaignSummary,
+  CreateCampaignRequest,
+  PublicCampaignStats,
+  UpdateCampaignRequest,
+} from "@/types/campaign"
 import type { Page } from "@/types/common"
 
 export interface ListCampaignsParams {
-  status?: CampaignStatus;
-  category?: CampaignCategory;
-  search?: string;
-  page?: number;
-  size?: number;
+  status?: CampaignStatus
+  category?: CampaignCategory
+  search?: string
+  page?: number
+  size?: number
 }
 
 /**
@@ -15,13 +23,11 @@ export interface ListCampaignsParams {
  *
  * @param params filter and pagination options
  */
-export async function listCampaigns(
-  params: ListCampaignsParams = {},
-): Promise<Page<CampaignSummary>> {
-  const { data } = await api.get<Page<CampaignSummary>>('/campaigns', {
+export async function listCampaigns(params: ListCampaignsParams = {}): Promise<Page<CampaignSummary>> {
+  const { data } = await api.get<Page<CampaignSummary>>("/campaigns", {
     params,
-  });
-  return data;
+  })
+  return data
 }
 
 /**
@@ -30,8 +36,8 @@ export async function listCampaigns(
  * @param slug the campaign slug
  */
 export async function getCampaign(slug: string): Promise<CampaignDetail> {
-  const { data } = await api.get<CampaignDetail>(`/campaigns/${slug}`);
-  return data;
+  const { data } = await api.get<CampaignDetail>(`/campaigns/${slug}`)
+  return data
 }
 
 /**
@@ -39,11 +45,9 @@ export async function getCampaign(slug: string): Promise<CampaignDetail> {
  *
  * @param payload the campaign fields
  */
-export async function createCampaign(
-  payload: CreateCampaignRequest,
-): Promise<CampaignDetail> {
-  const { data } = await api.post<CampaignDetail>('/campaigns', payload);
-  return data;
+export async function createCampaign(payload: CreateCampaignRequest): Promise<CampaignDetail> {
+  const { data } = await api.post<CampaignDetail>("/campaigns", payload)
+  return data
 }
 
 /**
@@ -52,12 +56,9 @@ export async function createCampaign(
  * @param id campaign id
  * @param payload the updated campaign fields
  */
-export async function updateCampaign(
-  id: number,
-  payload: UpdateCampaignRequest,
-): Promise<CampaignDetail> {
-  const { data } = await api.put<CampaignDetail>(`/campaigns/${id}`, payload);
-  return data;
+export async function updateCampaign(id: number, payload: UpdateCampaignRequest): Promise<CampaignDetail> {
+  const { data } = await api.put<CampaignDetail>(`/campaigns/${id}`, payload)
+  return data
 }
 
 /**
@@ -66,14 +67,11 @@ export async function updateCampaign(
  * @param id campaign id
  * @param status the target status
  */
-export async function updateCampaignStatus(
-  id: number,
-  status: CampaignStatus,
-): Promise<CampaignDetail> {
+export async function updateCampaignStatus(id: number, status: CampaignStatus): Promise<CampaignDetail> {
   const { data } = await api.patch<CampaignDetail>(`/campaigns/${id}/status`, {
     status,
-  });
-  return data;
+  })
+  return data
 }
 
 /**
@@ -86,11 +84,8 @@ export async function updateCampaignProgress(
   id: number,
   progress: { currentAmount: number; donorCount: number },
 ): Promise<CampaignDetail> {
-  const { data } = await api.patch<CampaignDetail>(
-    `/campaigns/${id}/progress`,
-    progress,
-  );
-  return data;
+  const { data } = await api.patch<CampaignDetail>(`/campaigns/${id}/progress`, progress)
+  return data
 }
 
 /**
@@ -99,15 +94,15 @@ export async function updateCampaignProgress(
  * @param id campaign id
  */
 export async function deleteCampaign(id: number): Promise<void> {
-  await api.delete(`/campaigns/${id}`);
+  await api.delete(`/campaigns/${id}`)
 }
 
 /**
  * Fetch the public-safe campaign and donation totals (no per-donor or per-actor detail).
  */
 export async function getPublicCampaignStats(): Promise<PublicCampaignStats> {
-  const { data } = await api.get<PublicCampaignStats>('/campaigns/stats');
-  return data;
+  const { data } = await api.get<PublicCampaignStats>("/campaigns/stats")
+  return data
 }
 
 /**
@@ -116,7 +111,7 @@ export async function getPublicCampaignStats(): Promise<PublicCampaignStats> {
  * @param id campaign id
  */
 export async function recordCampaignView(id: number): Promise<void> {
-  await api.post(`/campaigns/${id}/views`);
+  await api.post(`/campaigns/${id}/views`)
 }
 
 /**
@@ -127,6 +122,6 @@ export async function recordCampaignView(id: number): Promise<void> {
  * @returns a plain URL suitable for an <img src>
  */
 export function campaignQrUrl(slug: string, amount?: number): string {
-  const base = `${API_BASE_URL}/campaigns/${slug}/qr`;
-  return amount && amount > 0 ? `${base}?amount=${amount}` : base;
+  const base = `${API_BASE_URL}/campaigns/${slug}/qr`
+  return amount && amount > 0 ? `${base}?amount=${amount}` : base
 }

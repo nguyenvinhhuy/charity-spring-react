@@ -1,11 +1,11 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { CreateInquiryRequest, Inquiry, InquiryStatus } from "@/types/inquiry"
 
 export interface ListInquiriesParams {
-  page?: number;
-  size?: number;
-  status?: InquiryStatus;
+  page?: number
+  size?: number
+  status?: InquiryStatus
 }
 
 /**
@@ -14,8 +14,8 @@ export interface ListInquiriesParams {
  * @param payload the submitted fields
  */
 export async function submitInquiry(payload: CreateInquiryRequest): Promise<Inquiry> {
-  const { data } = await api.post<Inquiry>('/inquiries', payload);
-  return data;
+  const { data } = await api.post<Inquiry>("/inquiries", payload)
+  return data
 }
 
 /**
@@ -24,8 +24,8 @@ export async function submitInquiry(payload: CreateInquiryRequest): Promise<Inqu
  * @param params pagination and optional status filter
  */
 export async function listInquiries(params: ListInquiriesParams = {}): Promise<Page<Inquiry>> {
-  const { data } = await api.get<Page<Inquiry>>('/inquiries', { params });
-  return data;
+  const { data } = await api.get<Page<Inquiry>>("/inquiries", { params })
+  return data
 }
 
 /**
@@ -34,8 +34,8 @@ export async function listInquiries(params: ListInquiriesParams = {}): Promise<P
  * @param id inquiry id
  */
 export async function markInquiryHandled(id: number): Promise<Inquiry> {
-  const { data } = await api.patch<Inquiry>(`/inquiries/${id}/handled`);
-  return data;
+  const { data } = await api.patch<Inquiry>(`/inquiries/${id}/handled`)
+  return data
 }
 
 /**
@@ -44,5 +44,5 @@ export async function markInquiryHandled(id: number): Promise<Inquiry> {
  * @param id inquiry id
  */
 export async function deleteInquiry(id: number): Promise<void> {
-  await api.delete(`/inquiries/${id}`);
+  await api.delete(`/inquiries/${id}`)
 }

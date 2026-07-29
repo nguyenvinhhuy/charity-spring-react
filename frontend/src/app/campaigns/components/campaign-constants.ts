@@ -2,13 +2,7 @@ import type { TFunction } from "i18next"
 import type { CampaignCategory, CampaignStatus } from "@/types/campaign"
 
 /** All campaign statuses, in lifecycle order. */
-export const STATUS_OPTIONS: CampaignStatus[] = [
-  "DRAFT",
-  "ACTIVE",
-  "COMPLETED",
-  "CLOSED",
-  "ARCHIVED",
-]
+export const STATUS_OPTIONS: CampaignStatus[] = ["DRAFT", "ACTIVE", "COMPLETED", "CLOSED", "ARCHIVED"]
 
 /** All campaign categories. */
 export const CATEGORY_OPTIONS: CampaignCategory[] = [

@@ -4,13 +4,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { DonationPoint } from "@/types/dashboard"
 import type { Granularity } from "@/types/common"
 import { formatVnd } from "@/app/campaigns/components/campaign-constants"
@@ -48,10 +42,7 @@ export function DonationsTrend({ data, granularity, onGranularityChange }: Donat
           <CardTitle>{t("dashboard.donationsTrend.title")}</CardTitle>
           <CardDescription>{t("dashboard.donationsTrend.description")}</CardDescription>
         </div>
-        <Select
-          value={granularity}
-          onValueChange={(value) => onGranularityChange(value as Granularity)}
-        >
+        <Select value={granularity} onValueChange={(value) => onGranularityChange(value as Granularity)}>
           <SelectTrigger className="w-28">
             <SelectValue />
           </SelectTrigger>
@@ -75,12 +66,7 @@ export function DonationsTrend({ data, granularity, onGranularityChange }: Donat
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-              <XAxis
-                dataKey="period"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12 }}
-              />
+              <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
               <YAxis
                 axisLine={false}
                 tickLine={false}
@@ -95,9 +81,7 @@ export function DonationsTrend({ data, granularity, onGranularityChange }: Donat
                       const point = item.payload as DonationPoint
                       return (
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-foreground font-medium">
-                            {formatVnd(Number(value))}
-                          </span>
+                          <span className="text-foreground font-medium">{formatVnd(Number(value))}</span>
                           <span className="text-muted-foreground">
                             {t("dashboard.donationsTrend.tooltipCount", {
                               count: point.count.toLocaleString("vi-VN"),

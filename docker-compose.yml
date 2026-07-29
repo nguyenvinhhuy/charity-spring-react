@@ -31,6 +31,14 @@ services:
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       CORS_ORIGINS: http://localhost:5173
       JWT_SECRET: ${JWT_SECRET}
+      # Monitoring dashboard — all optional, blank means that card shows "not configured".
+      RENDER_API_KEY: ${RENDER_API_KEY}
+      RENDER_SERVICE_ID: ${RENDER_SERVICE_ID}
+      VERCEL_API_TOKEN: ${VERCEL_API_TOKEN}
+      VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM}
     ports:
       - "8080:8080"
     depends_on:

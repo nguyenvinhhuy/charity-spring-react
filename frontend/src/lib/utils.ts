@@ -16,8 +16,8 @@ export function cn(...inputs: ClassValue[]) {
  * @param path the asset path relative to the public root
  */
 export function assetUrl(path: string): string {
-  const baseUrl = import.meta.env.BASE_URL || '/'
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path
+  const baseUrl = import.meta.env.BASE_URL || "/"
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path
   return baseUrl + cleanPath
 }
 
@@ -27,7 +27,7 @@ export function assetUrl(path: string): string {
  * @param path the internal path (e.g. "/dashboard", "/auth/sign-in")
  */
 export function getAppUrl(path: string): string {
-  const basename = import.meta.env.VITE_BASENAME || ''
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const basename = import.meta.env.VITE_BASENAME || ""
+  const cleanPath = path.startsWith("/") ? path : `/${path}`
   return basename + cleanPath
 }

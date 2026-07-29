@@ -18,19 +18,15 @@ export const SidebarContext = React.createContext<SidebarContextValue | null>(nu
 export function SidebarConfigProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = React.useState<SidebarConfig>({
     variant: "inset",
-    collapsible: "offcanvas", 
-    side: "left"
+    collapsible: "offcanvas",
+    side: "left",
   })
 
   const updateConfig = React.useCallback((newConfig: Partial<SidebarConfig>) => {
-    setConfig(prev => ({ ...prev, ...newConfig }))
+    setConfig((prev) => ({ ...prev, ...newConfig }))
   }, [])
 
-  return (
-    <SidebarContext.Provider value={{ config, updateConfig }}>
-      {children}
-    </SidebarContext.Provider>
-  )
+  return <SidebarContext.Provider value={{ config, updateConfig }}>{children}</SidebarContext.Provider>
 }
 
 export function useSidebarConfig() {

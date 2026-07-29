@@ -1,4 +1,4 @@
 export interface BankSettings {
-  bankAccountNo: string;
-  bankAccountName: string;
+  bankAccountNo: string
+  bankAccountName: string
 }

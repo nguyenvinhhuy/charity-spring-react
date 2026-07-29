@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -10,28 +11,14 @@ import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "@/lib/status-badges"
-import type { Page } from "@/types/common"
 import type { Faq } from "@/types/faq"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -54,35 +41,29 @@ export default function FaqManagePage() {
   const [publishedFilter, setPublishedFilter] = useState<typeof ALL | "true" | "false">(ALL)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
-  const [data, setData] = useState<Page<Faq> | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Faq | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Faq | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  /** Fetches the current page of FAQs and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listFaqs({
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["faqs", { page, publishedFilter, debouncedSearch }],
+    queryFn: () =>
+      listFaqs({
         page,
         size: PAGE_SIZE,
         published: publishedFilter === ALL ? undefined : publishedFilter === "true",
         search: debouncedSearch || undefined,
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, publishedFilter, debouncedSearch])
+      }),
+    // Keeps the previous page/filter's rows on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches every FAQs list query, regardless of the current page/filter/search params. */
+  function refreshFaqs() {
+    return queryClient.invalidateQueries({ queryKey: ["faqs"] })
+  }
 
   /** Opens the form dialog in create mode. */
   function openCreate() {
@@ -100,37 +81,24 @@ export default function FaqManagePage() {
     setFormOpen(true)
   }
 
-  /**
-   * Publishes or unpublishes a FAQ, then refreshes the list.
-   *
-   * @param faq the FAQ to toggle
-   * @param published the desired published state
-   */
-  async function handlePublishToggle(faq: Faq, published: boolean) {
-    try {
-      await publishFaq(faq.id, published)
+  const publishToggleMutation = useMutation({
+    mutationFn: ({ faq, published }: { faq: Faq; published: boolean }) => publishFaq(faq.id, published),
+    onSuccess: (_result, { published }) => {
       toast.success(published ? t("faqManage.toast.published") : t("faqManage.toast.unpublished"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
+      refreshFaqs()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
-  /** Deletes the FAQ held in deleteTarget, then refreshes the list. */
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await deleteFaq(deleteTarget.id)
+  const deleteMutation = useMutation({
+    mutationFn: (faq: Faq) => deleteFaq(faq.id),
+    onSuccess: async () => {
       toast.success(t("faqManage.toast.deleted"))
+      await refreshFaqs()
       setDeleteTarget(null)
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setDeleting(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   const faqs = data?.content ?? []
 
@@ -218,19 +186,14 @@ export default function FaqManagePage() {
                           {isAdmin && (
                             <Switch
                               checked={faq.isPublished}
-                              onCheckedChange={(checked) => handlePublishToggle(faq, checked)}
+                              onCheckedChange={(checked) => publishToggleMutation.mutate({ faq, published: checked })}
                             />
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="pr-4">
                         <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title={t("faqManage.edit")}
-                            onClick={() => openEdit(faq)}
-                          >
+                          <Button variant="ghost" size="icon" title={t("faqManage.edit")} onClick={() => openEdit(faq)}>
                             <Pencil />
                           </Button>
                           {isAdmin && (
@@ -278,22 +241,24 @@ export default function FaqManagePage() {
         </div>
       </div>
 
-      <FaqFormDialog open={formOpen} onOpenChange={setFormOpen} faq={editing} onSaved={load} />
+      <FaqFormDialog open={formOpen} onOpenChange={setFormOpen} faq={editing} onSaved={refreshFaqs} />
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("faqManage.deleteDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("faqManage.deleteDialog.description")}
-            </DialogDescription>
+            <DialogDescription>{t("faqManage.deleteDialog.description")}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("faqManage.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("faqManage.deleteDialog.deleting") : t("faqManage.delete")}
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("faqManage.deleteDialog.deleting") : t("faqManage.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -102,11 +102,7 @@ export default function NewsDetailPage() {
         <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
 
         {post.thumbnailUrl && (
-          <img
-            src={post.thumbnailUrl}
-            alt={title}
-            className="aspect-[3/2] w-full rounded-lg object-cover"
-          />
+          <img src={post.thumbnailUrl} alt={title} className="aspect-[3/2] w-full rounded-lg object-cover" />
         )}
 
         <div className="flex flex-wrap items-center gap-2">

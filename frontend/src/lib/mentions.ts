@@ -31,8 +31,8 @@ export function renderCommentContent(content: string, viewerMemberId?: number | 
           key: `mention-${key++}`,
           className: isViewer ? "text-destructive font-semibold" : "text-primary font-medium",
         },
-        `@${match[1]}`
-      )
+        `@${match[1]}`,
+      ),
     )
     lastIndex = match.index + match[0].length
   }

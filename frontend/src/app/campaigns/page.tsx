@@ -1,56 +1,24 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
-import {
-  ArrowRightLeft,
-  ChevronLeft,
-  ChevronRight,
-  HandCoins,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react"
+import { useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { ArrowRightLeft, ChevronLeft, ChevronRight, HandCoins, Pencil, Plus, Search, Trash2, Users } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { BaseLayout } from "@/components/layouts/base-layout"
-import {
-  deleteCampaign,
-  listCampaigns,
-  updateCampaignStatus,
-} from "@/api/campaigns"
+import { deleteCampaign, listCampaigns, updateCampaignStatus } from "@/api/campaigns"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { CampaignStatus, CampaignSummary } from "@/types/campaign"
-import type { Page } from "@/types/common"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -94,8 +62,7 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<CampaignStatus | typeof ALL>(ALL)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
-  const [data, setData] = useState<Page<CampaignSummary> | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<CampaignSummary | null>(null)
@@ -104,29 +71,26 @@ export default function CampaignsPage() {
   const [registrationsOpen, setRegistrationsOpen] = useState(false)
   const [registrationsTarget, setRegistrationsTarget] = useState<CampaignSummary | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  /** Fetches the current page of campaigns and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listCampaigns({
+  const campaignsQueryKey = ["campaigns", { page, statusFilter, debouncedSearch }]
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: campaignsQueryKey,
+    queryFn: () =>
+      listCampaigns({
         page,
         size: PAGE_SIZE,
         status: statusFilter === ALL ? undefined : statusFilter,
         search: debouncedSearch || undefined,
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, statusFilter, debouncedSearch])
+      }),
+    // Keeps the previous page/filter's rows on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches every campaigns list query, regardless of the current page/filter/search params. */
+  function refreshCampaigns() {
+    return queryClient.invalidateQueries({ queryKey: ["campaigns"] })
+  }
 
   /** Opens the form dialog in create mode. */
   function openCreate() {
@@ -164,37 +128,25 @@ export default function CampaignsPage() {
     setRegistrationsOpen(true)
   }
 
-  /**
-   * Transitions a campaign to the target status, then refreshes the list.
-   *
-   * @param campaign the campaign to transition
-   * @param status the target status
-   */
-  async function handleStatusChange(campaign: CampaignSummary, status: CampaignStatus) {
-    try {
-      await updateCampaignStatus(campaign.id, status)
+  const statusChangeMutation = useMutation({
+    mutationFn: ({ campaign, status }: { campaign: CampaignSummary; status: CampaignStatus }) =>
+      updateCampaignStatus(campaign.id, status),
+    onSuccess: (_result, { status }) => {
       toast.success(t("campaigns.statusChanged", { status: statusLabel(t, status) }))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
+      refreshCampaigns()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
-  /** Deletes the campaign held in deleteTarget (only DRAFT campaigns), then refreshes. */
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await deleteCampaign(deleteTarget.id)
+  const deleteMutation = useMutation({
+    mutationFn: (campaign: CampaignSummary) => deleteCampaign(campaign.id),
+    onSuccess: async () => {
       toast.success(t("campaigns.deleted"))
+      await refreshCampaigns()
       setDeleteTarget(null)
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setDeleting(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   const campaigns = data?.content ?? []
 
@@ -298,9 +250,7 @@ export default function CampaignsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex w-48 flex-col gap-1">
-                            <Progress
-                              value={progressPercent(campaign.currentAmount, campaign.targetAmount)}
-                            />
+                            <Progress value={progressPercent(campaign.currentAmount, campaign.targetAmount)} />
                             <span className="text-muted-foreground text-xs">
                               {formatVnd(campaign.currentAmount)} / {formatVnd(campaign.targetAmount)}
                               {" · "}
@@ -358,7 +308,7 @@ export default function CampaignsPage() {
                                   {transitions.map((status) => (
                                     <DropdownMenuItem
                                       key={status}
-                                      onClick={() => handleStatusChange(campaign, status)}
+                                      onClick={() => statusChangeMutation.mutate({ campaign, status })}
                                     >
                                       {statusLabel(t, status)}
                                     </DropdownMenuItem>
@@ -413,18 +363,13 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <CampaignFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        campaign={editing}
-        onSaved={load}
-      />
+      <CampaignFormDialog open={formOpen} onOpenChange={setFormOpen} campaign={editing} onSaved={refreshCampaigns} />
 
       <DonationsDialog
         open={donationsOpen}
         onOpenChange={setDonationsOpen}
         campaign={donationsTarget}
-        onChanged={load}
+        onChanged={refreshCampaigns}
       />
 
       <RegistrationsDialog
@@ -445,8 +390,12 @@ export default function CampaignsPage() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("common.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("common.deleting") : t("common.delete")}
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

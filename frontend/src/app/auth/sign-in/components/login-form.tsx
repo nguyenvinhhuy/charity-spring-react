@@ -13,20 +13,16 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Logo } from "@/components/logo"
 import { SocialLoginButtons } from "@/components/social-login-buttons"
 
 function buildLoginFormSchema(t: TFunction) {
   return z.object({
-    email: z.string().min(1, t("auth.validation.emailRequired")).pipe(z.email(t("auth.validation.emailInvalid"))),
+    email: z
+      .string()
+      .min(1, t("auth.validation.emailRequired"))
+      .pipe(z.email(t("auth.validation.emailInvalid"))),
     password: z.string().min(1, t("auth.validation.passwordRequired")),
   })
 }
@@ -39,10 +35,7 @@ type LoginFormValues = z.infer<ReturnType<typeof buildLoginFormSchema>>
  * @param className additional classes merged onto the root div
  * @param props remaining props spread onto the root div
  */
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const setAuth = useAuthStore((state) => state.setAuth)
@@ -87,9 +80,7 @@ export function LoginForm({
                 </div>
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">{t("auth.welcomeBack")}</h1>
-                  <p className="text-muted-foreground text-balance">
-                    {t("auth.loginSubtitle")}
-                  </p>
+                  <p className="text-muted-foreground text-balance">{t("auth.loginSubtitle")}</p>
                 </div>
 
                 <FormField
@@ -99,12 +90,7 @@ export function LoginForm({
                     <FormItem>
                       <FormLabel>{t("auth.email")}</FormLabel>
                       <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="ban@email.com"
-                          autoComplete="email"
-                          {...field}
-                        />
+                        <Input type="email" placeholder="ban@email.com" autoComplete="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -118,30 +104,19 @@ export function LoginForm({
                     <FormItem>
                       <div className="flex items-center">
                         <FormLabel>{t("auth.password")}</FormLabel>
-                        <Link
-                          to="/auth/forgot-password"
-                          className="ml-auto text-sm underline-offset-2 hover:underline"
-                        >
+                        <Link to="/auth/forgot-password" className="ml-auto text-sm underline-offset-2 hover:underline">
                           {t("auth.forgotPassword")}
                         </Link>
                       </div>
                       <FormControl>
-                        <Input
-                          type="password"
-                          autoComplete="current-password"
-                          {...field}
-                        />
+                        <Input type="password" autoComplete="current-password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button
-                  type="submit"
-                  className="w-full cursor-pointer"
-                  disabled={form.formState.isSubmitting}
-                >
+                <Button type="submit" className="w-full cursor-pointer" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? t("auth.loggingIn") : t("auth.login")}
                 </Button>
 
@@ -149,10 +124,7 @@ export function LoginForm({
 
                 <div className="text-center text-sm">
                   {t("auth.noAccount")}{" "}
-                  <Link
-                    to="/auth/sign-up"
-                    className="underline underline-offset-4"
-                  >
+                  <Link to="/auth/sign-up" className="underline underline-offset-4">
                     {t("auth.signUp")}
                   </Link>
                 </div>
@@ -164,9 +136,7 @@ export function LoginForm({
             <Logo size={72} />
             <div className="text-center">
               <p className="text-lg font-semibold">{t("auth.orgName")}</p>
-              <p className="text-muted-foreground text-sm text-balance">
-                {t("auth.tagline")}
-              </p>
+              <p className="text-muted-foreground text-sm text-balance">{t("auth.tagline")}</p>
             </div>
           </div>
         </CardContent>

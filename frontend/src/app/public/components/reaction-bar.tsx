@@ -50,7 +50,10 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
   const [pending, setPending] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const pendingRef = useRef(pending)
-  pendingRef.current = pending
+
+  useEffect(() => {
+    pendingRef.current = pending
+  }, [pending])
 
   useEffect(() => {
     let active = true
@@ -137,7 +140,7 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
                 onClick={() => handlePick(type)}
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                  isMine ? "border-primary bg-primary/10" : "hover:bg-muted"
+                  isMine ? "border-primary bg-primary/10" : "hover:bg-muted",
                 )}
               >
                 <span>{REACTION_EMOJI[type]}</span>
@@ -145,9 +148,7 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
               </button>
             </HoverCardTrigger>
             <HoverCardContent className="w-56 p-0" align="start">
-              <div className="border-b px-3 py-2 text-sm font-medium">
-                {t(`reactions.types.${type}`)}
-              </div>
+              <div className="border-b px-3 py-2 text-sm font-medium">{t(`reactions.types.${type}`)}</div>
               <div className="max-h-64 overflow-y-auto py-1">
                 {names.map((name, index) => (
                   <div key={`${name}-${index}`} className="hover:bg-muted flex items-center gap-2 px-3 py-2">
@@ -183,7 +184,7 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
                 title={t(`reactions.types.${type}`)}
                 className={cn(
                   "flex size-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125 hover:bg-muted",
-                  summary.myReaction === type && "bg-primary/10"
+                  summary.myReaction === type && "bg-primary/10",
                 )}
               >
                 {REACTION_EMOJI[type]}

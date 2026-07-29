@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import type { TFunction } from "i18next"
@@ -21,21 +22,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const PASSWORD_MIN_LENGTH = 8
 
@@ -51,9 +39,7 @@ function buildCreateMemberSchema(t: TFunction) {
       .string()
       .min(1, t("users.validation.emailRequired"))
       .pipe(z.email(t("users.validation.emailInvalid"))),
-    password: z
-      .string()
-      .min(PASSWORD_MIN_LENGTH, t("users.validation.passwordMin", { min: PASSWORD_MIN_LENGTH })),
+    password: z.string().min(PASSWORD_MIN_LENGTH, t("users.validation.passwordMin", { min: PASSWORD_MIN_LENGTH })),
     role: z.enum(["ADMIN", "CONTRIBUTOR", "MEMBER"]),
   })
 }
@@ -61,7 +47,7 @@ function buildCreateMemberSchema(t: TFunction) {
 type CreateMemberValues = z.infer<ReturnType<typeof buildCreateMemberSchema>>
 
 interface CreateMemberDialogProps {
-  onCreated: () => void
+  onCreated: () => void | Promise<void>
 }
 
 /**
@@ -85,21 +71,25 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
     },
   })
 
+  const createMutation = useMutation({
+    mutationFn: (values: CreateMemberValues) => createMember(values),
+    // Awaits the refetch before closing so the table behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(t("users.dialog.created"))
+      await onCreated()
+      setOpen(false)
+      form.reset()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   /**
-   * Creates the member, then closes and resets the dialog and refreshes the list.
+   * Submits the validated create-member form values.
    *
    * @param values the validated create-member form values
    */
-  async function onSubmit(values: CreateMemberValues) {
-    try {
-      await createMember(values)
-      toast.success(t("users.dialog.created"))
-      setOpen(false)
-      form.reset()
-      onCreated()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
+  function onSubmit(values: CreateMemberValues) {
+    createMutation.mutate(values)
   }
 
   return (
@@ -113,15 +103,10 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("users.dialog.title")}</DialogTitle>
-          <DialogDescription>
-            {t("users.dialog.description")}
-          </DialogDescription>
+          <DialogDescription>{t("users.dialog.description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
+          <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="fullName"
@@ -129,11 +114,7 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
                 <FormItem>
                   <FormLabel>{t("users.dialog.fullName")}</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t("users.dialog.fullNamePlaceholder")}
-                      autoComplete="name"
-                      {...field}
-                    />
+                    <Input placeholder={t("users.dialog.fullNamePlaceholder")} autoComplete="name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,9 +168,7 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="ADMIN">{t("role.ADMIN")}</SelectItem>
-                      <SelectItem value="CONTRIBUTOR">
-                        {t("role.CONTRIBUTOR")}
-                      </SelectItem>
+                      <SelectItem value="CONTRIBUTOR">{t("role.CONTRIBUTOR")}</SelectItem>
                       <SelectItem value="MEMBER">{t("role.MEMBER")}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -202,8 +181,8 @@ export function CreateMemberDialog({ onCreated }: CreateMemberDialogProps) {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? t("users.dialog.submitting") : t("users.dialog.submit")}
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? t("users.dialog.submitting") : t("users.dialog.submit")}
               </Button>
             </DialogFooter>
           </form>

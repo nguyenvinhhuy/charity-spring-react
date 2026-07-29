@@ -1,17 +1,14 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
 import { toast } from "sonner"
-import {
-  createCampaign,
-  getCampaign,
-  updateCampaign,
-} from "@/api/campaigns"
+import { createCampaign, getCampaign, updateCampaign } from "@/api/campaigns"
 import { getBankSettings } from "@/api/settings"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
@@ -28,21 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUploadField } from "@/components/image-upload-field"
 import { CATEGORY_OPTIONS, categoryLabel } from "./campaign-constants"
 
@@ -54,65 +38,57 @@ import { CATEGORY_OPTIONS, categoryLabel } from "./campaign-constants"
 function buildCampaignSchema(t: TFunction) {
   return z
     .object({
-    // Vietnamese content is required (the default language).
-    title: z.string().min(1, t("campaigns.form.titleRequired")),
-    summary: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
-    description: z.string().min(1, t("campaigns.form.descriptionRequired")),
-    // English content is optional; the client falls back to Vietnamese when it is empty.
-    titleEn: z.string().max(255, t("campaigns.form.maxLength255")).optional(),
-    summaryEn: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
-    descriptionEn: z.string().optional(),
-    category: z.enum([
-      "CHILDREN",
-      "EDUCATION",
-      "HEALTHCARE",
-      "DISASTER_RELIEF",
-      "ELDERLY",
-      "ENVIRONMENT",
-      "OTHER",
-    ]),
-    targetAmount: z
-      .string()
-      .min(1, t("campaigns.form.amountRequired"))
-      .refine((v) => Number(v) > 0, t("campaigns.form.amountPositive")),
-    bankAccountNo: z.string().min(1, t("campaigns.form.bankAccountNoRequired")),
-    bankAccountName: z.string().min(1, t("campaigns.form.bankAccountNameRequired")),
-    qrDescription: z.string().max(100, t("campaigns.form.maxLength100")).optional(),
-    thienNguyenUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
-    thumbnailUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
-    startDate: z.string().min(1, t("campaigns.form.startDateRequired")),
-    endDate: z.string().optional(),
-    // Dates of the on-ground activity, separate from the fundraising period above; not every campaign has one.
-    eventStartDate: z.string().optional(),
-    eventEndDate: z.string().optional(),
-    // Max participants for the on-ground event; only valid together with eventStartDate (enforced below).
-    capacity: z.string().optional(),
-  })
-  .superRefine((values, ctx) => {
-    const hasEventStart = !!values.eventStartDate
-    const hasCapacity = !!values.capacity
-    if (hasCapacity && !hasEventStart) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["eventStartDate"],
-        message: t("campaigns.form.capacityRequiresEventDate"),
-      })
-    }
-    if (hasEventStart && !hasCapacity) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["capacity"],
-        message: t("campaigns.form.eventDateRequiresCapacity"),
-      })
-    }
-    if (hasCapacity && Number(values.capacity) <= 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["capacity"],
-        message: t("campaigns.form.capacityPositive"),
-      })
-    }
-  })
+      // Vietnamese content is required (the default language).
+      title: z.string().min(1, t("campaigns.form.titleRequired")),
+      summary: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
+      description: z.string().min(1, t("campaigns.form.descriptionRequired")),
+      // English content is optional; the client falls back to Vietnamese when it is empty.
+      titleEn: z.string().max(255, t("campaigns.form.maxLength255")).optional(),
+      summaryEn: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
+      descriptionEn: z.string().optional(),
+      category: z.enum(["CHILDREN", "EDUCATION", "HEALTHCARE", "DISASTER_RELIEF", "ELDERLY", "ENVIRONMENT", "OTHER"]),
+      targetAmount: z
+        .string()
+        .min(1, t("campaigns.form.amountRequired"))
+        .refine((v) => Number(v) > 0, t("campaigns.form.amountPositive")),
+      bankAccountNo: z.string().min(1, t("campaigns.form.bankAccountNoRequired")),
+      bankAccountName: z.string().min(1, t("campaigns.form.bankAccountNameRequired")),
+      qrDescription: z.string().max(100, t("campaigns.form.maxLength100")).optional(),
+      thienNguyenUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
+      thumbnailUrl: z.url(t("campaigns.form.invalidUrl")).or(z.literal("")).optional(),
+      startDate: z.string().min(1, t("campaigns.form.startDateRequired")),
+      endDate: z.string().optional(),
+      // Dates of the on-ground activity, separate from the fundraising period above; not every campaign has one.
+      eventStartDate: z.string().optional(),
+      eventEndDate: z.string().optional(),
+      // Max participants for the on-ground event; only valid together with eventStartDate (enforced below).
+      capacity: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      const hasEventStart = !!values.eventStartDate
+      const hasCapacity = !!values.capacity
+      if (hasCapacity && !hasEventStart) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["eventStartDate"],
+          message: t("campaigns.form.capacityRequiresEventDate"),
+        })
+      }
+      if (hasEventStart && !hasCapacity) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["capacity"],
+          message: t("campaigns.form.eventDateRequiresCapacity"),
+        })
+      }
+      if (hasCapacity && Number(values.capacity) <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["capacity"],
+          message: t("campaigns.form.capacityPositive"),
+        })
+      }
+    })
 }
 
 type CampaignFormValues = z.infer<ReturnType<typeof buildCampaignSchema>>
@@ -181,7 +157,7 @@ interface CampaignFormDialogProps {
   onOpenChange: (open: boolean) => void
   /** When set, the dialog edits this campaign; otherwise it creates a new one. */
   campaign?: CampaignSummary | null
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 /**
@@ -192,72 +168,70 @@ interface CampaignFormDialogProps {
  * @param campaign when set, the dialog edits this campaign; otherwise it creates a new one
  * @param onSaved invoked after a successful create or update
  */
-export function CampaignFormDialog({
-  open,
-  onOpenChange,
-  campaign,
-  onSaved,
-}: CampaignFormDialogProps) {
+export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: CampaignFormDialogProps) {
   const { t } = useTranslation()
   const campaignSchema = useMemo(() => buildCampaignSchema(t), [t])
   const isEdit = Boolean(campaign)
   const isAdmin = useAuthStore((s) => s.member?.role) === "ADMIN"
-  const [loadingDetail, setLoadingDetail] = useState(false)
-  // Keep the existing statementUrl on edit so an update does not wipe it (the form does not expose it).
-  const [statementUrl, setStatementUrl] = useState<string | null>(null)
 
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignSchema),
     defaultValues: EMPTY_VALUES,
   })
 
-  // When opening, reset to empty (create) or fetch and prefill the campaign detail (edit).
+  // Pre-fills the club's default bank account for a new campaign; CONTRIBUTOR cannot change it
+  // (fields disabled below), and it saves ADMIN a lookup even though they are still free to override it.
+  const bankDefaultsQuery = useQuery({
+    queryKey: ["bank-settings"],
+    queryFn: getBankSettings,
+    enabled: open && !campaign,
+  })
+
+  const detailQuery = useQuery({
+    queryKey: ["campaigns", "detail", campaign?.slug],
+    queryFn: () => getCampaign(campaign!.slug),
+    enabled: open && !!campaign,
+  })
+  const loadingDetail = detailQuery.isLoading && isEdit
+  // Keep the existing statementUrl on edit so an update does not wipe it (the form does not expose it).
+  const statementUrl = detailQuery.data?.statementUrl ?? null
+
+  // Resets the form once the relevant fetch (bank defaults or campaign detail) has data, keyed on the
+  // dialog opening for a (possibly different) campaign — form.reset() is react-hook-form's own store,
+  // not a React state setter, so this effect isn't subject to the "fetch, then setState" restriction.
   useEffect(() => {
     if (!open) return
-    if (!campaign) {
-      setStatementUrl(null)
-      // Pre-fill the club's default bank account; CONTRIBUTOR cannot change it (fields disabled below),
-      // and it saves ADMIN a lookup even though they are still free to override it.
-      getBankSettings()
-        .then((defaults) => {
-          form.reset({
-            ...EMPTY_VALUES,
-            bankAccountNo: defaults.bankAccountNo,
-            bankAccountName: defaults.bankAccountName,
-          })
-        })
-        .catch(() => {
-          form.reset(EMPTY_VALUES)
-        })
-      return
+    if (campaign) {
+      if (detailQuery.data) form.reset(detailToValues(detailQuery.data))
+    } else if (bankDefaultsQuery.data) {
+      form.reset({
+        ...EMPTY_VALUES,
+        bankAccountNo: bankDefaultsQuery.data.bankAccountNo,
+        bankAccountName: bankDefaultsQuery.data.bankAccountName,
+      })
+    } else if (bankDefaultsQuery.isError) {
+      form.reset(EMPTY_VALUES)
     }
-    let active = true
-    setLoadingDetail(true)
-    getCampaign(campaign.slug)
-      .then((detail) => {
-        if (!active) return
-        setStatementUrl(detail.statementUrl ?? null)
-        form.reset(detailToValues(detail))
-      })
-      .catch((err) => {
-        if (active) toast.error(getErrorMessage(err))
-      })
-      .finally(() => {
-        if (active) setLoadingDetail(false)
-      })
-    return () => {
-      active = false
-    }
-    // Re-run whenever the dialog opens or the target campaign changes.
+  }, [open, campaign, detailQuery.data, bankDefaultsQuery.data, bankDefaultsQuery.isError, form])
 
-  }, [open, campaign])
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreateCampaignRequest) =>
+      campaign ? updateCampaign(campaign.id, payload) : createCampaign(payload),
+    // Awaits the refetch before closing so the list behind it never briefly shows stale data.
+    onSuccess: async () => {
+      toast.success(campaign ? t("campaigns.form.updated") : t("campaigns.form.created"))
+      await onSaved()
+      onOpenChange(false)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   /**
-   * Submits the form, creating or updating the campaign, then closes on success.
+   * Submits the form, creating or updating the campaign.
    *
    * @param values the validated form values
    */
-  async function onSubmit(values: CampaignFormValues) {
+  function onSubmit(values: CampaignFormValues) {
     const payload: CreateCampaignRequest = {
       title: values.title.trim(),
       summary: orNull(values.summary),
@@ -280,20 +254,7 @@ export function CampaignFormDialog({
       eventEndDate: orNull(values.eventEndDate),
       capacity: values.capacity ? Number(values.capacity) : null,
     }
-
-    try {
-      if (campaign) {
-        await updateCampaign(campaign.id, payload)
-        toast.success(t("campaigns.form.updated"))
-      } else {
-        await createCampaign(payload)
-        toast.success(t("campaigns.form.created"))
-      }
-      onOpenChange(false)
-      onSaved()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
+    saveMutation.mutate(payload)
   }
 
   return (
@@ -302,9 +263,7 @@ export function CampaignFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? t("campaigns.form.editTitle") : t("campaigns.form.createTitle")}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? t("campaigns.form.editDescription")
-              : t("campaigns.form.createDescription")}
+            {isEdit ? t("campaigns.form.editDescription") : t("campaigns.form.createDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -377,9 +336,7 @@ export function CampaignFormDialog({
                 </TabsContent>
 
                 <TabsContent value="en" className="mt-4 flex flex-col gap-4">
-                  <p className="text-muted-foreground text-xs">
-                    {t("campaigns.form.enHint")}
-                  </p>
+                  <p className="text-muted-foreground text-xs">{t("campaigns.form.enHint")}</p>
                   <FormField
                     control={form.control}
                     name="titleEn"
@@ -501,9 +458,7 @@ export function CampaignFormDialog({
                 />
               </div>
               {!isAdmin && (
-                <p className="text-muted-foreground -mt-2 text-xs">
-                  {t("campaigns.form.bankAccountLockedHint")}
-                </p>
+                <p className="text-muted-foreground -mt-2 text-xs">{t("campaigns.form.bankAccountLockedHint")}</p>
               )}
 
               <FormField
@@ -566,9 +521,7 @@ export function CampaignFormDialog({
 
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">{t("campaigns.form.eventSectionTitle")}</p>
-                <p className="text-muted-foreground text-xs">
-                  {t("campaigns.form.eventSectionHint")}
-                </p>
+                <p className="text-muted-foreground text-xs">{t("campaigns.form.eventSectionHint")}</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
@@ -618,8 +571,8 @@ export function CampaignFormDialog({
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   {t("common.cancel")}
                 </Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending
                     ? t("common.saving")
                     : isEdit
                       ? t("campaigns.form.saveChanges")

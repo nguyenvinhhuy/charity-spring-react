@@ -48,9 +48,10 @@ export function ProtectedRoute({ children, requiredRole, requiredRoles }: Protec
     return () => {
       active = false
     }
-    // Run once on mount.
-
-  }, [])
+    // Intentionally excludes accessToken: this must run once on mount only, not whenever
+    // accessToken later changes (e.g. after a normal sign-in), or it would re-trigger restoration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clear, setMember])
 
   if (restoring) {
     return (

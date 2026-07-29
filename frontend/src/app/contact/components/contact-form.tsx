@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useMemo, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
@@ -12,14 +12,7 @@ import { getErrorMessage } from "@/api/axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 /**
  * Builds the contact form's zod schema with localized validation messages.
@@ -51,7 +44,8 @@ const EMPTY_VALUES: ContactFormValues = {
 export function ContactForm() {
   const { t } = useTranslation()
   const contactSchema = useMemo(() => buildContactSchema(t), [t])
-  const formRenderedAtMs = useRef(Date.now())
+  // Lazy initializer so Date.now() is called exactly once, on first render.
+  const [formRenderedAtMs] = useState(() => Date.now())
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -71,7 +65,7 @@ export function ContactForm() {
         subject: values.subject.trim(),
         message: values.message.trim(),
         website: values.website,
-        formRenderedAtMs: formRenderedAtMs.current,
+        formRenderedAtMs,
       })
       toast.success(t("contactPublic.form.success"))
       form.reset(EMPTY_VALUES)

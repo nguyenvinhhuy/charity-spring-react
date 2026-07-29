@@ -1,10 +1,10 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { CreateDonationRequest, Donation } from "@/types/donation"
 
 export interface ListDonationsParams {
-  page?: number;
-  size?: number;
+  page?: number
+  size?: number
 }
 
 /**
@@ -13,15 +13,9 @@ export interface ListDonationsParams {
  * @param campaignId the campaign id
  * @param params pagination options
  */
-export async function listDonations(
-  campaignId: number,
-  params: ListDonationsParams = {},
-): Promise<Page<Donation>> {
-  const { data } = await api.get<Page<Donation>>(
-    `/campaigns/${campaignId}/donations`,
-    { params },
-  );
-  return data;
+export async function listDonations(campaignId: number, params: ListDonationsParams = {}): Promise<Page<Donation>> {
+  const { data } = await api.get<Page<Donation>>(`/campaigns/${campaignId}/donations`, { params })
+  return data
 }
 
 /**
@@ -31,15 +25,9 @@ export async function listDonations(
  * @param payload the donation fields
  * @returns the created donation
  */
-export async function addDonation(
-  campaignId: number,
-  payload: CreateDonationRequest,
-): Promise<Donation> {
-  const { data } = await api.post<Donation>(
-    `/campaigns/${campaignId}/donations`,
-    payload,
-  );
-  return data;
+export async function addDonation(campaignId: number, payload: CreateDonationRequest): Promise<Donation> {
+  const { data } = await api.post<Donation>(`/campaigns/${campaignId}/donations`, payload)
+  return data
 }
 
 /**
@@ -48,9 +36,6 @@ export async function addDonation(
  * @param campaignId the campaign id
  * @param donationId the donation id
  */
-export async function deleteDonation(
-  campaignId: number,
-  donationId: number,
-): Promise<void> {
-  await api.delete(`/campaigns/${campaignId}/donations/${donationId}`);
+export async function deleteDonation(campaignId: number, donationId: number): Promise<void> {
+  await api.delete(`/campaigns/${campaignId}/donations/${donationId}`)
 }

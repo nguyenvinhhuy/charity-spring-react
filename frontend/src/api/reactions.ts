@@ -1,7 +1,7 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { ReactionSummary, ReactionType } from "@/types/reaction"
 
-export type ReactionTarget = 'campaigns' | 'posts';
+export type ReactionTarget = "campaigns" | "posts"
 
 /**
  * Fetches a target's reaction summary (per-type counts, reactor names, and the caller's own pick).
@@ -9,12 +9,9 @@ export type ReactionTarget = 'campaigns' | 'posts';
  * @param target the kind of content being reacted to
  * @param id the target's id
  */
-export async function getReactionSummary(
-  target: ReactionTarget,
-  id: number,
-): Promise<ReactionSummary> {
-  const { data } = await api.get<ReactionSummary>(`/${target}/${id}/reactions`);
-  return data;
+export async function getReactionSummary(target: ReactionTarget, id: number): Promise<ReactionSummary> {
+  const { data } = await api.get<ReactionSummary>(`/${target}/${id}/reactions`)
+  return data
 }
 
 /**
@@ -24,12 +21,8 @@ export async function getReactionSummary(
  * @param id the target's id
  * @param type the chosen reaction
  */
-export async function setReaction(
-  target: ReactionTarget,
-  id: number,
-  type: ReactionType,
-): Promise<void> {
-  await api.put(`/${target}/${id}/reactions/me`, { type });
+export async function setReaction(target: ReactionTarget, id: number, type: ReactionType): Promise<void> {
+  await api.put(`/${target}/${id}/reactions/me`, { type })
 }
 
 /**
@@ -39,5 +32,5 @@ export async function setReaction(
  * @param id the target's id
  */
 export async function removeReaction(target: ReactionTarget, id: number): Promise<void> {
-  await api.delete(`/${target}/${id}/reactions/me`);
+  await api.delete(`/${target}/${id}/reactions/me`)
 }

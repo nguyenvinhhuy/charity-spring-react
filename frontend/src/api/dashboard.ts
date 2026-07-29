@@ -1,4 +1,4 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Granularity } from "@/types/common"
 import type { DashboardSummary } from "@/types/dashboard"
 
@@ -7,11 +7,9 @@ import type { DashboardSummary } from "@/types/dashboard"
  *
  * @param granularity the bucket size for the donation series
  */
-export async function getDashboardSummary(
-  granularity: Granularity = 'MONTH',
-): Promise<DashboardSummary> {
-  const { data } = await api.get<DashboardSummary>('/dashboard/summary', {
+export async function getDashboardSummary(granularity: Granularity = "MONTH"): Promise<DashboardSummary> {
+  const { data } = await api.get<DashboardSummary>("/dashboard/summary", {
     params: { granularity },
-  });
-  return data;
+  })
+  return data
 }

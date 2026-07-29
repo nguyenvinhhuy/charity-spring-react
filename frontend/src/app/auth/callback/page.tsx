@@ -33,7 +33,7 @@ export default function AuthCallbackPage() {
     }
 
     void completeLogin()
-  }, [navigate, setAuth, setAccessToken])
+  }, [navigate, setAuth, setAccessToken, t])
 
   return (
     <div className="flex min-h-svh items-center justify-center">

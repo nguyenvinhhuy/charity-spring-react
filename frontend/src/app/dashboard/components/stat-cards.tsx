@@ -18,9 +18,7 @@ interface StatCardsProps {
 export function StatCards({ summary }: StatCardsProps) {
   const { t } = useTranslation()
 
-  const roleSummary = summary.membersByRole
-    .map((r) => `${r.count} ${t(`dashboard.roleShort.${r.role}`)}`)
-    .join(" · ")
+  const roleSummary = summary.membersByRole.map((r) => `${r.count} ${t(`dashboard.roleShort.${r.role}`)}`).join(" · ")
 
   const cards = [
     {
@@ -65,9 +63,7 @@ export function StatCards({ summary }: StatCardsProps) {
                 <Icon className="size-4" />
                 {card.title}
               </CardDescription>
-              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-                {card.value}
-              </CardTitle>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">{card.value}</CardTitle>
             </CardHeader>
             <CardFooter className="text-muted-foreground text-sm">
               <span className="line-clamp-1">{card.footer}</span>

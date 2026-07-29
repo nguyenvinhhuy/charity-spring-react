@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CheckCircle2, ChevronLeft, ChevronRight, Eye, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -8,26 +9,12 @@ import { BaseLayout } from "@/components/layouts/base-layout"
 import { deleteInquiry, listInquiries, markInquiryHandled } from "@/api/inquiries"
 import { getErrorMessage } from "@/api/axios"
 import { INQUIRY_STATUS_BADGE_CLASSES } from "@/lib/status-badges"
-import type { Page } from "@/types/common"
 import type { Inquiry, InquiryStatus } from "@/types/inquiry"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -54,64 +41,46 @@ export default function InquiriesManagePage() {
 
   const [page, setPage] = useState(0)
   const [statusFilter, setStatusFilter] = useState<typeof ALL | InquiryStatus>(ALL)
-  const [data, setData] = useState<Page<Inquiry> | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [viewing, setViewing] = useState<Inquiry | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  /** Fetches the current page of inquiries and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listInquiries({
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["inquiries", { page, statusFilter }],
+    queryFn: () =>
+      listInquiries({
         page,
         size: PAGE_SIZE,
         status: statusFilter === ALL ? undefined : statusFilter,
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, statusFilter])
+      }),
+    // Keeps the previous page/filter's rows on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches every inquiries list query, regardless of the current page/filter. */
+  function refreshInquiries() {
+    return queryClient.invalidateQueries({ queryKey: ["inquiries"] })
+  }
 
-  /**
-   * Marks an inquiry as handled, then refreshes the list.
-   *
-   * @param inquiry the inquiry to mark handled
-   */
-  async function handleMarkHandled(inquiry: Inquiry) {
-    try {
-      await markInquiryHandled(inquiry.id)
+  const markHandledMutation = useMutation({
+    mutationFn: (inquiry: Inquiry) => markInquiryHandled(inquiry.id),
+    onSuccess: async () => {
       toast.success(t("inquiries.toast.markedHandled"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
+      await refreshInquiries()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
-  /** Deletes the inquiry held in deleteTarget, then refreshes the list. */
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await deleteInquiry(deleteTarget.id)
+  const deleteMutation = useMutation({
+    mutationFn: (inquiry: Inquiry) => deleteInquiry(inquiry.id),
+    onSuccess: async () => {
       toast.success(t("inquiries.toast.deleted"))
+      await refreshInquiries()
       setDeleteTarget(null)
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setDeleting(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   const inquiries = data?.content ?? []
 
@@ -196,7 +165,7 @@ export default function InquiriesManagePage() {
                               variant="ghost"
                               size="icon"
                               title={t("inquiries.actions.markHandled")}
-                              onClick={() => handleMarkHandled(inquiry)}
+                              onClick={() => markHandledMutation.mutate(inquiry)}
                             >
                               <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" />
                             </Button>
@@ -271,8 +240,12 @@ export default function InquiriesManagePage() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("inquiries.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("inquiries.deleteDialog.deleting") : t("inquiries.actions.delete")}
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("inquiries.deleteDialog.deleting") : t("inquiries.actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

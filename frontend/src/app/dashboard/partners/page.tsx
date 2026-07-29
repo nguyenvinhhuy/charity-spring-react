@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -11,14 +12,7 @@ import { useAuthStore } from "@/store/authStore"
 import type { Partner } from "@/types/partner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -33,30 +27,21 @@ export default function PartnersManagePage() {
   const { t } = useTranslation()
   const isAdmin = useAuthStore((s) => s.member?.role) === "ADMIN"
 
-  const [partners, setPartners] = useState<Partner[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Partner | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  /** Fetches the partner list and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listPartners()
-      setPartners(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const { data: partners = [], isLoading: loading } = useQuery({
+    queryKey: ["partners"],
+    queryFn: listPartners,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches the partner list. */
+  function refreshPartners() {
+    return queryClient.invalidateQueries({ queryKey: ["partners"] })
+  }
 
   /** Opens the form dialog in create mode. */
   function openCreate() {
@@ -74,29 +59,21 @@ export default function PartnersManagePage() {
     setFormOpen(true)
   }
 
-  /** Deletes the partner held in deleteTarget, then refreshes the list. */
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await deletePartner(deleteTarget.id)
+  const deleteMutation = useMutation({
+    mutationFn: (partner: Partner) => deletePartner(partner.id),
+    onSuccess: async () => {
       toast.success(t("partnersManage.toast.deleted"))
+      await refreshPartners()
       setDeleteTarget(null)
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setDeleting(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <BaseLayout title={t("partnersManage.title")} description={t("partnersManage.description")}>
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="text-muted-foreground text-sm">
-            {t("partnersManage.total", { count: partners.length })}
-          </span>
+          <span className="text-muted-foreground text-sm">{t("partnersManage.total", { count: partners.length })}</span>
           <Button onClick={openCreate}>
             <Plus />
             {t("partnersManage.addPartner")}
@@ -184,7 +161,7 @@ export default function PartnersManagePage() {
         </Card>
       </div>
 
-      <PartnerFormDialog open={formOpen} onOpenChange={setFormOpen} partner={editing} onSaved={load} />
+      <PartnerFormDialog open={formOpen} onOpenChange={setFormOpen} partner={editing} onSaved={refreshPartners} />
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
@@ -196,8 +173,12 @@ export default function PartnersManagePage() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("partnersManage.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("partnersManage.deleteDialog.deleting") : t("partnersManage.delete")}
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("partnersManage.deleteDialog.deleting") : t("partnersManage.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

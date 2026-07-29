@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Mention, MentionsInput, type SuggestionDataItem } from "react-mentions"
@@ -104,67 +105,15 @@ interface CommentSectionProps {
 export function CommentSection({ target, targetId }: CommentSectionProps) {
   const { t } = useTranslation()
   const member = useAuthStore((s) => s.member)
+  const queryClient = useQueryClient()
 
-  const [data, setData] = useState<Page<Comment> | null>(null)
-  const [loading, setLoading] = useState(true)
   const [showingAll, setShowingAll] = useState(false)
   const [draft, setDraft] = useState("")
-  const [posting, setPosting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState("")
-  const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Comment | null>(null)
-  const [deleting, setDeleting] = useState(false)
 
-  /** Loads the first page (5) or, once expanded, the full comment list. */
-  async function load(all: boolean) {
-    setLoading(true)
-    try {
-      const size = all ? Math.max(PAGE_SIZE, data?.totalElements ?? PAGE_SIZE) : PAGE_SIZE
-      const result = await listComments(target, targetId, { page: 0, size })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Kept in sync with the latest render so the polling interval below (created once per
-  // target/targetId) always reads current values instead of the ones from its first render.
-  const dataRef = useRef(data)
-  dataRef.current = data
-  const showingAllRef = useRef(showingAll)
-  showingAllRef.current = showingAll
-  const busyRef = useRef(false)
-  busyRef.current = posting || saving || deleting
-
-  useEffect(() => {
-    let active = true
-    void load(false)
-
-    const intervalId = setInterval(() => {
-      // Skip while the viewer is mid-post/edit/delete so the poll can't clobber that mutation's
-      // own optimistic update or refetch.
-      if (busyRef.current) return
-      const size = showingAllRef.current
-        ? Math.max(PAGE_SIZE, dataRef.current?.totalElements ?? PAGE_SIZE)
-        : PAGE_SIZE
-      listComments(target, targetId, { page: 0, size })
-        .then((result) => {
-          if (active) setData(result)
-        })
-        .catch(() => {
-          // Silent background refresh: a transient failure here isn't worth a toast.
-        })
-    }, POLL_INTERVAL_MS)
-
-    return () => {
-      active = false
-      clearInterval(intervalId)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [target, targetId])
+  const commentsQueryKey = ["comments", target, targetId, showingAll]
 
   /** Fetches @mention suggestions for the comment input, reporting results via react-mentions' callback. */
   function fetchMentions(query: string, callback: (data: SuggestionDataItem[]) => void) {
@@ -177,23 +126,21 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
       .catch(() => callback([]))
   }
 
-  /** Posts a new comment, prepending it to the list optimistically. */
-  async function handlePost() {
-    if (!draft.trim() || posting) return
-    setPosting(true)
-    try {
-      const created = await addComment(target, targetId, { content: draft.trim() })
-      setData((prev) =>
-        prev
-          ? { ...prev, content: [created, ...prev.content], totalElements: prev.totalElements + 1 }
-          : prev
+  const postMutation = useMutation({
+    mutationFn: (content: string) => addComment(target, targetId, { content }),
+    onSuccess: (created) => {
+      queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
+        prev ? { ...prev, content: [created, ...prev.content], totalElements: prev.totalElements + 1 } : prev,
       )
       setDraft("")
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setPosting(false)
-    }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  /** Posts a new comment, prepending it to the list optimistically. */
+  function handlePost() {
+    if (!draft.trim() || postMutation.isPending) return
+    postMutation.mutate(draft.trim())
   }
 
   function startEdit(comment: Comment) {
@@ -201,45 +148,54 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
     setEditDraft(comment.content)
   }
 
-  /** Saves an in-place edit, replacing the comment in the list on success. */
-  async function handleSaveEdit(commentId: number) {
-    if (!editDraft.trim() || saving) return
-    setSaving(true)
-    try {
-      const updated = await updateComment(target, targetId, commentId, { content: editDraft.trim() })
-      setData((prev) =>
-        prev ? { ...prev, content: prev.content.map((c) => (c.id === commentId ? updated : c)) } : prev
+  const editMutation = useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) =>
+      updateComment(target, targetId, commentId, { content }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
+        prev ? { ...prev, content: prev.content.map((c) => (c.id === updated.id ? updated : c)) } : prev,
       )
       setEditingId(null)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  /** Saves an in-place edit, replacing the comment in the list on success. */
+  function handleSaveEdit(commentId: number) {
+    if (!editDraft.trim() || editMutation.isPending) return
+    editMutation.mutate({ commentId, content: editDraft.trim() })
   }
 
-  /** Deletes the comment held in `deleteTarget`, removing it from the list on success. */
-  async function handleDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
-    try {
-      await deleteComment(target, targetId, deleteTarget.id)
-      setData((prev) =>
+  const deleteMutation = useMutation({
+    mutationFn: (comment: Comment) => deleteComment(target, targetId, comment.id),
+    onSuccess: (_result, comment) => {
+      queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
         prev
           ? {
               ...prev,
-              content: prev.content.filter((c) => c.id !== deleteTarget.id),
+              content: prev.content.filter((c) => c.id !== comment.id),
               totalElements: prev.totalElements - 1,
             }
-          : prev
+          : prev,
       )
       setDeleteTarget(null)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setDeleting(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: commentsQueryKey,
+    queryFn: () => {
+      const prevTotal = queryClient.getQueryData<Page<Comment>>(commentsQueryKey)?.totalElements
+      const size = showingAll ? Math.max(PAGE_SIZE, prevTotal ?? PAGE_SIZE) : PAGE_SIZE
+      return listComments(target, targetId, { page: 0, size })
+    },
+    // Paused while a post/edit/delete is in flight so the poll can't clobber its own optimistic update.
+    refetchInterval: () =>
+      postMutation.isPending || editMutation.isPending || deleteMutation.isPending ? false : POLL_INTERVAL_MS,
+    // Keeps the current thread on screen while "view all" expands to the larger page size.
+    placeholderData: keepPreviousData,
+  })
 
   const comments = data?.content ?? []
   const total = data?.totalElements ?? 0
@@ -253,15 +209,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
       <h2 className="font-semibold">{t("comments.title", { count: total })}</h2>
 
       {hasMore && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-fit"
-          onClick={() => {
-            setShowingAll(true)
-            void load(true)
-          }}
-        >
+        <Button variant="ghost" size="sm" className="w-fit" onClick={() => setShowingAll(true)}>
           {t("comments.viewAll", { count: total })}
         </Button>
       )}
@@ -275,84 +223,81 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
           {displayComments.map((comment, index) => {
             // Consecutive comments from the same author collapse into one avatar/name block,
             // Slack-style, instead of repeating the author's identity on every single comment.
-            const sameAuthorAsPrevious =
-              index > 0 && displayComments[index - 1].authorName === comment.authorName
+            const sameAuthorAsPrevious = index > 0 && displayComments[index - 1].authorName === comment.authorName
             return (
-            <div key={comment.id} className="flex gap-3">
-              {sameAuthorAsPrevious ? (
-                <div className="size-8 shrink-0" />
-              ) : (
-                <Avatar className="size-8 shrink-0">
-                  <AvatarFallback className={colorOf(comment.authorName)}>
-                    {initialsOf(comment.authorName)}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <div className="flex-1">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  {!sameAuthorAsPrevious && <span className="text-sm font-medium">{comment.authorName}</span>}
-                  <span className="text-muted-foreground text-xs">{formatDateTime(comment.createdAt)}</span>
-                  {comment.edited && (
-                    <span className="text-muted-foreground text-xs">{t("comments.edited")}</span>
-                  )}
-                  {editingId !== comment.id && (comment.canEdit || comment.canDelete) && (
-                    <div className="ml-auto flex gap-3">
-                      {comment.canEdit && (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(comment)}
-                          className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-xs"
-                        >
-                          <Pencil className="size-3" />
-                          {t("comments.edit")}
-                        </button>
-                      )}
-                      {comment.canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(comment)}
-                          className="text-muted-foreground hover:text-destructive inline-flex cursor-pointer items-center gap-1 text-xs"
-                        >
-                          <Trash2 className="size-3" />
-                          {t("comments.delete")}
-                        </button>
-                      )}
+              <div key={comment.id} className="flex gap-3">
+                {sameAuthorAsPrevious ? (
+                  <div className="size-8 shrink-0" />
+                ) : (
+                  <Avatar className="size-8 shrink-0">
+                    <AvatarFallback className={colorOf(comment.authorName)}>
+                      {initialsOf(comment.authorName)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    {!sameAuthorAsPrevious && <span className="text-sm font-medium">{comment.authorName}</span>}
+                    <span className="text-muted-foreground text-xs">{formatDateTime(comment.createdAt)}</span>
+                    {comment.edited && <span className="text-muted-foreground text-xs">{t("comments.edited")}</span>}
+                    {editingId !== comment.id && (comment.canEdit || comment.canDelete) && (
+                      <div className="ml-auto flex gap-3">
+                        {comment.canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(comment)}
+                            className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-xs"
+                          >
+                            <Pencil className="size-3" />
+                            {t("comments.edit")}
+                          </button>
+                        )}
+                        {comment.canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(comment)}
+                            className="text-muted-foreground hover:text-destructive inline-flex cursor-pointer items-center gap-1 text-xs"
+                          >
+                            <Trash2 className="size-3" />
+                            {t("comments.delete")}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {editingId === comment.id ? (
+                    <div className="mt-1 flex flex-col gap-2">
+                      <MentionsInput
+                        value={editDraft}
+                        onChange={(_e, newValue) => setEditDraft(newValue)}
+                        style={mentionsInputStyle}
+                      >
+                        <Mention
+                          trigger="@"
+                          data={fetchMentions}
+                          markup="@[__display__](__id__)"
+                          displayTransform={mentionDisplayTransform}
+                          style={mentionStyle}
+                          appendSpaceOnAdd
+                        />
+                      </MentionsInput>
+                      <div className="flex gap-2">
+                        <Button size="sm" disabled={editMutation.isPending} onClick={() => handleSaveEdit(comment.id)}>
+                          {editMutation.isPending ? t("comments.saving") : t("comments.save")}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                          {t("comments.cancel")}
+                        </Button>
+                      </div>
                     </div>
+                  ) : (
+                    <p className="mt-1 text-sm whitespace-pre-wrap">
+                      {renderCommentContent(comment.content, member?.id)}
+                    </p>
                   )}
                 </div>
-
-                {editingId === comment.id ? (
-                  <div className="mt-1 flex flex-col gap-2">
-                    <MentionsInput
-                      value={editDraft}
-                      onChange={(_e, newValue) => setEditDraft(newValue)}
-                      style={mentionsInputStyle}
-                    >
-                      <Mention
-                        trigger="@"
-                        data={fetchMentions}
-                        markup="@[__display__](__id__)"
-                        displayTransform={mentionDisplayTransform}
-                        style={mentionStyle}
-                        appendSpaceOnAdd
-                      />
-                    </MentionsInput>
-                    <div className="flex gap-2">
-                      <Button size="sm" disabled={saving} onClick={() => handleSaveEdit(comment.id)}>
-                        {saving ? t("comments.saving") : t("comments.save")}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
-                        {t("comments.cancel")}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-1 text-sm whitespace-pre-wrap">
-                    {renderCommentContent(comment.content, member?.id)}
-                  </p>
-                )}
               </div>
-            </div>
             )
           })}
         </div>
@@ -378,8 +323,8 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
               />
             </MentionsInput>
           </div>
-          <Button className="h-10" disabled={!draft.trim() || posting} onClick={handlePost}>
-            {posting ? t("comments.posting") : t("comments.submit")}
+          <Button className="h-10" disabled={!draft.trim() || postMutation.isPending} onClick={handlePost}>
+            {postMutation.isPending ? t("comments.posting") : t("comments.submit")}
           </Button>
         </div>
       ) : (
@@ -396,8 +341,12 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               {t("comments.cancel")}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? t("comments.deleteDialog.deleting") : t("comments.delete")}
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("comments.deleteDialog.deleting") : t("comments.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

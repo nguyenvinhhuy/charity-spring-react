@@ -1,40 +1,41 @@
-import { lazy } from 'react'
-import { Navigate } from 'react-router'
+import { lazy } from "react"
+import { Navigate } from "react-router"
 import type { Role } from "@/types/common"
 
 // Lazy load components for better performance
-const Landing = lazy(() => import('@/app/landing/page'))
-const Dashboard = lazy(() => import('@/app/dashboard/page'))
-const Calendar = lazy(() => import('@/app/calendar/page'))
-const Campaigns = lazy(() => import('@/app/campaigns/page'))
-const Users = lazy(() => import('@/app/users/page'))
-const FAQs = lazy(() => import('@/app/faqs/page'))
-const FaqManage = lazy(() => import('@/app/faqs/manage/page'))
-const NewsManage = lazy(() => import('@/app/dashboard/news/manage/page'))
-const InquiriesManage = lazy(() => import('@/app/dashboard/inquiries/page'))
-const PartnersManage = lazy(() => import('@/app/dashboard/partners/page'))
-const Settings = lazy(() => import('@/app/dashboard/settings/page'))
+const Landing = lazy(() => import("@/app/landing/page"))
+const Dashboard = lazy(() => import("@/app/dashboard/page"))
+const Calendar = lazy(() => import("@/app/calendar/page"))
+const Campaigns = lazy(() => import("@/app/campaigns/page"))
+const Users = lazy(() => import("@/app/users/page"))
+const FAQs = lazy(() => import("@/app/faqs/page"))
+const FaqManage = lazy(() => import("@/app/faqs/manage/page"))
+const NewsManage = lazy(() => import("@/app/dashboard/news/manage/page"))
+const InquiriesManage = lazy(() => import("@/app/dashboard/inquiries/page"))
+const PartnersManage = lazy(() => import("@/app/dashboard/partners/page"))
+const Settings = lazy(() => import("@/app/dashboard/settings/page"))
+const Monitoring = lazy(() => import("@/features/monitoring/pages/monitoring-page"))
 
 // Public content pages (Phase 2)
-const PublicCampaigns = lazy(() => import('@/app/public/campaigns/page'))
-const PublicCampaignDetail = lazy(() => import('@/app/public/campaigns/detail'))
-const PublicNews = lazy(() => import('@/app/public/news/page'))
-const PublicNewsDetail = lazy(() => import('@/app/public/news/detail'))
-const About = lazy(() => import('@/app/about/page'))
-const Contact = lazy(() => import('@/app/contact/page'))
+const PublicCampaigns = lazy(() => import("@/app/public/campaigns/page"))
+const PublicCampaignDetail = lazy(() => import("@/app/public/campaigns/detail"))
+const PublicNews = lazy(() => import("@/app/public/news/page"))
+const PublicNewsDetail = lazy(() => import("@/app/public/news/detail"))
+const About = lazy(() => import("@/app/about/page"))
+const Contact = lazy(() => import("@/app/contact/page"))
 
 // Auth pages
-const SignIn = lazy(() => import('@/app/auth/sign-in/page'))
-const SignUp = lazy(() => import('@/app/auth/sign-up/page'))
-const ForgotPassword = lazy(() => import('@/app/auth/forgot-password/page'))
-const AuthCallback = lazy(() => import('@/app/auth/callback/page'))
+const SignIn = lazy(() => import("@/app/auth/sign-in/page"))
+const SignUp = lazy(() => import("@/app/auth/sign-up/page"))
+const ForgotPassword = lazy(() => import("@/app/auth/forgot-password/page"))
+const AuthCallback = lazy(() => import("@/app/auth/callback/page"))
 
 // Error pages
-const Forbidden = lazy(() => import('@/app/errors/forbidden/page'))
-const NotFound = lazy(() => import('@/app/errors/not-found/page'))
+const Forbidden = lazy(() => import("@/app/errors/forbidden/page"))
+const NotFound = lazy(() => import("@/app/errors/not-found/page"))
 
 // Profile
-const Profile = lazy(() => import('@/app/profile/page'))
+const Profile = lazy(() => import("@/app/profile/page"))
 
 export interface RouteConfig {
   path: string
@@ -56,140 +57,145 @@ export const routes: RouteConfig[] = [
   // sidebar's "Home" preview link actually previews it instead of bouncing back.
   {
     path: "/",
-    element: <Landing />
+    element: <Landing />,
   },
 
   // Legacy standalone path; the home page now lives at "/" only.
   {
     path: "/landing",
-    element: <Navigate to="/" replace />
+    element: <Navigate to="/" replace />,
   },
 
   // Public content pages (Phase 2)
   {
     path: "/campaigns",
-    element: <PublicCampaigns />
+    element: <PublicCampaigns />,
   },
   {
     path: "/campaigns/:slug",
-    element: <PublicCampaignDetail />
+    element: <PublicCampaignDetail />,
   },
   {
     path: "/news",
-    element: <PublicNews />
+    element: <PublicNews />,
   },
   {
     path: "/news/:slug",
-    element: <PublicNewsDetail />
+    element: <PublicNewsDetail />,
   },
   {
     path: "/about",
-    element: <About />
+    element: <About />,
   },
   {
     path: "/contact",
-    element: <Contact />
+    element: <Contact />,
   },
 
   // Dashboard Routes (staff only: ADMIN/CONTRIBUTOR)
   {
     path: "/dashboard",
     element: <Dashboard />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   // Legacy path kept as a redirect; the dashboard now lives at /dashboard only.
   {
     path: "/dashboard-2",
-    element: <Navigate to="/dashboard" replace />
+    element: <Navigate to="/dashboard" replace />,
   },
 
   // Application Routes (internal, namespaced under /dashboard)
   {
     path: "/dashboard/calendar",
     element: <Calendar />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/campaigns",
     element: <Campaigns />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/users",
     element: <Users />,
     protected: true,
-    requiredRole: "ADMIN"
+    requiredRole: "ADMIN",
   },
 
   // Content Pages (public)
   {
     path: "/faqs",
-    element: <FAQs />
+    element: <FAQs />,
   },
   {
     path: "/dashboard/faqs",
     element: <FaqManage />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/news",
     element: <NewsManage />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/inquiries",
     element: <InquiriesManage />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/partners",
     element: <PartnersManage />,
-    requiredRoles: ["ADMIN", "CONTRIBUTOR"]
+    requiredRoles: ["ADMIN", "CONTRIBUTOR"],
   },
   {
     path: "/dashboard/settings",
     element: <Settings />,
-    requiredRole: "ADMIN"
+    requiredRole: "ADMIN",
+  },
+  {
+    path: "/dashboard/monitoring",
+    element: <Monitoring />,
+    requiredRole: "ADMIN",
   },
 
   // Authentication Routes (public)
   {
     path: "/auth/sign-in",
-    element: <SignIn />
+    element: <SignIn />,
   },
   {
     path: "/auth/sign-up",
-    element: <SignUp />
+    element: <SignUp />,
   },
   {
     path: "/auth/forgot-password",
-    element: <ForgotPassword />
+    element: <ForgotPassword />,
   },
   {
     path: "/auth/callback",
-    element: <AuthCallback />
+    element: <AuthCallback />,
   },
 
   // Error Pages (public)
   {
     path: "/errors/forbidden",
-    element: <Forbidden />
+    element: <Forbidden />,
   },
   {
     path: "/errors/not-found",
-    element: <NotFound />
+    element: <NotFound />,
   },
 
   // Profile (public — shared by every authenticated role)
   {
     path: "/profile",
     element: <Profile />,
-    protected: true
+    protected: true,
   },
 
   // Catch-all route for 404
   {
     path: "*",
-    element: <NotFound />
-  }
+    element: <NotFound />,
+  },
 ]

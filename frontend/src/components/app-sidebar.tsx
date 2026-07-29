@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  Activity,
   LayoutDashboard,
   Calendar,
   CircleUser,
@@ -53,6 +54,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/dashboard",
             icon: LayoutDashboard,
           },
+          ...(isAdmin
+            ? [
+                {
+                  title: t("nav.monitoring"),
+                  url: "/dashboard/monitoring",
+                  icon: Activity,
+                },
+              ]
+            : []),
         ],
       },
       {

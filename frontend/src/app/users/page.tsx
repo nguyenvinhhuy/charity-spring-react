@@ -1,36 +1,22 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight, Search, Settings } from "lucide-react"
-import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { BaseLayout } from "@/components/layouts/base-layout"
 import { listMembers } from "@/api/members"
-import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import type { Page, Role } from "@/types/common"
+import type { Role } from "@/types/common"
 import type { Member } from "@/types/member"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CreateMemberDialog } from "./components/create-member-dialog"
 import { MemberEditDialog } from "./components/member-edit-dialog"
 import { ROLE_BADGE_CLASSES, STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "./components/role-constants"
@@ -63,44 +49,36 @@ export default function UsersPage() {
   const { t } = useTranslation()
   const currentMember = useAuthStore((s) => s.member)
   const [page, setPage] = useState(0)
-  const [data, setData] = useState<Page<Member> | null>(null)
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
   const [roleFilter, setRoleFilter] = useState<Role | typeof ALL>(ALL)
   const [statusFilter, setStatusFilter] = useState<"true" | "false" | typeof ALL>(ALL)
   const [editTarget, setEditTarget] = useState<Member | null>(null)
+  const queryClient = useQueryClient()
 
-  /** Fetches the current page of members and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listMembers({
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["members", { page, debouncedSearch, roleFilter, statusFilter }],
+    queryFn: () =>
+      listMembers({
         page,
         size: PAGE_SIZE,
         search: debouncedSearch || undefined,
         role: roleFilter === ALL ? undefined : roleFilter,
         active: statusFilter === ALL ? undefined : statusFilter === "true",
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, debouncedSearch, roleFilter, statusFilter])
+      }),
+    // Keeps the previous page/filter's rows on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches every members list query, regardless of the current page/filters. */
+  function refreshMembers() {
+    return queryClient.invalidateQueries({ queryKey: ["members"] })
+  }
 
   const members = data?.content ?? []
 
   return (
-    <BaseLayout
-      title={t("users.title")}
-      description={t("users.description")}
-    >
+    <BaseLayout title={t("users.title")} description={t("users.description")}>
       <div className="flex flex-col gap-4 px-4 lg:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -155,7 +133,7 @@ export default function UsersPage() {
               {t("users.totalCount", { count: data?.totalElements ?? 0 })}
             </p>
           </div>
-          <CreateMemberDialog onCreated={load} />
+          <CreateMemberDialog onCreated={refreshMembers} />
         </div>
 
         <Card>
@@ -196,16 +174,12 @@ export default function UsersPage() {
                             </Avatar>
                             <div className="flex flex-col">
                               <span className="font-medium">{member.fullName}</span>
-                              <span className="text-muted-foreground text-sm">
-                                {member.email}
-                              </span>
+                              <span className="text-muted-foreground text-sm">{member.email}</span>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={ROLE_BADGE_CLASSES[member.role]}>
-                            {t(`role.${member.role}`)}
-                          </Badge>
+                          <Badge className={ROLE_BADGE_CLASSES[member.role]}>{t(`role.${member.role}`)}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge className={member.isActive ? STATUS_BADGE_ACTIVE : STATUS_BADGE_INACTIVE}>
@@ -264,7 +238,7 @@ export default function UsersPage() {
         member={editTarget}
         isSelf={editTarget?.id === currentMember?.id}
         onOpenChange={(open) => !open && setEditTarget(null)}
-        onSaved={load}
+        onSaved={refreshMembers}
       />
     </BaseLayout>
   )

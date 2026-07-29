@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { type InfiniteData, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 import { formatDistanceToNow } from "date-fns"
@@ -34,10 +35,12 @@ import {
   markNotificationRead,
 } from "@/api/notifications"
 import { getErrorMessage } from "@/api/axios"
+import type { Page } from "@/types/common"
 import type { AppNotification } from "@/types/notification"
 
 const PAGE_SIZE = 20
 const VISIBLE_ROWS_HEIGHT = "22rem"
+const NOTIFICATIONS_QUERY_KEY = ["notifications"]
 
 function referenceHref(n: AppNotification): string | null {
   switch (n.referenceType) {
@@ -62,15 +65,10 @@ export function NotificationBell() {
   const decrementUnread = useNotificationStore((s) => s.decrementUnread)
 
   const [open, setOpen] = useState(false)
-  const [notifications, setNotifications] = useState<AppNotification[]>([])
-  const [loading, setLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [page, setPage] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
   const [broadcastOpen, setBroadcastOpen] = useState(false)
   const [broadcastTitle, setBroadcastTitle] = useState("")
   const [broadcastMessage, setBroadcastMessage] = useState("")
-  const [sendingBroadcast, setSendingBroadcast] = useState(false)
+  const queryClient = useQueryClient()
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const dateLocale = i18n.language.startsWith("vi") ? viLocale : enUS
@@ -116,6 +114,16 @@ export function NotificationBell() {
       })
   }, [member, setUnreadCount])
 
+  /** Applies `updater` to every fetched page's content, e.g. to mark a row read or drop it locally. */
+  const updateNotificationPages = useCallback(
+    (updater: (content: AppNotification[]) => AppNotification[]) => {
+      queryClient.setQueryData(NOTIFICATIONS_QUERY_KEY, (old?: InfiniteData<Page<AppNotification>>) =>
+        old ? { ...old, pages: old.pages.map((p) => ({ ...p, content: updater(p.content) })) } : old,
+      )
+    },
+    [queryClient],
+  )
+
   useNotificationStream(
     !!member,
     useCallback(
@@ -123,41 +131,31 @@ export function NotificationBell() {
         incrementUnread()
         toast(messageFor(n))
         if (open) {
-          setNotifications((prev) => [n, ...prev])
+          updateNotificationPages((content) => [n, ...content])
         }
       },
-      [incrementUnread, messageFor, open],
+      [incrementUnread, messageFor, open, updateNotificationPages],
     ),
   )
 
-  const loadFirstPage = useCallback(() => {
-    setLoading(true)
-    listNotifications({ page: 0, size: PAGE_SIZE })
-      .then((res) => {
-        setNotifications(res.content)
-        setPage(0)
-        setHasMore(!res.last)
-      })
-      .catch((error) => toast.error(getErrorMessage(error)))
-      .finally(() => setLoading(false))
-  }, [])
-
-  useEffect(() => {
-    if (open) loadFirstPage()
-  }, [open, loadFirstPage])
+  const {
+    data: notificationsPages,
+    isLoading: loading,
+    isFetchingNextPage: loadingMore,
+    hasNextPage: hasMore,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: NOTIFICATIONS_QUERY_KEY,
+    queryFn: ({ pageParam }) => listNotifications({ page: pageParam, size: PAGE_SIZE }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => (lastPage.last ? undefined : allPages.length),
+    enabled: open,
+  })
+  const notifications = useMemo(() => notificationsPages?.pages.flatMap((p) => p.content) ?? [], [notificationsPages])
 
   function loadMore() {
     if (loadingMore || !hasMore) return
-    setLoadingMore(true)
-    const nextPage = page + 1
-    listNotifications({ page: nextPage, size: PAGE_SIZE })
-      .then((res) => {
-        setNotifications((prev) => [...prev, ...res.content])
-        setPage(nextPage)
-        setHasMore(!res.last)
-      })
-      .catch((error) => toast.error(getErrorMessage(error)))
-      .finally(() => setLoadingMore(false))
+    void fetchNextPage()
   }
 
   function handleScroll() {
@@ -168,42 +166,57 @@ export function NotificationBell() {
     }
   }
 
+  const markReadMutation = useMutation({
+    mutationFn: (id: number) => markNotificationRead(id),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteNotification(id),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => markAllNotificationsRead(),
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const broadcastMutation = useMutation({
+    mutationFn: (payload: { title: string; message: string }) => broadcastNotification(payload),
+    onSuccess: () => {
+      toast.success(t("notifications.broadcastSent"))
+      setBroadcastOpen(false)
+      setBroadcastTitle("")
+      setBroadcastMessage("")
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
   function handleRowClick(n: AppNotification) {
     if (!n.read) {
-      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+      updateNotificationPages((content) => content.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
       decrementUnread()
-      markNotificationRead(n.id).catch(() => {
-        // Best-effort: the row already shows as read locally.
-      })
+      // Best-effort: the row already shows as read locally regardless of the request's outcome.
+      markReadMutation.mutate(n.id)
     }
     setOpen(false)
   }
 
   function handleDelete(id: number, wasUnread: boolean) {
-    setNotifications((prev) => prev.filter((x) => x.id !== id))
+    updateNotificationPages((content) => content.filter((x) => x.id !== id))
     if (wasUnread) decrementUnread()
-    deleteNotification(id).catch((error) => toast.error(getErrorMessage(error)))
+    deleteMutation.mutate(id)
   }
 
   function handleMarkAllRead() {
     const unread = notifications.filter((n) => !n.read).length
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    updateNotificationPages((content) => content.map((n) => ({ ...n, read: true })))
     if (unread > 0) decrementUnread(unread)
-    markAllNotificationsRead().catch((error) => toast.error(getErrorMessage(error)))
+    markAllReadMutation.mutate()
   }
 
   function handleSendBroadcast() {
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) return
-    setSendingBroadcast(true)
-    broadcastNotification({ title: broadcastTitle, message: broadcastMessage })
-      .then(() => {
-        toast.success(t("notifications.broadcastSent"))
-        setBroadcastOpen(false)
-        setBroadcastTitle("")
-        setBroadcastMessage("")
-      })
-      .catch((error) => toast.error(getErrorMessage(error)))
-      .finally(() => setSendingBroadcast(false))
+    broadcastMutation.mutate({ title: broadcastTitle, message: broadcastMessage })
   }
 
   if (!member) return null
@@ -227,7 +240,12 @@ export function NotificationBell() {
             {isAdmin && (
               <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-7 cursor-pointer" aria-label={t("notifications.sendBroadcast")}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 cursor-pointer"
+                    aria-label={t("notifications.sendBroadcast")}
+                  >
                     <Megaphone className="size-4" />
                   </Button>
                 </DialogTrigger>
@@ -254,8 +272,8 @@ export function NotificationBell() {
                     <DialogClose asChild>
                       <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>
-                    <Button onClick={handleSendBroadcast} disabled={sendingBroadcast}>
-                      {sendingBroadcast && <Loader2 className="animate-spin" />}
+                    <Button onClick={handleSendBroadcast} disabled={broadcastMutation.isPending}>
+                      {broadcastMutation.isPending && <Loader2 className="animate-spin" />}
                       {t("notifications.send")}
                     </Button>
                   </DialogFooter>
@@ -263,79 +281,90 @@ export function NotificationBell() {
               </Dialog>
             )}
             {notifications.some((n) => !n.read) && (
-              <Button variant="ghost" size="icon" className="size-7 cursor-pointer" onClick={handleMarkAllRead} aria-label={t("notifications.markAllRead")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 cursor-pointer"
+                onClick={handleMarkAllRead}
+                aria-label={t("notifications.markAllRead")}
+              >
                 <Check className="size-4" />
               </Button>
             )}
           </div>
         </div>
         <Separator />
-        <div ref={scrollRef} onScroll={handleScroll} className="overflow-y-auto" style={{ maxHeight: VISIBLE_ROWS_HEIGHT }}>
-            {loading ? (
-              <div className="text-muted-foreground flex items-center justify-center gap-2 p-6 text-sm">
-                <Loader2 className="size-4 animate-spin" />
-                {t("common.loading")}
-              </div>
-            ) : notifications.length === 0 ? (
-              <p className="text-muted-foreground p-6 text-center text-sm">{t("notifications.empty")}</p>
-            ) : (
-              <ul>
-                {notifications.map((n) => {
-                  const href = referenceHref(n)
-                  const content = (
-                    <div
-                      className={`hover:bg-accent flex items-start gap-2.5 p-3 text-sm transition-colors ${
-                        !n.read ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      {!n.read && <span className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full" />}
-                      <div className={`flex-1 ${n.read ? "pl-3.5" : ""}`}>
-                        <p className={n.read ? "text-muted-foreground" : "font-medium"}>
-                          {n.type === "BROADCAST" ? n.title : messageFor(n)}
-                        </p>
-                        {n.type === "BROADCAST" && n.message && (
-                          <p className="text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                        )}
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: dateLocale })}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0 cursor-pointer"
-                        aria-label={t("common.delete")}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleDelete(n.id, !n.read)
-                        }}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  )
-                  return (
-                    <li key={n.id} className="border-b last:border-b-0">
-                      {href ? (
-                        <Link to={href} onClick={() => handleRowClick(n)}>
-                          {content}
-                        </Link>
-                      ) : (
-                        <div onClick={() => handleRowClick(n)} className="cursor-pointer">
-                          {content}
-                        </div>
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="overflow-y-auto"
+          style={{ maxHeight: VISIBLE_ROWS_HEIGHT }}
+        >
+          {loading ? (
+            <div className="text-muted-foreground flex items-center justify-center gap-2 p-6 text-sm">
+              <Loader2 className="size-4 animate-spin" />
+              {t("common.loading")}
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="text-muted-foreground p-6 text-center text-sm">{t("notifications.empty")}</p>
+          ) : (
+            <ul>
+              {notifications.map((n) => {
+                const href = referenceHref(n)
+                const content = (
+                  <div
+                    className={`hover:bg-accent flex items-start gap-2.5 p-3 text-sm transition-colors ${
+                      !n.read ? "bg-primary/5" : ""
+                    }`}
+                  >
+                    {!n.read && <span className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full" />}
+                    <div className={`flex-1 ${n.read ? "pl-3.5" : ""}`}>
+                      <p className={n.read ? "text-muted-foreground" : "font-medium"}>
+                        {n.type === "BROADCAST" ? n.title : messageFor(n)}
+                      </p>
+                      {n.type === "BROADCAST" && n.message && (
+                        <p className="text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                       )}
-                    </li>
-                  )
-                })}
-                {loadingMore && (
-                  <div className="flex items-center justify-center p-3">
-                    <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                      <p className="text-muted-foreground mt-1 text-xs">
+                        {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: dateLocale })}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 cursor-pointer"
+                      aria-label={t("common.delete")}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleDelete(n.id, !n.read)
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
                   </div>
-                )}
-              </ul>
-            )}
+                )
+                return (
+                  <li key={n.id} className="border-b last:border-b-0">
+                    {href ? (
+                      <Link to={href} onClick={() => handleRowClick(n)}>
+                        {content}
+                      </Link>
+                    ) : (
+                      <div onClick={() => handleRowClick(n)} className="cursor-pointer">
+                        {content}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+              {loadingMore && (
+                <div className="flex items-center justify-center p-3">
+                  <Loader2 className="text-muted-foreground size-4 animate-spin" />
+                </div>
+              )}
+            </ul>
+          )}
         </div>
       </PopoverContent>
     </Popover>

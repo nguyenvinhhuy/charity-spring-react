@@ -103,7 +103,7 @@ export function HomeFeaturedCampaigns() {
         className={cn(
           "grid grid-cols-1 gap-6",
           campaigns.length >= 2 && "sm:grid-cols-2",
-          campaigns.length >= 3 && "lg:grid-cols-3"
+          campaigns.length >= 3 && "lg:grid-cols-3",
         )}
         initial="hidden"
         whileInView="show"

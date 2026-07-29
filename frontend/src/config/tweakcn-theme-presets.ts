@@ -1,4 +1,4 @@
-import type { ThemePreset } from "../types/theme";
+import type { ThemePreset } from "../types/theme"
 
 export const tweakcnPresets: Record<string, ThemePreset> = {
   "modern-minimal": {
@@ -3419,4 +3419,4 @@ export const tweakcnPresets: Record<string, ThemePreset> = {
       },
     },
   },
-};
+}

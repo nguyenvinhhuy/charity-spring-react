@@ -1,12 +1,12 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { CreateFaqRequest, Faq, UpdateFaqRequest } from "@/types/faq"
 
 export interface ListFaqsParams {
-  published?: boolean;
-  search?: string;
-  page?: number;
-  size?: number;
+  published?: boolean
+  search?: string
+  page?: number
+  size?: number
 }
 
 /**
@@ -14,11 +14,9 @@ export interface ListFaqsParams {
  *
  * @param params filter and pagination options
  */
-export async function listFaqs(
-  params: ListFaqsParams = {},
-): Promise<Page<Faq>> {
-  const { data } = await api.get<Page<Faq>>('/faqs', { params });
-  return data;
+export async function listFaqs(params: ListFaqsParams = {}): Promise<Page<Faq>> {
+  const { data } = await api.get<Page<Faq>>("/faqs", { params })
+  return data
 }
 
 /**
@@ -27,8 +25,8 @@ export async function listFaqs(
  * @param payload the FAQ fields
  */
 export async function createFaq(payload: CreateFaqRequest): Promise<Faq> {
-  const { data } = await api.post<Faq>('/faqs', payload);
-  return data;
+  const { data } = await api.post<Faq>("/faqs", payload)
+  return data
 }
 
 /**
@@ -37,12 +35,9 @@ export async function createFaq(payload: CreateFaqRequest): Promise<Faq> {
  * @param id FAQ id
  * @param payload the updated FAQ fields
  */
-export async function updateFaq(
-  id: number,
-  payload: UpdateFaqRequest,
-): Promise<Faq> {
-  const { data } = await api.put<Faq>(`/faqs/${id}`, payload);
-  return data;
+export async function updateFaq(id: number, payload: UpdateFaqRequest): Promise<Faq> {
+  const { data } = await api.put<Faq>(`/faqs/${id}`, payload)
+  return data
 }
 
 /**
@@ -52,8 +47,8 @@ export async function updateFaq(
  * @param published whether the FAQ should be published
  */
 export async function publishFaq(id: number, published: boolean): Promise<Faq> {
-  const { data } = await api.patch<Faq>(`/faqs/${id}/publish`, { published });
-  return data;
+  const { data } = await api.patch<Faq>(`/faqs/${id}/publish`, { published })
+  return data
 }
 
 /**
@@ -62,5 +57,5 @@ export async function publishFaq(id: number, published: boolean): Promise<Faq> {
  * @param id FAQ id
  */
 export async function deleteFaq(id: number): Promise<void> {
-  await api.delete(`/faqs/${id}`);
+  await api.delete(`/faqs/${id}`)
 }

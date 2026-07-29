@@ -1,6 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight, Pencil, Plus, Search } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -11,28 +12,14 @@ import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { localized } from "@/app/campaigns/components/campaign-constants"
 import { STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "@/lib/status-badges"
-import type { Page } from "@/types/common"
 import type { PostSummary } from "@/types/post"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { NewsFormDialog } from "./components/news-form-dialog"
 
 const PAGE_SIZE = 10
@@ -55,41 +42,34 @@ export default function NewsManagePage() {
   const [publishedFilter, setPublishedFilter] = useState<typeof ALL | "true" | "false">(ALL)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search)
-  const [data, setData] = useState<Page<PostSummary> | null>(null)
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<PostSummary | null>(null)
 
-  /** Fetches the current page of posts and stores it, surfacing errors as a toast. */
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await listPosts({
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["posts", { page, publishedFilter }],
+    queryFn: () =>
+      listPosts({
         page,
         size: PAGE_SIZE,
         published: publishedFilter === ALL ? undefined : publishedFilter === "true",
-      })
-      setData(result)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [page, publishedFilter])
+      }),
+    // Keeps the previous page/filter's rows on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  })
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  /** Refetches every posts list query, regardless of the current page/filter. */
+  function refreshPosts() {
+    return queryClient.invalidateQueries({ queryKey: ["posts"] })
+  }
 
   // listPosts has no server-side search param, so the currently loaded page is filtered client-side.
   const posts = useMemo(() => {
     const all = data?.content ?? []
     const query = debouncedSearch.trim().toLowerCase()
     if (!query) return all
-    return all.filter((post) =>
-      localized(i18n.language, post.title, post.titleEn).toLowerCase().includes(query)
-    )
+    return all.filter((post) => localized(i18n.language, post.title, post.titleEn).toLowerCase().includes(query))
   }, [data, debouncedSearch, i18n.language])
 
   /** Opens the form dialog in create mode. */
@@ -108,21 +88,14 @@ export default function NewsManagePage() {
     setFormOpen(true)
   }
 
-  /**
-   * Publishes or unpublishes a post, then refreshes the list.
-   *
-   * @param post the post to toggle
-   * @param published the desired published state
-   */
-  async function handlePublishToggle(post: PostSummary, published: boolean) {
-    try {
-      await publishPost(post.id, published)
+  const publishToggleMutation = useMutation({
+    mutationFn: ({ post, published }: { post: PostSummary; published: boolean }) => publishPost(post.id, published),
+    onSuccess: (_result, { published }) => {
       toast.success(published ? t("news.manage.toast.published") : t("news.manage.toast.unpublished"))
-      await load()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
-  }
+      refreshPosts()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <BaseLayout title={t("news.manage.pageTitle")} description={t("news.manage.pageDescription")}>
@@ -195,11 +168,7 @@ export default function NewsManagePage() {
                       <TableCell className="max-w-md pl-4">
                         <div className="flex items-center gap-3">
                           {post.thumbnailUrl ? (
-                            <img
-                              src={post.thumbnailUrl}
-                              alt=""
-                              className="size-10 shrink-0 rounded-md object-cover"
-                            />
+                            <img src={post.thumbnailUrl} alt="" className="size-10 shrink-0 rounded-md object-cover" />
                           ) : (
                             <div className="bg-muted size-10 shrink-0 rounded-md" />
                           )}
@@ -227,7 +196,7 @@ export default function NewsManagePage() {
                           {isAdmin && (
                             <Switch
                               checked={post.isPublished}
-                              onCheckedChange={(checked) => handlePublishToggle(post, checked)}
+                              onCheckedChange={(checked) => publishToggleMutation.mutate({ post, published: checked })}
                             />
                           )}
                         </div>
@@ -276,7 +245,7 @@ export default function NewsManagePage() {
         </div>
       </div>
 
-      <NewsFormDialog open={formOpen} onOpenChange={setFormOpen} post={editing} onSaved={load} />
+      <NewsFormDialog open={formOpen} onOpenChange={setFormOpen} post={editing} onSaved={refreshPosts} />
     </BaseLayout>
   )
 }

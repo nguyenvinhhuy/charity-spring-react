@@ -1,11 +1,11 @@
-import { api } from '@/api/axios';
+import { api } from "@/api/axios"
 import type { Page } from "@/types/common"
 import type { CreatePostRequest, PostDetail, PostSummary, UpdatePostRequest } from "@/types/post"
 
 export interface ListPostsParams {
-  published?: boolean;
-  page?: number;
-  size?: number;
+  published?: boolean
+  page?: number
+  size?: number
 }
 
 /**
@@ -13,11 +13,9 @@ export interface ListPostsParams {
  *
  * @param params filter and pagination options
  */
-export async function listPosts(
-  params: ListPostsParams = {},
-): Promise<Page<PostSummary>> {
-  const { data } = await api.get<Page<PostSummary>>('/posts', { params });
-  return data;
+export async function listPosts(params: ListPostsParams = {}): Promise<Page<PostSummary>> {
+  const { data } = await api.get<Page<PostSummary>>("/posts", { params })
+  return data
 }
 
 /**
@@ -26,8 +24,8 @@ export async function listPosts(
  * @param slug the post slug
  */
 export async function getPost(slug: string): Promise<PostDetail> {
-  const { data } = await api.get<PostDetail>(`/posts/${slug}`);
-  return data;
+  const { data } = await api.get<PostDetail>(`/posts/${slug}`)
+  return data
 }
 
 /**
@@ -35,11 +33,9 @@ export async function getPost(slug: string): Promise<PostDetail> {
  *
  * @param payload the post fields
  */
-export async function createPost(
-  payload: CreatePostRequest,
-): Promise<PostDetail> {
-  const { data } = await api.post<PostDetail>('/posts', payload);
-  return data;
+export async function createPost(payload: CreatePostRequest): Promise<PostDetail> {
+  const { data } = await api.post<PostDetail>("/posts", payload)
+  return data
 }
 
 /**
@@ -48,12 +44,9 @@ export async function createPost(
  * @param id post id
  * @param payload the updated post fields
  */
-export async function updatePost(
-  id: number,
-  payload: UpdatePostRequest,
-): Promise<PostDetail> {
-  const { data } = await api.put<PostDetail>(`/posts/${id}`, payload);
-  return data;
+export async function updatePost(id: number, payload: UpdatePostRequest): Promise<PostDetail> {
+  const { data } = await api.put<PostDetail>(`/posts/${id}`, payload)
+  return data
 }
 
 /**
@@ -62,14 +55,11 @@ export async function updatePost(
  * @param id post id
  * @param published whether the post should be published
  */
-export async function publishPost(
-  id: number,
-  published: boolean,
-): Promise<PostDetail> {
+export async function publishPost(id: number, published: boolean): Promise<PostDetail> {
   const { data } = await api.patch<PostDetail>(`/posts/${id}/publish`, {
     published,
-  });
-  return data;
+  })
+  return data
 }
 
 /**
@@ -78,5 +68,5 @@ export async function publishPost(
  * @param id post id
  */
 export async function recordPostView(id: number): Promise<void> {
-  await api.post(`/posts/${id}/views`);
+  await api.post(`/posts/${id}/views`)
 }

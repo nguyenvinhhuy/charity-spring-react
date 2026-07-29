@@ -23,14 +23,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Logo } from "@/components/logo"
 import type { NotificationPreference, NotificationType } from "@/types/notification"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 function buildProfileSchema(t: TFunction) {
   return z.object({
@@ -230,11 +223,7 @@ export default function ProfileSettingsPage() {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Avatar"
-                      className="h-20 w-20 rounded-lg object-cover"
-                    />
+                    <img src={avatarUrl} alt="Avatar" className="h-20 w-20 rounded-lg object-cover" />
                   ) : (
                     <div className="bg-muted flex h-20 w-20 items-center justify-center rounded-lg">
                       <Logo size={48} />
@@ -285,9 +274,7 @@ export default function ProfileSettingsPage() {
                   <div className="grid gap-2">
                     <Label>{t("profile.role")}</Label>
                     <div>
-                      <Badge variant="secondary">
-                        {member ? t(`role.${member.role}`) : ""}
-                      </Badge>
+                      <Badge variant="secondary">{member ? t(`role.${member.role}`) : ""}</Badge>
                     </div>
                   </div>
                 </div>
@@ -375,9 +362,7 @@ export default function ProfileSettingsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>{t("profile.changePassword")}</CardTitle>
-                <CardDescription>
-                  {t("profile.changePasswordDesc")}
-                </CardDescription>
+                <CardDescription>{t("profile.changePasswordDesc")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField

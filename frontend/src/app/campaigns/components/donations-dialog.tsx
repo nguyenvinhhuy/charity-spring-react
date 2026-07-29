@@ -1,13 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
 import { addDonation, deleteDonation, listDonations } from "@/api/donations"
 import { getErrorMessage } from "@/api/axios"
 import type { CampaignSummary } from "@/types/campaign"
-import type { Donation } from "@/types/donation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,14 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatVnd } from "./campaign-constants"
 
 interface DonationsDialogProps {
@@ -52,80 +45,72 @@ function today(): string {
  */
 export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: DonationsDialogProps) {
   const { t } = useTranslation()
-  const [donations, setDonations] = useState<Donation[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
+  const campaignId = campaign?.id ?? null
+
   const [amount, setAmount] = useState("")
   const [donorName, setDonorName] = useState("")
   const [donatedAt, setDonatedAt] = useState(today())
-  const [saving, setSaving] = useState(false)
 
-  const campaignId = campaign?.id ?? null
-
-  /** Loads the campaign's donations into local state. */
-  const load = useCallback(async () => {
-    if (campaignId == null) return
-    setLoading(true)
-    try {
-      const page = await listDonations(campaignId, { size: 50 })
-      setDonations(page.content)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [campaignId])
-
-  useEffect(() => {
+  // Resets the add-donation form fields each time the dialog opens, computed during render instead
+  // of an effect so React doesn't paint the stale values first.
+  const [wasOpen, setWasOpen] = useState(false)
+  if (open !== wasOpen) {
+    setWasOpen(open)
     if (open) {
       setAmount("")
       setDonorName("")
       setDonatedAt(today())
-      void load()
     }
-  }, [open, load])
+  }
 
-  /** Records a new donation, then refreshes the list and the parent totals. */
-  async function handleAdd() {
+  const { data: donationsPage, isLoading: loading } = useQuery({
+    queryKey: ["donations", campaignId],
+    queryFn: () => listDonations(campaignId!, { size: 50 }),
+    enabled: open && campaignId != null,
+  })
+  const donations = donationsPage?.content ?? []
+
+  /** Refetches this campaign's donation ledger. */
+  function refreshDonations() {
+    if (campaignId != null) void queryClient.invalidateQueries({ queryKey: ["donations", campaignId] })
+  }
+
+  const addMutation = useMutation({
+    mutationFn: (payload: { amount: number; donorName: string | null; donatedAt: string }) =>
+      addDonation(campaignId!, { ...payload, note: null }),
+    onSuccess: () => {
+      toast.success(t("campaigns.donations.added"))
+      setAmount("")
+      setDonorName("")
+      refreshDonations()
+      onChanged()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteDonation(campaignId!, id),
+    onSuccess: () => {
+      toast.success(t("campaigns.donations.deleted"))
+      refreshDonations()
+      onChanged()
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  /** Validates and records a new donation. */
+  function handleAdd() {
     if (campaignId == null) return
     if (Number(amount) <= 0) {
       toast.error(t("campaigns.donations.amountMustBePositive"))
       return
     }
-    setSaving(true)
-    try {
-      await addDonation(campaignId, {
-        amount: Number(amount),
-        donorName: donorName.trim() ? donorName.trim() : null,
-        donatedAt,
-        note: null,
-      })
-      toast.success(t("campaigns.donations.added"))
-      setAmount("")
-      setDonorName("")
-      await load()
-      onChanged()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  /**
-   * Deletes a donation, then refreshes the list and the parent totals.
-   *
-   * @param id the donation's id
-   */
-  async function handleDelete(id: number) {
-    if (campaignId == null) return
-    try {
-      await deleteDonation(campaignId, id)
-      toast.success(t("campaigns.donations.deleted"))
-      await load()
-      onChanged()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    }
+    addMutation.mutate({
+      amount: Number(amount),
+      donorName: donorName.trim() ? donorName.trim() : null,
+      donatedAt,
+    })
   }
 
   const total = donations.reduce((sum, d) => sum + d.amount, 0)
@@ -162,15 +147,10 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="don-date">{t("campaigns.donations.dateLabel")}</Label>
-            <Input
-              id="don-date"
-              type="date"
-              value={donatedAt}
-              onChange={(e) => setDonatedAt(e.target.value)}
-            />
+            <Input id="don-date" type="date" value={donatedAt} onChange={(e) => setDonatedAt(e.target.value)} />
           </div>
-          <Button type="button" onClick={handleAdd} disabled={saving}>
-            {saving ? t("campaigns.donations.adding") : t("campaigns.donations.addButton")}
+          <Button type="button" onClick={handleAdd} disabled={addMutation.isPending}>
+            {addMutation.isPending ? t("campaigns.donations.adding") : t("campaigns.donations.addButton")}
           </Button>
         </div>
 
@@ -214,7 +194,7 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(d.id)}
+                        onClick={() => deleteMutation.mutate(d.id)}
                         aria-label={t("common.delete")}
                       >
                         <Trash2 className="text-destructive" />

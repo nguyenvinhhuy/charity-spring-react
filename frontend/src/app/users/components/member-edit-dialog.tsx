@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Lock } from "lucide-react"
@@ -14,13 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -37,7 +32,7 @@ interface MemberEditDialogProps {
   /** True when the member being edited is the currently signed-in admin (role/active are locked). */
   isSelf: boolean
   onOpenChange: (open: boolean) => void
-  onSaved: () => void
+  onSaved: () => void | Promise<void>
 }
 
 /**
@@ -55,21 +50,22 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
   const [active, setActive] = useState(true)
   const [leadershipTitle, setLeadershipTitle] = useState("")
   const [teamDisplayOrder, setTeamDisplayOrder] = useState("")
-  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (!member) return
+  // Resets the fields the moment a (possibly different) member is opened for editing, computed
+  // during render instead of an effect so React doesn't paint the stale values first.
+  const [lastMemberId, setLastMemberId] = useState<number | null>(null)
+  if (member && member.id !== lastMemberId) {
+    setLastMemberId(member.id)
     setRole(member.role)
     setActive(member.isActive)
     setLeadershipTitle(member.leadershipTitle ?? "")
     setTeamDisplayOrder(member.teamDisplayOrder != null ? String(member.teamDisplayOrder) : "")
-  }, [member])
+  }
 
-  /** Saves only the fields that changed, then closes on success. */
-  async function handleSave() {
-    if (!member) return
-    setSaving(true)
-    try {
+  const saveMutation = useMutation({
+    /** Saves only the fields that changed against the member snapshot the dialog was opened with. */
+    mutationFn: async () => {
+      if (!member) return
       if (role !== member.role) {
         await updateMemberRole(member.id, role)
       }
@@ -84,15 +80,15 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
           teamDisplayOrder: newTeamDisplayOrder,
         })
       }
+    },
+    // Awaits the refetch before closing so the table behind it never briefly shows stale data.
+    onSuccess: async () => {
       toast.success(t("users.editDialog.saved"))
+      await onSaved()
       onOpenChange(false)
-      onSaved()
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
-  }
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <Dialog open={member !== null} onOpenChange={onOpenChange}>
@@ -196,8 +192,8 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t("users.editDialog.cancel")}
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? t("users.editDialog.saving") : t("users.editDialog.save")}
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? t("users.editDialog.saving") : t("users.editDialog.save")}
             </Button>
           </DialogFooter>
         </div>

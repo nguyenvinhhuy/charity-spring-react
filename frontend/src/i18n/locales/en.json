@@ -19,7 +19,8 @@
     "contact": "Contact",
     "inquiriesManage": "Manage Inquiries",
     "partnersManage": "Manage Partners",
-    "settings": "Settings"
+    "settings": "Settings",
+    "monitoring": "System Monitoring"
   },
   "userMenu": {
     "profile": "Profile",
@@ -591,6 +592,55 @@
       "accountNameRequired": "Please enter the account holder name",
       "save": "Save changes",
       "saved": "Settings saved"
+    }
+  },
+  "monitoring": {
+    "title": "System Monitoring",
+    "description": "Render, Vercel, Database, and Cloudinary status",
+    "loading": "Loading...",
+    "empty": "No data",
+    "noData": "No data yet",
+    "notConfigured": "Not configured",
+    "refresh": "Refresh",
+    "lastUpdated": "Updated at {{time}}",
+    "autoRefreshNote": "Auto-refreshes every 60 seconds",
+    "bytesLabel": "Size",
+    "range": {
+      "ONE_DAY": "1 day",
+      "SEVEN_DAYS": "7 days",
+      "ONE_MONTH": "1 month",
+      "ALL": "All"
+    },
+    "status": {
+      "OK": "Healthy",
+      "DEGRADED": "Warning",
+      "ERROR": "Error",
+      "NOT_CONFIGURED": "Not configured"
+    },
+    "render": {
+      "title": "Render (Backend)",
+      "description": "Backend hosting status",
+      "cpu": "CPU",
+      "memory": "Memory",
+      "lastDeploy": "Last deploy: {{status}}",
+      "metricsNote": "CPU & memory are sampled every minute over the last hour — this reflects real load (including traffic spikes), independent of the last deploy."
+    },
+    "vercel": {
+      "title": "Vercel (Frontend)",
+      "description": "Frontend hosting status",
+      "buildDuration": "Build duration (s)",
+      "lastDeploy": "Last deploy",
+      "metricsNote": "Vercel's free plan has no public API for real-time load/bandwidth, so this chart only shows the build duration of recent deployments."
+    },
+    "database": {
+      "title": "Supabase (Database)",
+      "description": "Postgres storage usage",
+      "connections": "{{count}} active connections"
+    },
+    "cloudinary": {
+      "title": "Cloudinary",
+      "description": "Image storage usage",
+      "bandwidth": "Bandwidth used: {{used}}"
     }
   },
   "partnersManage": {

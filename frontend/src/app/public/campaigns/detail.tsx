@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Link, useParams } from "react-router"
 import { ExternalLink } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { PublicLayout } from "@/components/layouts/public-layout"
 import { campaignQrUrl, getCampaign, recordCampaignView } from "@/api/campaigns"
 import { useRecordView } from "@/hooks/use-record-view"
-import type { CampaignDetail } from "@/types/campaign"
 import { ReactionBar } from "@/app/public/components/reaction-bar"
 import { ViewCountBadge } from "@/app/public/components/view-count-badge"
 import { CommentSection } from "@/app/public/components/comment-section"
@@ -40,20 +40,17 @@ export default function PublicCampaignDetailPage() {
   const { t, i18n } = useTranslation()
   const { slug } = useParams<{ slug: string }>()
 
-  const [campaign, setCampaign] = useState<CampaignDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
   const [amount, setAmount] = useState("")
 
-  useEffect(() => {
-    if (!slug) return
-    setLoading(true)
-    setNotFound(false)
-    getCampaign(slug)
-      .then(setCampaign)
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
-  }, [slug])
+  const {
+    data: campaign,
+    isLoading: loading,
+    isError: notFound,
+  } = useQuery({
+    queryKey: ["campaigns", "detail", slug],
+    queryFn: () => getCampaign(slug!),
+    enabled: !!slug,
+  })
 
   useRecordView(campaign?.id ?? null, recordCampaignView)
 
@@ -94,11 +91,7 @@ export default function PublicCampaignDetailPage() {
               {localized(i18n.language, campaign.title, campaign.titleEn)}
             </h1>
             {campaign.thumbnailUrl && (
-              <img
-                src={campaign.thumbnailUrl}
-                alt=""
-                className="aspect-[3/2] w-full rounded-lg object-cover"
-              />
+              <img src={campaign.thumbnailUrl} alt="" className="aspect-[3/2] w-full rounded-lg object-cover" />
             )}
             <ReactionBar target="campaigns" targetId={campaign.id} />
           </div>

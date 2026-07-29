@@ -24,13 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 const STAFF_ROLES: Role[] = ["ADMIN", "CONTRIBUTOR"]
 
@@ -189,14 +183,24 @@ export function PublicLayout({ children, title, description }: PublicLayoutProps
                         <span className="truncate font-medium">{member.fullName}</span>
                         <span className="text-muted-foreground truncate text-xs">{member.email}</span>
                       </div>
-                      <Button variant="ghost" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                      <Button
+                        variant="ghost"
+                        className="justify-start"
+                        asChild
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
                         <Link to="/profile">
                           <CircleUser />
                           {t("userMenu.profile")}
                         </Link>
                       </Button>
                       {isStaff && (
-                        <Button variant="ghost" className="justify-start" asChild onClick={() => setMobileMenuOpen(false)}>
+                        <Button
+                          variant="ghost"
+                          className="justify-start"
+                          asChild
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
                           <Link to="/dashboard">
                             <LayoutDashboard />
                             {t("nav.dashboard")}

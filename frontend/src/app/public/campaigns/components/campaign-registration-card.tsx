@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import {
-  cancelRegistration,
-  getRegistrationSummary,
-  registerForCampaign,
-} from "@/api/registrations"
+import { cancelRegistration, getRegistrationSummary, registerForCampaign } from "@/api/registrations"
 import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import type { RegistrationSummary } from "@/types/registration"
@@ -51,7 +47,10 @@ export function CampaignRegistrationCard({ campaignId, capacity, eventStartDate 
   const [summary, setSummary] = useState<RegistrationSummary | null>(null)
   const [pending, setPending] = useState(false)
   const pendingRef = useRef(pending)
-  pendingRef.current = pending
+
+  useEffect(() => {
+    pendingRef.current = pending
+  }, [pending])
 
   useEffect(() => {
     let active = true
