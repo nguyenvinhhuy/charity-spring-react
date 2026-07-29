@@ -606,10 +606,10 @@
     "autoRefreshNote": "Auto-refreshes every 60 seconds",
     "bytesLabel": "Size",
     "range": {
+      "TWELVE_HOURS": "12 hours",
       "ONE_DAY": "1 day",
-      "SEVEN_DAYS": "7 days",
-      "ONE_MONTH": "1 month",
-      "ALL": "All"
+      "THREE_DAYS": "3 days",
+      "SEVEN_DAYS": "7 days"
     },
     "status": {
       "OK": "Healthy",
@@ -623,7 +623,7 @@
       "cpu": "CPU",
       "memory": "Memory",
       "lastDeploy": "Last deploy: {{status}}",
-      "metricsNote": "CPU & memory are sampled every minute over the last hour — this reflects real load (including traffic spikes), independent of the last deploy."
+      "metricsNote": "CPU & memory come from Render's API at a resolution matching the selected time range — this reflects real load (including traffic spikes), independent of the last deploy."
     },
     "vercel": {
       "title": "Vercel (Frontend)",

@@ -64,18 +64,17 @@ export function usageBarColorClass(percent: number, thresholdPercent: number): s
  */
 export function formatChartTick(
   iso: string,
-  range: "ONE_DAY" | "SEVEN_DAYS" | "ONE_MONTH" | "ALL",
+  range: "TWELVE_HOURS" | "ONE_DAY" | "THREE_DAYS" | "SEVEN_DAYS",
   locale: string,
 ): string {
   const date = new Date(iso)
   switch (range) {
+    case "TWELVE_HOURS":
     case "ONE_DAY":
       return date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+    case "THREE_DAYS":
+      return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", hour: "2-digit" })
     case "SEVEN_DAYS":
       return date.toLocaleDateString(locale, { weekday: "short", day: "2-digit" })
-    case "ONE_MONTH":
-      return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })
-    case "ALL":
-      return date.toLocaleDateString(locale, { month: "short", year: "2-digit" })
   }
 }

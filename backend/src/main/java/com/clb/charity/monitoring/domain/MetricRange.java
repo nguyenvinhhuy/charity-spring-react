@@ -5,11 +5,12 @@ package com.clb.charity.monitoring.domain;
  */
 public enum MetricRange {
     // Resolution grows coarser as the window widens, so every range renders roughly the same point count.
+    // All four stay within Render's Hobby/Free-plan metrics retention (7 days) — a longer range would just
+    // come back empty for whatever falls outside that window.
+    TWELVE_HOURS(12L * 3600, 5 * 60),
     ONE_DAY(24L * 3600, 15 * 60),
-    SEVEN_DAYS(7L * 24 * 3600, 60 * 60),
-    ONE_MONTH(30L * 24 * 3600, 6 * 3600),
-    /** As far back as the upstream API actually retains — Render/Vercel free-tier retention, not literally forever. */
-    ALL(365L * 24 * 3600, 24 * 3600);
+    THREE_DAYS(3L * 24 * 3600, 30 * 60),
+    SEVEN_DAYS(7L * 24 * 3600, 60 * 60);
 
     private final long lookbackSeconds;
     private final long resolutionSeconds;

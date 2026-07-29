@@ -17,7 +17,7 @@ import { CloudinaryStatusCard } from "../components/cloudinary-status-card"
 /** Matches the backend's default alert threshold fraction (app.alert.threshold-fraction). */
 const THRESHOLD_PERCENT = 80
 const AUTO_REFRESH_MS = 60_000
-const RANGE_OPTIONS: MetricRange[] = ["ONE_DAY", "SEVEN_DAYS", "ONE_MONTH", "ALL"]
+const RANGE_OPTIONS: MetricRange[] = ["TWELVE_HOURS", "ONE_DAY", "THREE_DAYS", "SEVEN_DAYS"]
 
 /** Admin-only system monitoring dashboard: Render, Vercel, Database, and Cloudinary status + trend charts. */
 export default function MonitoringPage() {

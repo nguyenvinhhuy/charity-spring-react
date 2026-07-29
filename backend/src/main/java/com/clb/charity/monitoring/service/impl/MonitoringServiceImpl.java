@@ -175,14 +175,9 @@ public class MonitoringServiceImpl implements MonitoringService {
             return new VercelStatusResponse(false, VercelState.NOT_CONFIGURED, null, List.of(), null);
         }
         try {
-            // ALL means "as many as Vercel will return" — no since filter, just the limit cap.
-            String url = range == MetricRange.ALL
-                    ? "https://api.vercel.com/v6/deployments?projectId={id}&limit={limit}"
-                    : "https://api.vercel.com/v6/deployments?projectId={id}&limit={limit}&since={since}";
-            JsonNode root = range == MetricRange.ALL
-                    ? getJson(url, config.apiToken(), config.projectId(), MAX_BUILDS_RETURNED)
-                    : getJson(url, config.apiToken(), config.projectId(), MAX_BUILDS_RETURNED,
-                            (Instant.now().getEpochSecond() - range.lookbackSeconds()) * 1000);
+            String url = "https://api.vercel.com/v6/deployments?projectId={id}&limit={limit}&since={since}";
+            JsonNode root = getJson(url, config.apiToken(), config.projectId(), MAX_BUILDS_RETURNED,
+                    (Instant.now().getEpochSecond() - range.lookbackSeconds()) * 1000);
             JsonNode deployments = root.path("deployments");
             List<DeployDurationPoint> recentBuilds = new ArrayList<>();
             VercelState latestState = VercelState.NOT_CONFIGURED;

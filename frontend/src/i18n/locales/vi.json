@@ -606,10 +606,10 @@
     "autoRefreshNote": "Tự động làm mới mỗi 60 giây",
     "bytesLabel": "Dung lượng",
     "range": {
+      "TWELVE_HOURS": "12 giờ",
       "ONE_DAY": "1 ngày",
-      "SEVEN_DAYS": "7 ngày",
-      "ONE_MONTH": "1 tháng",
-      "ALL": "Tất cả"
+      "THREE_DAYS": "3 ngày",
+      "SEVEN_DAYS": "7 ngày"
     },
     "status": {
       "OK": "Hoạt động tốt",
@@ -623,7 +623,7 @@
       "cpu": "CPU",
       "memory": "Bộ nhớ",
       "lastDeploy": "Lần deploy gần nhất: {{status}}",
-      "metricsNote": "CPU & RAM đo mỗi phút trong 1 giờ gần nhất — phản ánh tải thực tế (kể cả khi lượng truy cập tăng đột biến), không phụ thuộc vào lần deploy gần nhất."
+      "metricsNote": "CPU & RAM lấy từ Render API với độ chi tiết tương ứng khung thời gian đã chọn — phản ánh tải thực tế (kể cả khi lượng truy cập tăng đột biến), không phụ thuộc vào lần deploy gần nhất."
     },
     "vercel": {
       "title": "Vercel (Frontend)",
