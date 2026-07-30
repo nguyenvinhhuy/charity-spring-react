@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { UserPlus } from "lucide-react"
 import { createMember } from "@/api/members"
 import { getErrorMessage } from "@/api/axios"
+import { buildPasswordFieldSchema } from "@/lib/validation/password"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -25,8 +26,6 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const PASSWORD_MIN_LENGTH = 8
-
 /**
  * Builds the create-member zod schema with localized validation messages.
  *
@@ -39,7 +38,7 @@ function buildCreateMemberSchema(t: TFunction) {
       .string()
       .min(1, t("users.validation.emailRequired"))
       .pipe(z.email(t("users.validation.emailInvalid"))),
-    password: z.string().min(PASSWORD_MIN_LENGTH, t("users.validation.passwordMin", { min: PASSWORD_MIN_LENGTH })),
+    password: buildPasswordFieldSchema(t),
     role: z.enum(["ADMIN", "CONTRIBUTOR", "MEMBER"]),
   })
 }

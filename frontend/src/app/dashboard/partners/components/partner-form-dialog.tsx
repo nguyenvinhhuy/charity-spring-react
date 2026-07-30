@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
+import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
+import { z } from "zod"
 import { toast } from "sonner"
 import { createPartner, updatePartner } from "@/api/partners"
 import { getErrorMessage } from "@/api/axios"
@@ -10,7 +12,7 @@ import type { CreatePartnerRequest, Partner } from "@/types/partner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ImageUploadField } from "@/components/image-upload-field"
+import { ImageUploadField, type ImageUploadHandle } from "@/components/image-upload-field"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,20 @@ interface PartnerFormValues {
   logoUrl: string
   websiteUrl: string
   displayOrder: string
+}
+
+/** Builds the partner form's zod schema with localized validation messages. */
+function buildPartnerSchema(t: TFunction) {
+  return z.object({
+    name: z
+      .string()
+      .min(1, t("partnersManage.form.nameRequired"))
+      .max(150, t("partnersManage.form.nameMax")),
+    websiteUrl: z
+      .url(t("partnersManage.form.invalidUrl"))
+      .max(500, t("partnersManage.form.urlMax"))
+      .or(z.literal("")),
+  })
 }
 
 const EMPTY_VALUES: PartnerFormValues = {
@@ -68,8 +84,11 @@ interface PartnerFormDialogProps {
  */
 export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: PartnerFormDialogProps) {
   const { t } = useTranslation()
+  const partnerSchema = useMemo(() => buildPartnerSchema(t), [t])
   const isEdit = Boolean(partner)
   const [values, setValues] = useState<PartnerFormValues>(EMPTY_VALUES)
+  const logoRef = useRef<ImageUploadHandle>(null)
+  const [committingLogo, setCommittingLogo] = useState(false)
 
   // Resets the fields the moment the dialog opens for a (possibly different) partner, computed
   // during render instead of an effect so React doesn't paint the stale values first.
@@ -93,19 +112,29 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
   })
 
   /** Validates the form and submits the create or update request. */
-  function handleSave() {
-    if (!values.name.trim()) {
-      toast.error(t("partnersManage.form.nameRequired"))
+  async function handleSave() {
+    const parsed = partnerSchema.safeParse({ name: values.name.trim(), websiteUrl: values.websiteUrl.trim() })
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message)
       return
     }
-    if (!values.logoUrl) {
+    let logoUrl: string
+    setCommittingLogo(true)
+    try {
+      logoUrl = (await logoRef.current?.commit()) ?? values.logoUrl
+    } catch {
+      return // ImageUploadField already surfaced the upload error.
+    } finally {
+      setCommittingLogo(false)
+    }
+    if (!logoUrl) {
       toast.error(t("partnersManage.form.logoRequired"))
       return
     }
     saveMutation.mutate({
-      name: values.name.trim(),
-      logoUrl: values.logoUrl,
-      websiteUrl: orNull(values.websiteUrl),
+      name: parsed.data.name,
+      logoUrl,
+      websiteUrl: orNull(parsed.data.websiteUrl),
       displayOrder: values.displayOrder.trim() ? Number(values.displayOrder) : null,
     })
   }
@@ -123,11 +152,7 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label>{t("partnersManage.form.logo")}</Label>
-            <ImageUploadField
-              value={values.logoUrl}
-              onChange={(url) => setValues((v) => ({ ...v, logoUrl: url }))}
-              aspectRatio="square"
-            />
+            <ImageUploadField ref={logoRef} value={values.logoUrl} aspectRatio="square" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>{t("partnersManage.form.name")}</Label>
@@ -160,8 +185,8 @@ export function PartnerFormDialog({ open, onOpenChange, partner, onSaved }: Part
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t("partnersManage.cancel")}
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saveMutation.isPending}>
-            {saveMutation.isPending
+          <Button type="button" onClick={handleSave} disabled={saveMutation.isPending || committingLogo}>
+            {saveMutation.isPending || committingLogo
               ? t("partnersManage.form.saving")
               : isEdit
                 ? t("partnersManage.form.save")

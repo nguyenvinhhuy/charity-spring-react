@@ -23,18 +23,20 @@ public interface AuthService {
      * Registers a new member with the MEMBER role and immediately issues tokens (auto-login).
      *
      * @param request the registration fields (full name, email, raw password)
+     * @param clientIp the caller's IP, used to rate-limit registrations
      * @return the login body and the opaque refresh token
      */
-    LoginResult register(RegisterRequest request);
+    LoginResult register(RegisterRequest request, String clientIp);
 
     /**
      * Authenticates a member and issues a new access and refresh token.
      *
      * @param email the member email
      * @param rawPassword the raw password to verify
+     * @param clientIp the caller's IP, used to rate-limit login attempts
      * @return the login body and the opaque refresh token
      */
-    LoginResult login(String email, String rawPassword);
+    LoginResult login(String email, String rawPassword, String clientIp);
 
     /**
      * Upserts a member from a verified OAuth2 profile (linking by email) and issues tokens.
@@ -63,4 +65,11 @@ public interface AuthService {
      * @param rawRefreshToken the opaque refresh token to revoke, may be null or blank
      */
     void logout(String rawRefreshToken);
+
+    /**
+     * Revokes every refresh token issued to the given member, so previously-issued sessions stop working.
+     *
+     * @param memberId the member whose sessions should be revoked
+     */
+    void revokeAllTokensForMember(Long memberId);
 }

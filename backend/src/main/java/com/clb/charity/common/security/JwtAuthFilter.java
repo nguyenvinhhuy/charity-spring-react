@@ -53,6 +53,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        // SSE endpoints (e.g. the notification stream) complete via an async dispatch on a different
+        // thread; without re-running here, that dispatch has no SecurityContext and AuthorizationFilter
+        // denies it after the response has already started streaming.
+        return false;
+    }
+
     private @Nullable String resolveToken(HttpServletRequest request) {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (header != null && header.startsWith(BEARER_PREFIX)) {

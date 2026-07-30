@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: clb_charity
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -23,7 +23,7 @@ services:
       # Point at the compose service names, not localhost.
       DB_URL: jdbc:postgresql://postgres:5432/clb_charity
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       # Free Cloudinary account — fill these in your shell env or a local .env file,
       # never commit real values here.
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}

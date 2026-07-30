@@ -12,6 +12,7 @@ import com.clb.charity.post.dto.response.PostSummaryResponse;
 import com.clb.charity.post.mapper.PostMapper;
 import com.clb.charity.post.repository.PostRepository;
 import com.clb.charity.post.service.PostService;
+import com.clb.charity.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
     private final PostMapper postMapper;
+    private final StorageService storageService;
 
     @Override
     public Page<PostSummaryResponse> list(@Nullable Boolean published, Pageable pageable) {
@@ -66,7 +68,11 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDetailResponse update(Long id, UpdatePostRequest request) {
         Post post = loadById(id);
+        String previousThumbnailUrl = post.getThumbnailUrl();
         postMapper.updateEntity(request, post);
+        if (previousThumbnailUrl != null && !previousThumbnailUrl.equals(post.getThumbnailUrl())) {
+            storageService.deleteByUrl(previousThumbnailUrl);
+        }
         return postMapper.toDetail(postRepository.save(post));
     }
 

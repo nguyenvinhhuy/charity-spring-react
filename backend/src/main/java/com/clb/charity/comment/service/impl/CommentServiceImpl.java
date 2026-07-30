@@ -9,6 +9,8 @@ import com.clb.charity.comment.repository.CommentRepository;
 import com.clb.charity.comment.service.CommentService;
 import com.clb.charity.common.exception.CommentAccessDeniedException;
 import com.clb.charity.common.exception.CommentNotFoundException;
+import com.clb.charity.common.exception.TooManyRequestsException;
+import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.service.MemberService;
 import com.clb.charity.notification.domain.NotificationReferenceType;
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
 public class CommentServiceImpl implements CommentService {
 
     private static final Duration EDIT_WINDOW = Duration.ofMinutes(15);
+    private static final int CREATE_MAX_PER_MEMBER = 5;
+    private static final Duration CREATE_WINDOW = Duration.ofMinutes(1);
 
     /** Matches the react-mentions markup embedded in comment content, e.g. {@code @[Nguyễn Văn A](12)}. */
     private static final Pattern MENTION_PATTERN = Pattern.compile("@\\[([^\\]]+)\\]\\((\\d+)\\)");
@@ -43,6 +47,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final MemberService memberService;
     private final NotificationService notificationService;
+    private final SlidingWindowRateLimiter rateLimiter;
 
     @Override
     public Page<CommentResponse> list(CommentTargetType targetType, Long targetId, Pageable pageable,
@@ -58,6 +63,9 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentResponse create(CommentTargetType targetType, Long targetId, Long memberId, CreateCommentRequest request) {
+        if (!rateLimiter.allow("comment", memberId.toString(), CREATE_MAX_PER_MEMBER, CREATE_WINDOW)) {
+            throw new TooManyRequestsException("Too many comments, please slow down");
+        }
         Comment comment = new Comment();
         comment.setTargetType(targetType);
         comment.setTargetId(targetId);

@@ -89,7 +89,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
     private void writeCookie(HttpServletResponse response, String value, int maxAge) {
         ResponseCookie cookie = ResponseCookie.from(AUTH_REQUEST_COOKIE, value)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .sameSite("Lax")
                 .maxAge(maxAge)

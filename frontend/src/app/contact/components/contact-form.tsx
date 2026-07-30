@@ -21,10 +21,19 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
  */
 function buildContactSchema(t: TFunction) {
   return z.object({
-    fullName: z.string().min(1, t("contactPublic.form.fullNameRequired")),
+    fullName: z
+      .string()
+      .min(1, t("contactPublic.form.fullNameRequired"))
+      .max(150, t("contactPublic.form.fullNameMax")),
     email: z.email(t("contactPublic.form.emailInvalid")),
-    subject: z.string().min(1, t("contactPublic.form.subjectRequired")),
-    message: z.string().min(1, t("contactPublic.form.messageRequired")),
+    subject: z
+      .string()
+      .min(1, t("contactPublic.form.subjectRequired"))
+      .max(200, t("contactPublic.form.subjectMax")),
+    message: z
+      .string()
+      .min(1, t("contactPublic.form.messageRequired"))
+      .max(1000, t("contactPublic.form.messageMax")),
     // Honeypot: never shown to real users; a bot that autofills every input trips this.
     website: z.string().optional(),
   })

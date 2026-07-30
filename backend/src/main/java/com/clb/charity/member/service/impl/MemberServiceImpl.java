@@ -1,5 +1,6 @@
 package com.clb.charity.member.service.impl;
 
+import com.clb.charity.auth.service.AuthService;
 import com.clb.charity.common.exception.EmailAlreadyExistsException;
 import com.clb.charity.common.exception.MemberNotFoundException;
 import com.clb.charity.common.exception.PasswordChangeException;
@@ -16,6 +17,7 @@ import com.clb.charity.member.dto.response.TeamMemberResponse;
 import com.clb.charity.member.mapper.MemberMapper;
 import com.clb.charity.member.repository.MemberRepository;
 import com.clb.charity.member.service.MemberService;
+import com.clb.charity.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,8 @@ public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final MemberMapper memberMapper;
+    private final AuthService authService;
+    private final StorageService storageService;
 
     @Override
     public Page<MemberResponse> list(@Nullable String search, @Nullable Role role, @Nullable Boolean active, Pageable pageable) {
@@ -87,6 +91,7 @@ public class MemberServiceImpl implements MemberService {
     public MemberResponse updateProfile(Long id, UpdateProfileRequest request) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new MemberNotFoundException(String.valueOf(id)));
+        String previousAvatarUrl = member.getAvatarUrl();
         member.setFullName(request.fullName());
         member.setPhone(request.phone());
         member.setBio(request.bio());
@@ -94,6 +99,9 @@ public class MemberServiceImpl implements MemberService {
         member.setDateOfBirth(request.dateOfBirth());
         member.setAddress(request.address());
         member.setNationalId(request.nationalId());
+        if (previousAvatarUrl != null && !previousAvatarUrl.equals(member.getAvatarUrl())) {
+            storageService.deleteByUrl(previousAvatarUrl);
+        }
         return memberMapper.toResponse(memberRepository.save(member));
     }
 
@@ -111,6 +119,17 @@ public class MemberServiceImpl implements MemberService {
         }
         member.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         memberRepository.save(member);
+        // Any refresh token issued before this change must stop working immediately.
+        authService.revokeAllTokensForMember(id);
+    }
+
+    @Override
+    @Transactional
+    public void forceLogout(Long id) {
+        if (!memberRepository.existsById(id)) {
+            throw new MemberNotFoundException(String.valueOf(id));
+        }
+        authService.revokeAllTokensForMember(id);
     }
 
     @Override

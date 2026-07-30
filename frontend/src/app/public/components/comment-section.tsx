@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
+import { z } from "zod"
 import { toast } from "sonner"
 import { Mention, MentionsInput, type SuggestionDataItem } from "react-mentions"
 import { Pencil, Trash2 } from "lucide-react"
@@ -90,6 +92,16 @@ function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })
 }
 
+/** Builds the comment content's zod schema with localized validation messages. */
+function buildCommentSchema(t: TFunction) {
+  return z.object({
+    content: z
+      .string()
+      .min(1, t("comments.validation.required"))
+      .max(2000, t("comments.validation.maxLength")),
+  })
+}
+
 interface CommentSectionProps {
   target: ReactionTarget
   targetId: number
@@ -104,6 +116,7 @@ interface CommentSectionProps {
  */
 export function CommentSection({ target, targetId }: CommentSectionProps) {
   const { t } = useTranslation()
+  const commentSchema = useMemo(() => buildCommentSchema(t), [t])
   const member = useAuthStore((s) => s.member)
   const queryClient = useQueryClient()
 
@@ -139,8 +152,13 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
 
   /** Posts a new comment, prepending it to the list optimistically. */
   function handlePost() {
-    if (!draft.trim() || postMutation.isPending) return
-    postMutation.mutate(draft.trim())
+    if (postMutation.isPending) return
+    const result = commentSchema.safeParse({ content: draft.trim() })
+    if (!result.success) {
+      toast.error(result.error.issues[0].message)
+      return
+    }
+    postMutation.mutate(result.data.content)
   }
 
   function startEdit(comment: Comment) {
@@ -162,8 +180,13 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
 
   /** Saves an in-place edit, replacing the comment in the list on success. */
   function handleSaveEdit(commentId: number) {
-    if (!editDraft.trim() || editMutation.isPending) return
-    editMutation.mutate({ commentId, content: editDraft.trim() })
+    if (editMutation.isPending) return
+    const result = commentSchema.safeParse({ content: editDraft.trim() })
+    if (!result.success) {
+      toast.error(result.error.issues[0].message)
+      return
+    }
+    editMutation.mutate({ commentId, content: result.data.content })
   }
 
   const deleteMutation = useMutation({

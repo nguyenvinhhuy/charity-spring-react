@@ -20,6 +20,7 @@ import com.cloudinary.utils.ObjectUtils;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,8 +29,11 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,15 +48,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MonitoringServiceImpl implements MonitoringService {
 
     private static final int TOP_TABLES_LIMIT = 7;
-    private static final int MAX_BUILDS_RETURNED = 60; // safety cap regardless of range, so an active project's 1-month view stays light
-    /** The alert-check job always evaluates the shortest range, independent of whatever the UI is showing. */
+    // Safety cap regardless of range, so an active project's 1-month view stays light.
+    private static final int MAX_BUILDS_RETURNED = 60;
+    // The alert-check job always evaluates the shortest range, independent of whatever the UI is showing.
     private static final MetricRange ALERT_CHECK_RANGE = MetricRange.ONE_DAY;
-    /** Render Free plan instance RAM cap — bump this if the plan ever changes. */
+    // Render Free plan instance RAM cap — bump this if the plan ever changes.
     private static final long RENDER_MEMORY_LIMIT_BYTES = 512L * 1024 * 1024;
-    /** Matches the alert job's own polling cadence, so each check covers the window since the previous one. */
+    // Render Free plan instance CPU cap, in cores — bump this if the plan ever changes.
+    private static final double RENDER_CPU_LIMIT_CORES = 0.1;
+    // Matches the alert job's own polling cadence, so each check covers the window since the previous one.
     private static final long ALERT_METRIC_LOOKBACK_SECONDS = 15 * 60;
-    /** Render's documented minimum bucket size — coarser buckets would dilute brief spikes into an average. */
+    // Render's documented minimum bucket size — coarser buckets would dilute brief spikes into an average.
     private static final long ALERT_METRIC_RESOLUTION_SECONDS = 30;
+    private static final DateTimeFormatter RENDER_ALERT_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm dd/MM");
 
     private final RestClient restClient;
     private final Cloudinary cloudinary;
@@ -89,13 +97,14 @@ public class MonitoringServiceImpl implements MonitoringService {
     /**
      * Fetches Render's service/deploy status plus a CPU/memory metrics window.
      *
-     * @param metricLookbackSeconds how far back the CPU/memory series should reach
+     * @param metricLookbackSeconds   how far back the CPU/memory series should reach
      * @param metricResolutionSeconds the bucket size for the CPU/memory series
      */
     private RenderStatusResponse fetchRenderStatus(long metricLookbackSeconds, long metricResolutionSeconds) {
         AppProperties.Render config = appProperties.render();
         if (isBlank(config.apiKey()) || isBlank(config.serviceId())) {
-            return new RenderStatusResponse(false, RenderState.NOT_CONFIGURED, null, null, null, List.of(), List.of(), null);
+            return new RenderStatusResponse(false, RenderState.NOT_CONFIGURED, null, null, null, List.of(), List.of(),
+                    null);
         }
         try {
             JsonNode service = getJson("https://api.render.com/v1/services/{id}", config.apiKey(), config.serviceId());
@@ -103,10 +112,12 @@ public class MonitoringServiceImpl implements MonitoringService {
             boolean suspended = "suspended".equalsIgnoreCase(service.path("suspended").asString(""));
             String serviceUrl = service.path("serviceDetails").path("url").asString(null);
 
-            JsonNode deploys = getJson("https://api.render.com/v1/services/{id}/deploys?limit=1", config.apiKey(), config.serviceId());
+            JsonNode deploys = getJson("https://api.render.com/v1/services/{id}/deploys?limit=1", config.apiKey(),
+                    config.serviceId());
             JsonNode firstDeploy = deploys.isArray() && !deploys.isEmpty() ? deploys.get(0).path("deploy") : null;
             String lastDeployStatus = firstDeploy != null ? firstDeploy.path("status").asString(null) : null;
-            Instant lastDeployAt = firstDeploy != null ? parseInstant(firstDeploy.path("finishedAt").asString(null)) : null;
+            Instant lastDeployAt = firstDeploy != null ? parseInstant(firstDeploy.path("finishedAt").asString(null))
+                    : null;
             boolean deployFailed = lastDeployStatus != null && lastDeployStatus.toLowerCase().contains("fail");
 
             List<MetricPoint> cpuSeries = fetchMetricSeries(
@@ -114,36 +125,44 @@ public class MonitoringServiceImpl implements MonitoringService {
             List<MetricPoint> memorySeries = fetchMetricSeries(
                     "memory", config.apiKey(), config.serviceId(), metricLookbackSeconds, metricResolutionSeconds);
 
-            RenderState state = deployFailed ? RenderState.ERROR : (suspended ? RenderState.SUSPENDED : RenderState.LIVE);
-            return new RenderStatusResponse(true, state, lastDeployStatus, lastDeployAt, serviceUrl, cpuSeries, memorySeries, null);
+            RenderState state = deployFailed ? RenderState.ERROR
+                    : (suspended ? RenderState.SUSPENDED : RenderState.LIVE);
+            return new RenderStatusResponse(true, state, lastDeployStatus, lastDeployAt, serviceUrl, cpuSeries,
+                    memorySeries, null);
         } catch (Exception ex) {
             log.warn("Failed to fetch Render status: {}", ex.getMessage());
-            return new RenderStatusResponse(true, RenderState.ERROR, null, null, null, List.of(), List.of(), ex.getMessage());
+            return new RenderStatusResponse(true, RenderState.ERROR, null, null, null, List.of(), List.of(),
+                    ex.getMessage());
         }
     }
 
     /**
      * Fetches a Render metrics time series (CPU or memory, both normalized to a 0-100 percent).
      *
-     * @param metric "cpu" or "memory"
-     * @param apiKey Render API key
-     * @param serviceId Render service id
-     * @param lookbackSeconds how far back the series should reach
+     * @param metric            "cpu" or "memory"
+     * @param apiKey            Render API key
+     * @param serviceId         Render service id
+     * @param lookbackSeconds   how far back the series should reach
      * @param resolutionSeconds the bucket size for each returned point
      */
-    private List<MetricPoint> fetchMetricSeries(
-            String metric, String apiKey, String serviceId, long lookbackSeconds, long resolutionSeconds) {
+    private List<MetricPoint> fetchMetricSeries(String metric, String apiKey, String serviceId, long lookbackSeconds,
+            long resolutionSeconds) {
         Instant end = Instant.now();
         Instant start = end.minusSeconds(lookbackSeconds);
+        // aggregationMethod=AVG makes Render merge series server-side. Without it, the Free plan's frequent
+        // spin-down/spin-up cycle hands out a new instance id per restart, so a single query window returns one
+        // series PER instance — and picking just the first one silently drops every later instance, truncating
+        // the chart to whichever instance happened to be oldest.
         String url = "https://api.render.com/v1/metrics/" + metric
-                + "?resource={resource}&startTime={start}&endTime={end}&resolutionSeconds={resolution}";
+                + "?resource={resource}&startTime={start}&endTime={end}&resolutionSeconds={resolution}"
+                + "&aggregationMethod=AVG";
         try {
-            // Render's metrics API rejects epoch-second integers for startTime/endTime ("invalid filter
-            // parameter") — it requires RFC3339 timestamps, which Instant#toString produces directly.
+            // Render's metrics API rejects epoch-second integers for startTime/endTime ("invalid filter parameter") —
+            // it requires RFC3339 timestamps, which Instant#toString produces directly.
             JsonNode root = getJson(url, apiKey, serviceId, start.toString(), end.toString(), resolutionSeconds);
             List<MetricPoint> points = new ArrayList<>();
-            // Response shape isn't fully verified without a live API key — defensively handle either a flat
-            // array of {timestamp, value} points, or an array of series each carrying a nested "values" array.
+            // With aggregationMethod set, Render always returns exactly one merged series — kept the flat-array
+            // fallback below in case Render ever returns one series unwrapped.
             JsonNode samples = root.isArray() && !root.isEmpty() && root.get(0).has("values")
                     ? root.get(0).path("values")
                     : root;
@@ -151,9 +170,12 @@ public class MonitoringServiceImpl implements MonitoringService {
                 for (JsonNode point : samples) {
                     Instant ts = parseInstant(point.path("timestamp").asString(null));
                     double value = point.path("value").asDouble(0);
-                    // Render reports memory as raw bytes used, unlike CPU which is already a 0-100 percent.
+                    // Verified against a live API key: Render reports memory as raw bytes used, and CPU as a
+                    // fraction of one core — both need scaling against this plan's allocation to become a percent.
                     if ("memory".equals(metric)) {
                         value = value / RENDER_MEMORY_LIMIT_BYTES * 100;
+                    } else if ("cpu".equals(metric)) {
+                        value = value / RENDER_CPU_LIMIT_CORES * 100;
                     }
                     if (ts != null) {
                         points.add(new MetricPoint(ts, value));
@@ -215,8 +237,8 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     // ── Database (Supabase/Postgres, queried directly) ──────────────────
 
-    // Queried directly rather than through a separate Supabase Management API token, since the backend
-    // already holds a live JDBC connection to this same database.
+    // Queried directly rather than through a separate Supabase Management API token, since the backend already holds a
+    // live JDBC connection to this same database.
     private DatabaseStatusResponse fetchDatabaseStatus() {
         try {
             long sizeBytes = ((Number) entityManager
@@ -241,10 +263,12 @@ public class MonitoringServiceImpl implements MonitoringService {
                     .map(row -> new CategoryAmount((String) row[0], ((Number) row[1]).longValue()))
                     .toList();
 
-            return new DatabaseStatusResponse(sizeBytes, appProperties.alert().databaseLimitBytes(), connections, topTables, null);
+            return new DatabaseStatusResponse(sizeBytes, appProperties.alert().databaseLimitBytes(), connections,
+                    topTables, null);
         } catch (Exception ex) {
             log.warn("Failed to fetch database status: {}", ex.getMessage());
-            return new DatabaseStatusResponse(0, appProperties.alert().databaseLimitBytes(), 0, List.of(), ex.getMessage());
+            return new DatabaseStatusResponse(0, appProperties.alert().databaseLimitBytes(), 0, List.of(),
+                    ex.getMessage());
         }
     }
 
@@ -253,7 +277,8 @@ public class MonitoringServiceImpl implements MonitoringService {
     private CloudinaryStatusResponse fetchCloudinaryStatus() {
         AppProperties.Cloudinary config = appProperties.cloudinary();
         if (isBlank(config.cloudName()) || isBlank(config.apiKey())) {
-            return new CloudinaryStatusResponse(false, 0, appProperties.alert().cloudinaryLimitBytes(), 0, List.of(), null);
+            return new CloudinaryStatusResponse(false, 0, appProperties.alert().cloudinaryLimitBytes(), 0, List.of(),
+                    null);
         }
         try {
             @SuppressWarnings("unchecked")
@@ -262,16 +287,18 @@ public class MonitoringServiceImpl implements MonitoringService {
             long bandwidthUsed = extractUsageBytes(usage, "bandwidth");
 
             // Cloudinary's account-level usage() call does not reliably break storage down by resource type
-            // (image/video/raw) — only a single total is well-documented. Show that single slice rather than
-            // guessing at undocumented fields; revisit once real Cloudinary usage is high enough to matter.
+            // (image/video/raw) — only a single total is well-documented. Show that single slice rather than guessing
+            // at undocumented fields; revisit once real Cloudinary usage is high enough to matter.
             List<CategoryAmount> byResourceType = storageUsed > 0
                     ? List.of(new CategoryAmount("Tổng dung lượng", storageUsed))
                     : List.of();
 
-            return new CloudinaryStatusResponse(true, storageUsed, appProperties.alert().cloudinaryLimitBytes(), bandwidthUsed, byResourceType, null);
+            return new CloudinaryStatusResponse(true, storageUsed, appProperties.alert().cloudinaryLimitBytes(),
+                    bandwidthUsed, byResourceType, null);
         } catch (Exception ex) {
             log.warn("Failed to fetch Cloudinary status: {}", ex.getMessage());
-            return new CloudinaryStatusResponse(true, 0, appProperties.alert().cloudinaryLimitBytes(), 0, List.of(), ex.getMessage());
+            return new CloudinaryStatusResponse(true, 0, appProperties.alert().cloudinaryLimitBytes(), 0, List.of(),
+                    ex.getMessage());
         }
     }
 
@@ -293,16 +320,17 @@ public class MonitoringServiceImpl implements MonitoringService {
     void checkThresholdsAndAlert() {
         double threshold = appProperties.alert().thresholdFraction();
 
-        // Render's CPU/memory are fetched at a much finer resolution than the UI chart uses, so a brief spike
-        // that both starts and ends between two scheduler runs still shows up as its own data point instead of
-        // being averaged away inside a coarse bucket.
+        // Render's CPU/memory are fetched at a much finer resolution than the UI chart uses, so a brief spike that both
+        // starts and ends between two scheduler runs still shows up as its own data point instead of being averaged
+        // away inside a coarse bucket.
         RenderStatusResponse render = fetchRenderStatus(ALERT_METRIC_LOOKBACK_SECONDS, ALERT_METRIC_RESOLUTION_SECONDS);
+        boolean deployFailed = render.status() == RenderState.ERROR;
+        MetricPoint cpuPeak = peakOver(render.cpuSeries(), threshold);
+        MetricPoint memoryPeak = peakOver(render.memorySeries(), threshold);
         evaluate(MonitoringResource.RENDER,
                 render.configured() && render.status() != RenderState.NOT_CONFIGURED
-                        && (render.status() == RenderState.ERROR
-                                || anyOverThreshold(render.cpuSeries(), threshold)
-                                || anyOverThreshold(render.memorySeries(), threshold)),
-                "Render (backend) đang gặp vấn đề hoặc CPU/RAM vượt " + (int) (threshold * 100) + "% — có thể do lượng truy cập tăng đột biến.");
+                        && (deployFailed || cpuPeak != null || memoryPeak != null),
+                renderAlertMessage(deployFailed, cpuPeak, memoryPeak));
 
         VercelStatusResponse vercel = fetchVercelStatus(ALERT_CHECK_RANGE);
         evaluate(MonitoringResource.VERCEL,
@@ -310,16 +338,49 @@ public class MonitoringServiceImpl implements MonitoringService {
                 "Lần deploy Vercel (frontend) gần nhất bị lỗi.");
 
         DatabaseStatusResponse database = fetchDatabaseStatus();
+        double databaseUsedPercent = fraction(database.databaseSizeBytes(), database.databaseLimitBytes()) * 100;
         evaluate(MonitoringResource.DATABASE,
-                database.errorMessage() == null
-                        && fraction(database.databaseSizeBytes(), database.databaseLimitBytes()) > threshold,
-                "Dung lượng Database (Supabase) đã vượt " + (int) (threshold * 100) + "% giới hạn free tier.");
+                database.errorMessage() == null && databaseUsedPercent > threshold * 100,
+                "Dung lượng Database (Supabase) đã dùng " + formatPercent(databaseUsedPercent)
+                        + "% giới hạn free tier.");
 
         CloudinaryStatusResponse cloudinary = fetchCloudinaryStatus();
+        double cloudinaryUsedPercent = fraction(cloudinary.storageUsedBytes(), cloudinary.storageLimitBytes()) * 100;
         evaluate(MonitoringResource.CLOUDINARY,
-                cloudinary.configured()
-                        && fraction(cloudinary.storageUsedBytes(), cloudinary.storageLimitBytes()) > threshold,
-                "Dung lượng Cloudinary đã vượt " + (int) (threshold * 100) + "% giới hạn free tier.");
+                cloudinary.configured() && cloudinaryUsedPercent > threshold * 100,
+                "Dung lượng Cloudinary đã dùng " + formatPercent(cloudinaryUsedPercent) + "% giới hạn free tier.");
+    }
+
+    /**
+     * Builds a Render alert message naming exactly which condition triggered, with the peak value and
+     * time for CPU/memory so it can be matched against the dashboard chart.
+     *
+     * @param deployFailed whether the last deploy failed
+     * @param cpuPeak      the highest over-threshold CPU sample, or null if CPU never crossed it
+     * @param memoryPeak   the highest over-threshold memory sample, or null if memory never crossed it
+     */
+    // Package-private (not private) so the message text can be unit-tested directly.
+    String renderAlertMessage(boolean deployFailed, @Nullable MetricPoint cpuPeak, @Nullable MetricPoint memoryPeak) {
+        if (deployFailed) {
+            return "Render (backend) đang gặp vấn đề: lần deploy gần nhất bị lỗi.";
+        }
+        List<String> parts = new ArrayList<>();
+        if (cpuPeak != null) {
+            parts.add("CPU đạt " + formatPercent(cpuPeak.value()) + "% lúc " + formatVietnamTime(cpuPeak.timestamp()));
+        }
+        if (memoryPeak != null) {
+            parts.add("RAM đạt " + formatPercent(memoryPeak.value()) + "% lúc "
+                    + formatVietnamTime(memoryPeak.timestamp()));
+        }
+        return "Render (backend) vượt ngưỡng: " + String.join("; ", parts) + ".";
+    }
+
+    private static String formatPercent(double value) {
+        return String.format("%.1f", value);
+    }
+
+    private static String formatVietnamTime(Instant instant) {
+        return RENDER_ALERT_TIME_FORMAT.format(instant.atZone(ZoneId.of("Asia/Ho_Chi_Minh")));
     }
 
     // Package-private (not private) so the debounce transitions can be unit-tested directly.
@@ -339,13 +400,16 @@ public class MonitoringServiceImpl implements MonitoringService {
     }
 
     /**
-     * Checks whether any sample in the series crossed the threshold, not just the latest one.
+     * Finds the highest over-threshold sample in the series, or null if none crossed it.
      *
-     * @param series the metric samples to check
+     * @param series    the metric samples to check
      * @param threshold the alert threshold as a 0-1 fraction (e.g. 0.8 for 80%)
      */
-    private boolean anyOverThreshold(List<MetricPoint> series, double threshold) {
-        return series.stream().anyMatch(point -> point.value() > threshold * 100);
+    private @Nullable MetricPoint peakOver(List<MetricPoint> series, double threshold) {
+        return series.stream()
+                .filter(point -> point.value() > threshold * 100)
+                .max(Comparator.comparingDouble(MetricPoint::value))
+                .orElse(null);
     }
 
     // ── HTTP helpers ──────────────────────────────────────────────────────

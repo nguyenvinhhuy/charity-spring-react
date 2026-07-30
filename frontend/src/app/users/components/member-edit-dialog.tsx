@@ -4,8 +4,8 @@ import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { Lock } from "lucide-react"
-import { setMemberActive, updateMemberRole, updateTeamProfile } from "@/api/members"
+import { Lock, LogOut } from "lucide-react"
+import { forceLogoutMember, setMemberActive, updateMemberRole, updateTeamProfile } from "@/api/members"
 import { getErrorMessage } from "@/api/axios"
 import { colorOf, initialsOf } from "@/lib/avatar"
 import type { Role } from "@/types/common"
@@ -50,6 +50,7 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
   const [active, setActive] = useState(true)
   const [leadershipTitle, setLeadershipTitle] = useState("")
   const [teamDisplayOrder, setTeamDisplayOrder] = useState("")
+  const [confirmingForceLogout, setConfirmingForceLogout] = useState(false)
 
   // Resets the fields the moment a (possibly different) member is opened for editing, computed
   // during render instead of an effect so React doesn't paint the stale values first.
@@ -86,6 +87,15 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
       toast.success(t("users.editDialog.saved"))
       await onSaved()
       onOpenChange(false)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
+
+  const forceLogoutMutation = useMutation({
+    mutationFn: () => forceLogoutMember(member!.id),
+    onSuccess: () => {
+      toast.success(t("users.editDialog.forceLogoutSuccess"))
+      setConfirmingForceLogout(false)
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   })
@@ -131,6 +141,27 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 p-4">
+                  <div className="min-w-0">
+                    <Label>{t("users.editDialog.forceLogoutLabel")}</Label>
+                    <p className="text-foreground/70 mt-0.5 flex items-center gap-1 text-sm">
+                      {isSelf && <Lock className="size-3 shrink-0" />}
+                      {isSelf ? t("users.editDialog.selfForceLogoutLocked") : t("users.editDialog.forceLogoutHint")}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-36 shrink-0"
+                    disabled={isSelf}
+                    onClick={() => setConfirmingForceLogout(true)}
+                  >
+                    <LogOut className="size-4" />
+                    {t("users.editDialog.forceLogoutButton")}
+                  </Button>
                 </div>
 
                 <div className="flex items-center justify-between gap-4 p-4">
@@ -198,6 +229,29 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
           </DialogFooter>
         </div>
       </DialogContent>
+
+      <Dialog open={confirmingForceLogout} onOpenChange={setConfirmingForceLogout}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("users.editDialog.forceLogoutConfirmTitle")}</DialogTitle>
+            <DialogDescription>{t("users.editDialog.forceLogoutConfirmDescription")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmingForceLogout(false)}>
+              {t("users.editDialog.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => forceLogoutMutation.mutate()}
+              disabled={forceLogoutMutation.isPending}
+            >
+              {forceLogoutMutation.isPending
+                ? t("users.editDialog.forceLogoutConfirming")
+                : t("users.editDialog.forceLogoutButton")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

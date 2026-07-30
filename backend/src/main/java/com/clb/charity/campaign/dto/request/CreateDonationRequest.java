@@ -11,6 +11,6 @@ public record CreateDonationRequest(
         @Positive long amount,
         @Size(max = 150) @Nullable String donorName,
         @NotNull LocalDate donatedAt,
-        @Nullable String note
+        @Size(max = 500) @Nullable String note
 ) {
 }

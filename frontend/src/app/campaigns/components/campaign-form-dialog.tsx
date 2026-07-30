@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { TFunction } from "i18next"
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImageUploadField } from "@/components/image-upload-field"
+import { ImageUploadField, type ImageUploadHandle } from "@/components/image-upload-field"
 import { CATEGORY_OPTIONS, categoryLabel } from "./campaign-constants"
 
 /**
@@ -39,13 +39,16 @@ function buildCampaignSchema(t: TFunction) {
   return z
     .object({
       // Vietnamese content is required (the default language).
-      title: z.string().min(1, t("campaigns.form.titleRequired")),
+      title: z.string().min(1, t("campaigns.form.titleRequired")).max(255, t("campaigns.form.maxLength255")),
       summary: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
-      description: z.string().min(1, t("campaigns.form.descriptionRequired")),
+      description: z
+        .string()
+        .min(1, t("campaigns.form.descriptionRequired"))
+        .max(50000, t("campaigns.form.maxLength50000")),
       // English content is optional; the client falls back to Vietnamese when it is empty.
       titleEn: z.string().max(255, t("campaigns.form.maxLength255")).optional(),
       summaryEn: z.string().max(500, t("campaigns.form.maxLength500")).optional(),
-      descriptionEn: z.string().optional(),
+      descriptionEn: z.string().max(50000, t("campaigns.form.maxLength50000")).optional(),
       category: z.enum(["CHILDREN", "EDUCATION", "HEALTHCARE", "DISASTER_RELIEF", "ELDERLY", "ENVIRONMENT", "OTHER"]),
       targetAmount: z
         .string()
@@ -173,6 +176,7 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
   const campaignSchema = useMemo(() => buildCampaignSchema(t), [t])
   const isEdit = Boolean(campaign)
   const isAdmin = useAuthStore((s) => s.member?.role) === "ADMIN"
+  const thumbnailRef = useRef<ImageUploadHandle>(null)
 
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignSchema),
@@ -231,7 +235,13 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
    *
    * @param values the validated form values
    */
-  function onSubmit(values: CampaignFormValues) {
+  async function onSubmit(values: CampaignFormValues) {
+    let thumbnailUrl: string | null
+    try {
+      thumbnailUrl = orNull((await thumbnailRef.current?.commit()) ?? values.thumbnailUrl ?? "")
+    } catch {
+      return // ImageUploadField already surfaced the upload error.
+    }
     const payload: CreateCampaignRequest = {
       title: values.title.trim(),
       summary: orNull(values.summary),
@@ -241,7 +251,7 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
       descriptionEn: orNull(values.descriptionEn),
       category: values.category,
       targetAmount: Number(values.targetAmount),
-      thumbnailUrl: orNull(values.thumbnailUrl),
+      thumbnailUrl,
       images: [],
       bankAccountNo: values.bankAccountNo.trim(),
       bankAccountName: values.bankAccountName.trim(),
@@ -279,7 +289,7 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
                   <FormItem>
                     <FormLabel>{t("campaigns.form.thumbnailUrlLabel")}</FormLabel>
                     <FormControl>
-                      <ImageUploadField value={field.value ?? ""} onChange={field.onChange} />
+                      <ImageUploadField ref={thumbnailRef} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -571,8 +581,8 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   {t("common.cancel")}
                 </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending
+                <Button type="submit" disabled={saveMutation.isPending || form.formState.isSubmitting}>
+                  {saveMutation.isPending || form.formState.isSubmitting
                     ? t("common.saving")
                     : isEdit
                       ? t("campaigns.form.saveChanges")

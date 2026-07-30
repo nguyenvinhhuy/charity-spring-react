@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public record UpdateProfileRequest(
         @NotBlank @Size(max = 100) String fullName,
         @Size(max = 30) @Nullable String phone,
-        @Nullable String bio,
+        @Size(max = 500) @Nullable String bio,
         @Size(max = 500) @Nullable String avatarUrl,
         @Nullable LocalDate dateOfBirth,
         @Size(max = 255) @Nullable String address,

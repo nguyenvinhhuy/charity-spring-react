@@ -139,4 +139,17 @@ public class MemberController {
     public MemberResponse updateTeamProfile(@PathVariable Long id, @Valid @RequestBody UpdateTeamProfileRequest request) {
         return memberService.updateTeamProfile(id, request);
     }
+
+    /**
+     * Revokes every refresh token issued to a member, ending their session on any device.
+     *
+     * @param id the member id
+     * @return an empty 204 response
+     */
+    @Operation(summary = "Force logout a member on every device")
+    @PostMapping("/{id}/force-logout")
+    public ResponseEntity<Void> forceLogout(@PathVariable Long id) {
+        memberService.forceLogout(id);
+        return ResponseEntity.noContent().build();
+    }
 }

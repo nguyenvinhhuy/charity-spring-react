@@ -152,6 +152,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/team-profile").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, API + "/members/*/force-logout").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/members").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, API + "/members").hasRole("ADMIN")
                         // Member detail can carry sensitive fields (DOB/address/national ID) — ADMIN only.

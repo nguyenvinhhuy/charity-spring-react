@@ -100,7 +100,11 @@
     "validation": {
       "currentPasswordRequired": "Vui lòng nhập mật khẩu hiện tại",
       "newPasswordMin": "Mật khẩu mới tối thiểu {{min}} ký tự",
-      "nationalIdFormat": "CCCD phải gồm đúng 12 chữ số"
+      "nationalIdFormat": "CCCD phải gồm đúng 12 chữ số",
+      "maxLength30": "Tối đa 30 ký tự",
+      "maxLength100": "Tối đa 100 ký tự",
+      "maxLength255": "Tối đa 255 ký tự",
+      "maxLength500": "Tối đa 500 ký tự"
     }
   },
   "role": {
@@ -124,7 +128,16 @@
     "noImage": "Chưa có ảnh",
     "scrollToTop": "Lên đầu trang",
     "openMenu": "Mở menu",
-    "closeMenu": "Đóng menu"
+    "closeMenu": "Đóng menu",
+    "validation": {
+      "password": {
+        "min": "Mật khẩu tối thiểu {{min}} ký tự",
+        "max": "Mật khẩu tối đa {{max}} ký tự",
+        "uppercase": "Mật khẩu phải có ít nhất 1 chữ hoa",
+        "digit": "Mật khẩu phải có ít nhất 1 chữ số",
+        "special": "Mật khẩu phải có ít nhất 1 ký tự đặc biệt"
+      }
+    }
   },
   "campaigns": {
     "title": "Quản lý chiến dịch",
@@ -212,6 +225,7 @@
       "maxLength500": "Tối đa 500 ký tự",
       "descriptionRequired": "Vui lòng nhập mô tả",
       "maxLength255": "Tối đa 255 ký tự",
+      "maxLength50000": "Tối đa 50000 ký tự",
       "amountRequired": "Vui lòng nhập số tiền",
       "amountPositive": "Số tiền mục tiêu phải lớn hơn 0",
       "bankAccountNoRequired": "Vui lòng nhập số tài khoản",
@@ -297,6 +311,14 @@
       "activeLabel": "Tài khoản hoạt động",
       "activeHint": "Tắt để chặn đăng nhập.",
       "selfActiveLocked": "Không thể tự vô hiệu hóa chính mình.",
+      "forceLogoutLabel": "Đăng xuất khỏi mọi thiết bị",
+      "forceLogoutHint": "Buộc đăng xuất khỏi mọi thiết bị.",
+      "selfForceLogoutLocked": "Không thể tự đăng xuất chính mình bằng cách này.",
+      "forceLogoutButton": "Đăng xuất",
+      "forceLogoutConfirmTitle": "Đăng xuất khỏi mọi thiết bị?",
+      "forceLogoutConfirmDescription": "Thành viên này sẽ phải đăng nhập lại trên mọi thiết bị. Phiên hiện tại của họ vẫn còn hiệu lực tối đa 15 phút do cách hoạt động của access token.",
+      "forceLogoutConfirming": "Đang đăng xuất...",
+      "forceLogoutSuccess": "Đã thu hồi toàn bộ phiên đăng nhập của thành viên này",
       "leadershipTitleLabel": "Chức vụ hiển thị",
       "leadershipTitlePlaceholder": "VD: Chủ tịch",
       "leadershipTitleHint": "Trống = ẩn khỏi trang Giới thiệu.",
@@ -539,7 +561,12 @@
         "saving": "Đang lưu...",
         "titleRequired": "Vui lòng nhập tiêu đề",
         "contentRequired": "Vui lòng nhập nội dung",
-        "invalidUrl": "Đường dẫn không hợp lệ"
+        "invalidUrl": "Đường dẫn không hợp lệ",
+        "maxLength255": "Tối đa 255 ký tự",
+        "maxLength500": "Tối đa 500 ký tự",
+        "maxLength50000": "Tối đa 50000 ký tự",
+        "tagsCountMax": "Tối đa 10 thẻ",
+        "tagsLengthMax": "Mỗi thẻ tối đa 30 ký tự"
       }
     }
   },
@@ -672,6 +699,9 @@
       "displayOrder": "Thứ tự hiển thị (tùy chọn)",
       "displayOrderPlaceholder": "Số nhỏ hơn hiện trước",
       "nameRequired": "Vui lòng nhập tên đơn vị",
+      "nameMax": "Tên đơn vị không được vượt quá 150 ký tự",
+      "invalidUrl": "Đường dẫn không hợp lệ",
+      "urlMax": "Đường dẫn không được vượt quá 500 ký tự",
       "logoRequired": "Vui lòng tải lên logo",
       "saving": "Đang lưu...",
       "save": "Lưu thay đổi"
@@ -730,6 +760,10 @@
       "title": "Xóa bình luận?",
       "description": "Bạn có chắc muốn xóa bình luận này? Hành động này không thể hoàn tác.",
       "deleting": "Đang xóa..."
+    },
+    "validation": {
+      "required": "Vui lòng nhập nội dung bình luận",
+      "maxLength": "Bình luận không được vượt quá 2000 ký tự"
     }
   },
   "reactions": {
@@ -861,9 +895,12 @@
       "sending": "Đang gửi...",
       "success": "Cảm ơn bạn đã liên hệ, chúng tôi sẽ phản hồi sớm nhất có thể.",
       "fullNameRequired": "Vui lòng nhập họ và tên",
+      "fullNameMax": "Họ và tên không được vượt quá 150 ký tự",
       "emailInvalid": "Email không hợp lệ",
       "subjectRequired": "Vui lòng nhập chủ đề",
-      "messageRequired": "Vui lòng nhập nội dung"
+      "subjectMax": "Chủ đề không được vượt quá 200 ký tự",
+      "messageRequired": "Vui lòng nhập nội dung",
+      "messageMax": "Nội dung không được vượt quá 1000 ký tự"
     }
   },
   "notifications": {

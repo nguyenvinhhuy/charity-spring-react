@@ -70,9 +70,7 @@ export default function MonitoringPage() {
         {isLoading && !data ? (
           <p className="text-muted-foreground py-20 text-center">{t("monitoring.loading")}</p>
         ) : data ? (
-          <div
-            className={`grid grid-cols-1 gap-4 transition-opacity lg:grid-cols-2 ${isFetching ? "opacity-60" : ""}`}
-          >
+          <div className={`grid grid-cols-1 gap-4 transition-opacity lg:grid-cols-2 ${isFetching ? "opacity-60" : ""}`}>
             <RenderStatusCard status={data.render} range={range} />
             <VercelStatusCard status={data.vercel} range={range} />
             <DatabaseStatusCard status={data.database} thresholdPercent={THRESHOLD_PERCENT} />

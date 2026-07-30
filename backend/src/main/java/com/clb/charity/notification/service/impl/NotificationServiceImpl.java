@@ -47,6 +47,9 @@ public class NotificationServiceImpl implements NotificationService {
     /** No SSE timeout — connections stay open until the client disconnects. */
     private static final long SSE_NO_TIMEOUT = 0L;
 
+    /** Caps concurrent streams per member so one account can't exhaust server connections/threads. */
+    private static final int MAX_EMITTERS_PER_MEMBER = 3;
+
     // In-memory only: the backend runs as a single instance, so no shared/Redis-backed registry is needed.
     private final Map<Long, List<SseEmitter>> emittersByMemberId = new ConcurrentHashMap<>();
 
@@ -152,7 +155,12 @@ public class NotificationServiceImpl implements NotificationService {
     public SseEmitter subscribe(Long memberId) {
         SseEmitter emitter = new SseEmitter(SSE_NO_TIMEOUT);
         List<SseEmitter> emitters = emittersByMemberId.computeIfAbsent(memberId, k -> new CopyOnWriteArrayList<>());
-        emitters.add(emitter);
+        synchronized (emitters) {
+            while (emitters.size() >= MAX_EMITTERS_PER_MEMBER) {
+                emitters.remove(0).complete();
+            }
+            emitters.add(emitter);
+        }
         emitter.onCompletion(() -> emitters.remove(emitter));
         emitter.onTimeout(() -> emitters.remove(emitter));
         emitter.onError(e -> emitters.remove(emitter));

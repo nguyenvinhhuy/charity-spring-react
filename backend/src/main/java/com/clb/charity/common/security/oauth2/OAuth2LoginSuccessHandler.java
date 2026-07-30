@@ -90,7 +90,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private ResponseCookie buildRefreshCookie(String token) {
         return ResponseCookie.from(REFRESH_COOKIE, token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path(COOKIE_PATH)
                 .sameSite(SAME_SITE)
                 .maxAge(tokenProvider.getRefreshTokenExpirySeconds())

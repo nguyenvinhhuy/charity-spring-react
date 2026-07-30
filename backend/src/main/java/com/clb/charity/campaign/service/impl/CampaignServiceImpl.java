@@ -37,6 +37,7 @@ import com.clb.charity.reaction.service.ReactionService;
 import com.clb.charity.registration.service.RegistrationService;
 import com.clb.charity.settings.dto.response.ClubSettingsResponse;
 import com.clb.charity.settings.service.ClubSettingsService;
+import com.clb.charity.storage.service.StorageService;
 import com.clb.charity.vietqr.service.VietQrService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -68,6 +69,7 @@ public class CampaignServiceImpl implements CampaignService {
     private final RegistrationService registrationService;
     private final ClubSettingsService clubSettingsService;
     private final NotificationService notificationService;
+    private final StorageService storageService;
 
     @Override
     public Page<CampaignSummaryResponse> list(@Nullable CampaignStatus status, @Nullable CampaignCategory category,
@@ -113,11 +115,15 @@ public class CampaignServiceImpl implements CampaignService {
         Campaign campaign = loadById(id);
         String previousBankAccountNo = campaign.getBankAccountNo();
         String previousBankAccountName = campaign.getBankAccountName();
+        String previousThumbnailUrl = campaign.getThumbnailUrl();
         campaignMapper.updateEntity(request, campaign);
         if (requesterRole != Role.ADMIN) {
             // Only ADMIN may change the bank account; everyone else keeps the existing value.
             campaign.setBankAccountNo(previousBankAccountNo);
             campaign.setBankAccountName(previousBankAccountName);
+        }
+        if (previousThumbnailUrl != null && !previousThumbnailUrl.equals(campaign.getThumbnailUrl())) {
+            storageService.deleteByUrl(previousThumbnailUrl);
         }
         return campaignMapper.toDetail(campaignRepository.save(campaign));
     }

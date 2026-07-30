@@ -9,7 +9,10 @@ import com.clb.charity.auth.service.AuthService;
 import com.clb.charity.common.exception.EmailAlreadyExistsException;
 import com.clb.charity.common.exception.InvalidCredentialsException;
 import com.clb.charity.common.exception.InvalidRefreshTokenException;
+import com.clb.charity.common.exception.TooManyRequestsException;
+import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.JwtTokenProvider;
+import com.clb.charity.common.security.TokenHasher;
 import com.clb.charity.member.domain.AuthProvider;
 import com.clb.charity.member.domain.Member;
 import com.clb.charity.member.domain.Role;
@@ -21,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Service
@@ -29,15 +33,28 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
 
+    // Dummy hash so a missing-email login costs the same BCrypt time as a real wrong-password check.
+    private static final String DUMMY_PASSWORD_HASH = "$2a$12$TlCEHbKUuuWt0X55MIBWLuqg8pJPBPEi8Y484wv0uxzfdq1vLUD26";
+
+    private static final int LOGIN_MAX_PER_IP = 20;
+    private static final int LOGIN_MAX_PER_EMAIL = 5;
+    private static final Duration LOGIN_WINDOW = Duration.ofMinutes(15);
+    private static final int REGISTER_MAX_PER_IP = 5;
+    private static final Duration REGISTER_WINDOW = Duration.ofHours(1);
+
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final MemberMapper memberMapper;
+    private final SlidingWindowRateLimiter rateLimiter;
 
     @Override
     @Transactional
-    public LoginResult register(RegisterRequest request) {
+    public LoginResult register(RegisterRequest request, String clientIp) {
+        if (!rateLimiter.allow("register-ip", clientIp, REGISTER_MAX_PER_IP, REGISTER_WINDOW)) {
+            throw new TooManyRequestsException("Too many registration attempts, please try again later");
+        }
         if (memberRepository.existsByEmail(request.email())) {
             throw new EmailAlreadyExistsException(request.email());
         }
@@ -52,13 +69,19 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public LoginResult login(String email, String rawPassword) {
-        Member member = memberRepository.findByEmail(email)
-                .filter(Member::isActive)
-                .orElseThrow(InvalidCredentialsException::new);
+    public LoginResult login(String email, String rawPassword, String clientIp) {
+        if (!rateLimiter.allow("login-ip", clientIp, LOGIN_MAX_PER_IP, LOGIN_WINDOW)
+                || !rateLimiter.allow("login-email", email.toLowerCase(), LOGIN_MAX_PER_EMAIL, LOGIN_WINDOW)) {
+            throw new TooManyRequestsException("Too many login attempts, please try again later");
+        }
 
-        if (member.getPasswordHash() == null
-                || !passwordEncoder.matches(rawPassword, member.getPasswordHash())) {
+        Member member = memberRepository.findByEmail(email).filter(Member::isActive).orElse(null);
+        if (member == null || member.getPasswordHash() == null) {
+            // Run the same expensive comparison as a real login so this branch isn't faster.
+            passwordEncoder.matches(rawPassword, DUMMY_PASSWORD_HASH);
+            throw new InvalidCredentialsException();
+        }
+        if (!passwordEncoder.matches(rawPassword, member.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
         return issueTokens(member);
@@ -105,11 +128,12 @@ public class AuthServiceImpl implements AuthService {
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
             throw new InvalidRefreshTokenException();
         }
-        RefreshToken existing = refreshTokenRepository.findByToken(rawRefreshToken)
+        String hashedToken = TokenHasher.sha256Hex(rawRefreshToken);
+        RefreshToken existing = refreshTokenRepository.findByToken(hashedToken)
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         if (existing.isExpired(Instant.now())) {
-            refreshTokenRepository.deleteByToken(rawRefreshToken);
+            refreshTokenRepository.deleteByToken(hashedToken);
             throw new InvalidRefreshTokenException();
         }
 
@@ -118,7 +142,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         // Rotate: revoke the used token and issue a fresh one.
-        refreshTokenRepository.deleteByToken(rawRefreshToken);
+        refreshTokenRepository.deleteByToken(hashedToken);
         String newRefreshToken = persistNewRefreshToken(member.getId());
 
         String accessToken = tokenProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole());
@@ -131,8 +155,14 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void logout(String rawRefreshToken) {
         if (rawRefreshToken != null && !rawRefreshToken.isBlank()) {
-            refreshTokenRepository.deleteByToken(rawRefreshToken);
+            refreshTokenRepository.deleteByToken(TokenHasher.sha256Hex(rawRefreshToken));
         }
+    }
+
+    @Override
+    @Transactional
+    public void revokeAllTokensForMember(Long memberId) {
+        refreshTokenRepository.deleteAllByMemberId(memberId);
     }
 
     /**
@@ -146,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
         Instant expiresAt = Instant.now().plusSeconds(tokenProvider.getRefreshTokenExpirySeconds());
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setMemberId(memberId);
-        refreshToken.setToken(token);
+        refreshToken.setToken(TokenHasher.sha256Hex(token));
         refreshToken.setExpiresAt(expiresAt);
         refreshTokenRepository.save(refreshToken);
         return token;

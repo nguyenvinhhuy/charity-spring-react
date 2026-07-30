@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type { TFunction } from "i18next"
@@ -12,7 +12,7 @@ import { createPost, getPost, updatePost } from "@/api/posts"
 import { getErrorMessage } from "@/api/axios"
 import type { CreatePostRequest, PostDetail, PostSummary } from "@/types/post"
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { ImageUploadField } from "@/components/image-upload-field"
+import { ImageUploadField, type ImageUploadHandle } from "@/components/image-upload-field"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,17 +35,32 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 function buildNewsSchema(t: TFunction) {
   return z.object({
     // Vietnamese content is required (the default language).
-    title: z.string().min(1, t("news.manage.form.titleRequired")),
-    summary: z.string().optional(),
-    content: z.string().min(1, t("news.manage.form.contentRequired")),
+    title: z.string().min(1, t("news.manage.form.titleRequired")).max(255, t("news.manage.form.maxLength255")),
+    summary: z.string().max(500, t("news.manage.form.maxLength500")).optional(),
+    content: z
+      .string()
+      .min(1, t("news.manage.form.contentRequired"))
+      .max(50000, t("news.manage.form.maxLength50000")),
     // English content is optional; the client falls back to Vietnamese when it is empty.
-    titleEn: z.string().optional(),
-    summaryEn: z.string().optional(),
-    contentEn: z.string().optional(),
+    titleEn: z.string().max(255, t("news.manage.form.maxLength255")).optional(),
+    summaryEn: z.string().max(500, t("news.manage.form.maxLength500")).optional(),
+    contentEn: z.string().max(50000, t("news.manage.form.maxLength50000")).optional(),
     thumbnailUrl: z.url(t("news.manage.form.invalidUrl")).or(z.literal("")).optional(),
     // Comma-separated tags, split into a string[] only when building the submit payload.
-    tags: z.string().optional(),
+    tags: z
+      .string()
+      .optional()
+      .refine((v) => splitTags(v).length <= 10, t("news.manage.form.tagsCountMax"))
+      .refine((v) => splitTags(v).every((tag) => tag.length <= 30), t("news.manage.form.tagsLengthMax")),
   })
+}
+
+/** Splits the comma-separated tags string into trimmed, non-empty tags. */
+function splitTags(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
 }
 
 type NewsFormValues = z.infer<ReturnType<typeof buildNewsSchema>>
@@ -109,6 +124,7 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
   const { t } = useTranslation()
   const newsSchema = useMemo(() => buildNewsSchema(t), [t])
   const isEdit = Boolean(post)
+  const thumbnailRef = useRef<ImageUploadHandle>(null)
 
   const form = useForm<NewsFormValues>({
     resolver: zodResolver(newsSchema),
@@ -151,7 +167,13 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
    *
    * @param values the validated form values
    */
-  function onSubmit(values: NewsFormValues) {
+  async function onSubmit(values: NewsFormValues) {
+    let thumbnailUrl: string | null
+    try {
+      thumbnailUrl = orNull((await thumbnailRef.current?.commit()) ?? values.thumbnailUrl ?? "")
+    } catch {
+      return // ImageUploadField already surfaced the upload error.
+    }
     const payload: CreatePostRequest = {
       title: values.title.trim(),
       summary: orNull(values.summary),
@@ -159,11 +181,8 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
       titleEn: orNull(values.titleEn),
       summaryEn: orNull(values.summaryEn),
       contentEn: orNull(values.contentEn),
-      thumbnailUrl: orNull(values.thumbnailUrl),
-      tags: (values.tags ?? "")
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      thumbnailUrl,
+      tags: splitTags(values.tags),
     }
     saveMutation.mutate(payload)
   }
@@ -190,7 +209,7 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
                   <FormItem>
                     <FormLabel>{t("news.manage.form.thumbnailUrlLabel")}</FormLabel>
                     <FormControl>
-                      <ImageUploadField value={field.value ?? ""} onChange={field.onChange} />
+                      <ImageUploadField ref={thumbnailRef} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -308,8 +327,8 @@ export function NewsFormDialog({ open, onOpenChange, post, onSaved }: NewsFormDi
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   {t("news.manage.cancel")}
                 </Button>
-                <Button type="submit" disabled={saveMutation.isPending}>
-                  {saveMutation.isPending
+                <Button type="submit" disabled={saveMutation.isPending || form.formState.isSubmitting}>
+                  {saveMutation.isPending || form.formState.isSubmitting
                     ? t("news.manage.form.saving")
                     : isEdit
                       ? t("news.manage.form.save")

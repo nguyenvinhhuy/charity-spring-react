@@ -7,11 +7,13 @@ import com.clb.charity.auth.dto.response.RefreshResponse;
 import com.clb.charity.auth.service.AuthService;
 import com.clb.charity.common.security.AuthPrincipal;
 import com.clb.charity.common.security.JwtTokenProvider;
+import com.clb.charity.common.util.ClientIpUtil;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.UpdateProfileRequest;
 import com.clb.charity.member.dto.response.MemberResponse;
 import com.clb.charity.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -43,12 +45,14 @@ public class AuthController {
      * Registers a new MEMBER account and logs the caller in, setting the refresh cookie.
      *
      * @param request the registration fields
+     * @param httpRequest the raw HTTP request, used to resolve the client IP for rate-limiting
      * @return the access-token body with the refresh cookie header
      */
     @Operation(summary = "Register a new account (role MEMBER) and receive an access token")
     @PostMapping("/register")
-    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthService.LoginResult result = authService.register(request);
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                   HttpServletRequest httpRequest) {
+        AuthService.LoginResult result = authService.register(request, ClientIpUtil.resolve(httpRequest));
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.refreshToken()).toString())
                 .body(result.body());
@@ -58,12 +62,15 @@ public class AuthController {
      * Authenticates the caller and sets the refresh token as an HttpOnly cookie.
      *
      * @param request the login credentials
+     * @param httpRequest the raw HTTP request, used to resolve the client IP for rate-limiting
      * @return the access-token body with the refresh cookie header
      */
     @Operation(summary = "Authenticate and receive an access token (refresh token set as HttpOnly cookie)")
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthService.LoginResult result = authService.login(request.email(), request.password());
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                                HttpServletRequest httpRequest) {
+        AuthService.LoginResult result =
+                authService.login(request.email(), request.password(), ClientIpUtil.resolve(httpRequest));
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.refreshToken()).toString())
                 .body(result.body());
@@ -151,7 +158,7 @@ public class AuthController {
     private ResponseCookie buildRefreshCookie(String token) {
         return ResponseCookie.from(REFRESH_COOKIE, token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path(COOKIE_PATH)
                 .sameSite(SAME_SITE)
                 .maxAge(tokenProvider.getRefreshTokenExpirySeconds())
@@ -166,7 +173,7 @@ public class AuthController {
     private ResponseCookie clearRefreshCookie() {
         return ResponseCookie.from(REFRESH_COOKIE, "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path(COOKIE_PATH)
                 .sameSite(SAME_SITE)
                 .maxAge(0)

@@ -92,3 +92,12 @@ export async function updateTeamProfile(id: number, payload: UpdateTeamProfileRe
   const { data } = await api.patch<Member>(`/members/${id}/team-profile`, payload)
   return data
 }
+
+/**
+ * Revoke every refresh token issued to a member, ending their session on any device (admin only).
+ *
+ * @param id member id
+ */
+export async function forceLogoutMember(id: number): Promise<void> {
+  await api.post(`/members/${id}/force-logout`)
+}

@@ -8,6 +8,7 @@ import com.clb.charity.partner.dto.response.PartnerResponse;
 import com.clb.charity.partner.mapper.PartnerMapper;
 import com.clb.charity.partner.repository.PartnerRepository;
 import com.clb.charity.partner.service.PartnerService;
+import com.clb.charity.storage.service.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public class PartnerServiceImpl implements PartnerService {
 
     private final PartnerRepository partnerRepository;
     private final PartnerMapper partnerMapper;
+    private final StorageService storageService;
 
     @Override
     public List<PartnerResponse> list() {
@@ -40,7 +42,11 @@ public class PartnerServiceImpl implements PartnerService {
     @Transactional
     public PartnerResponse update(Long id, UpdatePartnerRequest request) {
         Partner partner = loadById(id);
+        String previousLogoUrl = partner.getLogoUrl();
         partnerMapper.updateEntity(request, partner);
+        if (previousLogoUrl != null && !previousLogoUrl.equals(partner.getLogoUrl())) {
+            storageService.deleteByUrl(previousLogoUrl);
+        }
         return partnerMapper.toResponse(partnerRepository.save(partner));
     }
 

@@ -12,6 +12,7 @@ import { changeMyPassword, getMe, updateMyProfile } from "@/api/auth"
 import { uploadImage } from "@/api/media"
 import { getErrorMessage } from "@/api/axios"
 import { getNotificationPreferences, updateNotificationPreferences } from "@/api/notifications"
+import { buildPasswordFieldSchema } from "@/lib/validation/password"
 import { useAuthStore } from "@/store/authStore"
 import { PublicLayout } from "@/components/layouts/public-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,11 +28,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 function buildProfileSchema(t: TFunction) {
   return z.object({
-    fullName: z.string().min(1, t("auth.validation.fullNameRequired")),
-    phone: z.string().optional(),
-    bio: z.string().optional(),
+    fullName: z
+      .string()
+      .min(1, t("auth.validation.fullNameRequired"))
+      .max(100, t("profile.validation.maxLength100")),
+    phone: z.string().max(30, t("profile.validation.maxLength30")).optional(),
+    bio: z.string().max(500, t("profile.validation.maxLength500")).optional(),
     dateOfBirth: z.string().optional(),
-    address: z.string().optional(),
+    address: z.string().max(255, t("profile.validation.maxLength255")).optional(),
     nationalId: z
       .string()
       .optional()
@@ -44,7 +48,7 @@ function buildPasswordSchema(t: TFunction) {
   return z
     .object({
       currentPassword: z.string().min(1, t("profile.validation.currentPasswordRequired")),
-      newPassword: z.string().min(8, t("profile.validation.newPasswordMin", { min: 8 })),
+      newPassword: buildPasswordFieldSchema(t),
       confirmPassword: z.string().min(1, t("auth.validation.confirmPasswordRequired")),
     })
     .refine((d) => d.newPassword === d.confirmPassword, {
@@ -72,7 +76,8 @@ export default function ProfileSettingsPage() {
   const setMember = useAuthStore((s) => s.setMember)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatarUrl ?? null)
-  const [uploading, setUploading] = useState(false)
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("")
   const profileSchema = useMemo(() => buildProfileSchema(t), [t])
   const passwordSchema = useMemo(() => buildPasswordSchema(t), [t])
   const [preferences, setPreferences] = useState<NotificationPreference[]>([])
@@ -127,6 +132,18 @@ export default function ProfileSettingsPage() {
     }
   }, [])
 
+  // Local preview of a picked-but-not-yet-uploaded avatar, so cancelling the page never leaves an
+  // unattached image on Cloudinary.
+  useEffect(() => {
+    if (!pendingAvatarFile) {
+      setAvatarPreviewUrl("")
+      return
+    }
+    const objectUrl = URL.createObjectURL(pendingAvatarFile)
+    setAvatarPreviewUrl(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [pendingAvatarFile])
+
   /**
    * Toggles a single notification type's enabled state and persists it immediately.
    *
@@ -148,43 +165,45 @@ export default function ProfileSettingsPage() {
   }
 
   /**
-   * Uploads the chosen image and stores its URL for the next profile save.
+   * Stores the picked file for local preview; the actual upload happens lazily on save.
    *
    * @param event the file input change event
    */
-  async function onPickAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+  function onPickAvatar(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const { url } = await uploadImage(file)
-      setAvatarUrl(url)
-      toast.success(t("profile.photoUploaded"))
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-    }
+    if (file) setPendingAvatarFile(file)
+    if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
   /**
-   * Saves the profile fields and syncs the auth store.
+   * Uploads a pending avatar (if any), saves the profile fields, and syncs the auth store.
    *
    * @param values the validated profile form values
    */
   async function onSaveProfile(values: ProfileValues) {
+    let nextAvatarUrl = avatarUrl
+    if (pendingAvatarFile) {
+      try {
+        const { url } = await uploadImage(pendingAvatarFile)
+        nextAvatarUrl = url
+      } catch (err) {
+        toast.error(getErrorMessage(err))
+        return
+      }
+    }
     try {
       const updated = await updateMyProfile({
         fullName: values.fullName,
         phone: values.phone?.trim() ? values.phone.trim() : null,
         bio: values.bio?.trim() ? values.bio.trim() : null,
-        avatarUrl,
+        avatarUrl: nextAvatarUrl,
         dateOfBirth: values.dateOfBirth?.trim() ? values.dateOfBirth.trim() : null,
         address: values.address?.trim() ? values.address.trim() : null,
         nationalId: values.nationalId?.trim() ? values.nationalId.trim() : null,
       })
       setMember(updated)
+      setAvatarUrl(nextAvatarUrl)
+      setPendingAvatarFile(null)
       toast.success(t("profile.profileUpdated"))
     } catch (err) {
       toast.error(getErrorMessage(err))
@@ -222,8 +241,12 @@ export default function ProfileSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="h-20 w-20 rounded-lg object-cover" />
+                  {pendingAvatarFile || avatarUrl ? (
+                    <img
+                      src={pendingAvatarFile ? avatarPreviewUrl : (avatarUrl ?? undefined)}
+                      alt="Avatar"
+                      className="h-20 w-20 rounded-lg object-cover"
+                    />
                   ) : (
                     <div className="bg-muted flex h-20 w-20 items-center justify-center rounded-lg">
                       <Logo size={48} />
@@ -235,11 +258,10 @@ export default function ProfileSettingsPage() {
                       variant="default"
                       size="sm"
                       className="cursor-pointer"
-                      disabled={uploading}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Upload className="mr-2 h-4 w-4" />
-                      {uploading ? t("profile.uploading") : t("profile.uploadPhoto")}
+                      {t("profile.uploadPhoto")}
                     </Button>
                     <p className="text-muted-foreground text-xs">{t("profile.photoHint")}</p>
                   </div>

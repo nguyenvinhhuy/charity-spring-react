@@ -85,6 +85,14 @@ public interface MemberService {
     void changePassword(Long id, ChangePasswordRequest request);
 
     /**
+     * Revokes every refresh token issued to a member, ending their session on any device within
+     * at most one access-token lifetime (does not invalidate an already-issued access token).
+     *
+     * @param id the member id
+     */
+    void forceLogout(Long id);
+
+    /**
      * Builds the total member count and the per-role distribution.
      *
      * @return the member statistics

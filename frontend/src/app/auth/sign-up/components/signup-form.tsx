@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { registerAccount } from "@/api/auth"
 import { getErrorMessage } from "@/api/axios"
+import { buildPasswordFieldSchema } from "@/lib/validation/password"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -26,7 +27,7 @@ function buildSignupFormSchema(t: TFunction) {
         .string()
         .min(1, t("auth.validation.emailRequired"))
         .pipe(z.email(t("auth.validation.emailInvalid"))),
-      password: z.string().min(8, t("auth.validation.passwordMin", { min: 8 })),
+      password: buildPasswordFieldSchema(t),
       confirmPassword: z.string().min(1, t("auth.validation.confirmPasswordRequired")),
       terms: z.boolean().refine((v) => v, t("auth.validation.termsRequired")),
     })

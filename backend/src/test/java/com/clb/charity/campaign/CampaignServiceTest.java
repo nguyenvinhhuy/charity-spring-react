@@ -22,6 +22,7 @@ import com.clb.charity.reaction.service.ReactionService;
 import com.clb.charity.registration.service.RegistrationService;
 import com.clb.charity.settings.dto.response.ClubSettingsResponse;
 import com.clb.charity.settings.service.ClubSettingsService;
+import com.clb.charity.storage.service.StorageService;
 import com.clb.charity.vietqr.service.VietQrService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,9 @@ class CampaignServiceTest {
     @Mock
     private NotificationService notificationService;
 
+    @Mock
+    private StorageService storageService;
+
     // Use the real generated MapStruct mappers so slug/status mapping is exercised.
     private final CampaignMapper campaignMapper = Mappers.getMapper(CampaignMapper.class);
     private final DonationMapper donationMapper = Mappers.getMapper(DonationMapper.class);
@@ -77,7 +81,8 @@ class CampaignServiceTest {
     void setUp() {
         campaignService = new CampaignServiceImpl(
                 campaignRepository, donationRepository, campaignMapper, donationMapper, vietQrService,
-                reactionService, commentService, registrationService, clubSettingsService, notificationService);
+                reactionService, commentService, registrationService, clubSettingsService, notificationService,
+                storageService);
     }
 
     private CreateCampaignRequest sampleRequest() {

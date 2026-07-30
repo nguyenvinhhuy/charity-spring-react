@@ -15,7 +15,9 @@ public final class ClientIpUtil {
     public static String resolve(HttpServletRequest request) {
         String forwardedFor = request.getHeader(FORWARDED_FOR_HEADER);
         if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
+            // Dead in practice: forward-headers-strategy=framework strips this header first (accepted risk).
+            String[] parts = forwardedFor.split(",");
+            return parts[parts.length - 1].trim();
         }
         return request.getRemoteAddr();
     }

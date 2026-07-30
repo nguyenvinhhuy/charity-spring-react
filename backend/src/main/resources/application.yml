@@ -25,6 +25,11 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
   # Social login (Google/Facebook) is configured in application-oauth.yml and only
   # loads when the "oauth" profile is active (set SPRING_PROFILES_ACTIVE=oauth), so the
   # app starts cleanly without provider credentials.

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import type { ChangeEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -11,43 +11,71 @@ import { cn } from "@/lib/utils"
 
 interface ImageUploadFieldProps {
   value: string
-  onChange: (url: string) => void
   /** Preview shape: "3/2" (default) for photo thumbnails, "square" for logos/emblems. */
   aspectRatio?: "3/2" | "square"
 }
 
+export interface ImageUploadHandle {
+  /** Uploads the picked file (if any) and returns its URL; returns the existing value otherwise. */
+  commit: () => Promise<string>
+}
+
 /**
- * A single-image upload dropzone: click anywhere to pick a file, upload it via the shared media
- * API, and preview it at the same ratio it renders at on the public site (so the preview is a
- * true WYSIWYG of the final crop, not just a small icon next to a button). The "3/2" ratio crops
- * to fill (photo thumbnails); "square" letterboxes without cropping (logos/emblems, which are
- * often non-square with a transparent background and must not be cut off).
+ * A single-image upload dropzone: click anywhere to pick a file, preview it locally, and upload it
+ * lazily only when the caller invokes {@link ImageUploadHandle.commit} (typically on form submit) —
+ * so cancelling the form never leaves an unattached image on Cloudinary. Preview is shown at the same
+ * ratio it renders at on the public site (a true WYSIWYG of the final crop, not just a small icon next
+ * to a button). The "3/2" ratio crops to fill (photo thumbnails); "square" letterboxes without
+ * cropping (logos/emblems, which are often non-square with a transparent background).
  *
- * @param value the current image URL, or an empty string when none is set
- * @param onChange called with the newly uploaded image's URL
+ * @param value the currently saved image URL, or an empty string when none is set
  * @param aspectRatio the preview shape
  */
-export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: ImageUploadFieldProps) {
+export const ImageUploadField = forwardRef<ImageUploadHandle, ImageUploadFieldProps>(function ImageUploadField(
+  { value, aspectRatio = "3/2" },
+  ref,
+) {
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState("")
   const [uploading, setUploading] = useState(false)
   const isSquare = aspectRatio === "square"
 
-  /** Uploads the picked file and reports its URL back to the caller. */
-  async function onPick(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    try {
-      const { url } = await uploadImage(file)
-      onChange(url)
-    } catch (err) {
-      toast.error(getErrorMessage(err))
-    } finally {
-      setUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ""
+  useEffect(() => {
+    if (!pendingFile) {
+      setPreviewUrl("")
+      return
     }
+    const objectUrl = URL.createObjectURL(pendingFile)
+    setPreviewUrl(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [pendingFile])
+
+  useImperativeHandle(ref, () => ({
+    async commit() {
+      if (!pendingFile) return value
+      setUploading(true)
+      try {
+        const { url } = await uploadImage(pendingFile)
+        setPendingFile(null)
+        return url
+      } catch (err) {
+        toast.error(getErrorMessage(err))
+        throw err
+      } finally {
+        setUploading(false)
+      }
+    },
+  }))
+
+  function onPick(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (file) setPendingFile(file)
+    event.target.value = ""
   }
+
+  const displayUrl = pendingFile ? previewUrl : value
 
   return (
     <div>
@@ -58,15 +86,15 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
         className={cn(
           "group relative mx-auto flex w-full cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed text-center transition-colors",
           isSquare ? "aspect-square max-w-40" : "aspect-[3/2] max-w-xs",
-          value ? "border-transparent" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
-          isSquare && value && "bg-muted",
+          displayUrl ? "border-transparent" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+          isSquare && displayUrl && "bg-muted",
           uploading && "pointer-events-none",
         )}
       >
-        {value && (
+        {displayUrl && (
           <>
             <img
-              src={value}
+              src={displayUrl}
               alt=""
               className={cn("absolute inset-0 h-full w-full", isSquare ? "object-contain p-3" : "object-cover")}
             />
@@ -79,7 +107,7 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
           </>
         )}
 
-        {!value && !uploading && (
+        {!displayUrl && !uploading && (
           <>
             <ImagePlus className="text-muted-foreground/50 size-8" />
             <span className="text-muted-foreground text-sm font-medium">{t("common.uploadImage")}</span>
@@ -91,10 +119,10 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
           <div
             className={cn(
               "absolute inset-0 flex items-center justify-center",
-              value ? "bg-black/50" : "bg-transparent",
+              displayUrl ? "bg-black/50" : "bg-transparent",
             )}
           >
-            <span className={cn("text-sm font-medium", value ? "text-white" : "text-muted-foreground")}>
+            <span className={cn("text-sm font-medium", displayUrl ? "text-white" : "text-muted-foreground")}>
               {t("common.uploadingImage")}
             </span>
           </div>
@@ -109,4 +137,4 @@ export function ImageUploadField({ value, onChange, aspectRatio = "3/2" }: Image
       />
     </div>
   )
-}
+})

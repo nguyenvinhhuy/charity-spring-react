@@ -11,5 +11,5 @@ import jakarta.validation.constraints.Size;
  */
 public record CreateBroadcastRequest(
         @NotBlank @Size(max = 200) String title,
-        @NotBlank String message) {
+        @NotBlank @Size(max = 2000) String message) {
 }

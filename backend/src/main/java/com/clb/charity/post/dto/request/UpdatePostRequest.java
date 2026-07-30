@@ -7,13 +7,13 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 public record UpdatePostRequest(
-        @NotBlank String title,
+        @NotBlank @Size(max = 255) String title,
         @Size(max = 500) @Nullable String summary,
-        @NotBlank String content,
+        @NotBlank @Size(max = 50000) String content,
         @Size(max = 255) @Nullable String titleEn,
         @Size(max = 500) @Nullable String summaryEn,
-        @Nullable String contentEn,
+        @Size(max = 50000) @Nullable String contentEn,
         @Size(max = 500) @Nullable String thumbnailUrl,
-        @Nullable List<String> tags
+        @Size(max = 10) @Nullable List<@Size(max = 30) String> tags
 ) {
 }

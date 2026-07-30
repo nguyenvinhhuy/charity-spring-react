@@ -43,9 +43,8 @@ public interface CampaignService {
     CampaignDetailResponse getBySlug(String slug);
 
     /**
-     * Creates a campaign in DRAFT status from the given request. Non-ADMIN callers cannot set the
-     * bank account fields — the club's default bank account is used instead, regardless of what
-     * the request carries.
+     * Creates a campaign in DRAFT status from the given request. Non-ADMIN callers cannot set the bank account fields —
+     * the club's default bank account is used instead, regardless of what the request carries.
      *
      * @param request the campaign fields
      * @param createdBy id of the authoring member
@@ -55,9 +54,8 @@ public interface CampaignService {
     CampaignDetailResponse create(CreateCampaignRequest request, Long createdBy, Role requesterRole);
 
     /**
-     * Updates the editable fields of an existing campaign. Non-ADMIN callers cannot change the
-     * bank account fields — the campaign's existing values are kept regardless of what the
-     * request carries.
+     * Updates the editable fields of an existing campaign. Non-ADMIN callers cannot change the bank account fields — the
+     * campaign's existing values are kept regardless of what the request carries.
      *
      * @param id the campaign id
      * @param request the new field values

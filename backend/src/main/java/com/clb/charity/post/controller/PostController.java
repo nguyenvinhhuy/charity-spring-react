@@ -5,7 +5,9 @@ import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.dto.request.UpdateCommentRequest;
 import com.clb.charity.comment.dto.response.CommentResponse;
 import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.AuthPrincipal;
+import com.clb.charity.common.util.ClientIpUtil;
 import com.clb.charity.post.dto.request.CreatePostRequest;
 import com.clb.charity.post.dto.request.PublishRequest;
 import com.clb.charity.post.dto.request.UpdatePostRequest;
@@ -17,6 +19,7 @@ import com.clb.charity.reaction.dto.request.SetReactionRequest;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
 import com.clb.charity.reaction.service.ReactionService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -36,14 +39,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
+
 @RestController
 @RequestMapping("/api/v1/posts")
 @RequiredArgsConstructor
 public class PostController {
 
+    private static final int VIEW_MAX_PER_IP = 30;
+    private static final Duration VIEW_WINDOW = Duration.ofMinutes(1);
+
     private final PostService postService;
     private final ReactionService reactionService;
     private final CommentService commentService;
+    private final SlidingWindowRateLimiter rateLimiter;
 
     /**
      * Lists posts with an optional published filter.
@@ -118,12 +127,16 @@ public class PostController {
      * Records one view of a post (fire-and-forget; the frontend calls this once per detail page load).
      *
      * @param id the post id
+     * @param httpRequest the incoming request, used to rate-limit anonymous callers by IP
      * @return an empty 204 response
      */
     @Operation(summary = "Record one view of a post")
     @PostMapping("/{id}/views")
-    public ResponseEntity<Void> recordView(@PathVariable Long id) {
-        postService.recordView(id);
+    public ResponseEntity<Void> recordView(@PathVariable Long id, HttpServletRequest httpRequest) {
+        // Silently drops over-limit calls instead of a 429 — a view counter isn't worth a user-visible error.
+        if (rateLimiter.allow("view-post", ClientIpUtil.resolve(httpRequest), VIEW_MAX_PER_IP, VIEW_WINDOW)) {
+            postService.recordView(id);
+        }
         return ResponseEntity.noContent().build();
     }
 
