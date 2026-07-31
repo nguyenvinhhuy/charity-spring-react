@@ -91,7 +91,8 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("Lax")
+                // None (not Lax) because the frontend and backend are deployed on different origins.
+                .sameSite("None")
                 .maxAge(maxAge)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

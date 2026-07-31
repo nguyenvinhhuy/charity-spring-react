@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 const STAFF_ROLES: Role[] = ["ADMIN", "CONTRIBUTOR"]
 
@@ -103,11 +104,21 @@ export function PublicLayout({ children, title, description }: PublicLayoutProps
             <div className="hidden md:block">
               {member ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="cursor-pointer">
-                      <Logo size={20} />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="cursor-pointer"
+                          aria-label={t("common.accountMenu")}
+                        >
+                          <Logo size={20} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("common.accountMenu")}</TooltipContent>
+                  </Tooltip>
                   <DropdownMenuContent align="end" className="min-w-56">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col text-sm">
@@ -151,11 +162,16 @@ export function PublicLayout({ children, title, description }: PublicLayoutProps
 
             {/* Mobile-only: hamburger opening a Sheet with nav links + auth actions. */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="md:hidden" aria-label={t("common.openMenu")}>
-                  <Menu />
-                </Button>
-              </SheetTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="md:hidden" aria-label={t("common.openMenu")}>
+                      <Menu />
+                    </Button>
+                  </SheetTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{t("common.openMenu")}</TooltipContent>
+              </Tooltip>
               <SheetContent side="right" className="flex flex-col">
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">

@@ -61,7 +61,7 @@ export function NavMain({
               {item.items?.length ? (
                 <>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} className="cursor-pointer">
+                    <SidebarMenuButton tooltip={item.title}>
                       {item.icon && <item.icon />}
                       <span>{item.title}</span>
                       <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -94,12 +94,7 @@ export function NavMain({
                   </CollapsibleContent>
                 </>
               ) : (
-                <SidebarMenuButton
-                  asChild
-                  tooltip={item.title}
-                  className="cursor-pointer"
-                  isActive={location.pathname === item.url}
-                >
+                <SidebarMenuButton asChild tooltip={item.title} isActive={location.pathname === item.url}>
                   <Link
                     to={item.url}
                     target={item.openInNewTab ? "_blank" : undefined}

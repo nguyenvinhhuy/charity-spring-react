@@ -42,12 +42,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const data = {
     user: {
       name: "Hương Sen",
-      email: "store@example.com",
+      email: "",
       avatar: "",
     },
     navGroups: [
       {
-        label: "Dashboards",
+        label: t("nav.groupDashboards"),
         items: [
           {
             title: t("nav.dashboard"),
@@ -66,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
-        label: "Apps",
+        label: t("nav.groupApps"),
         items: [
           ...(canManageCampaigns
             ? [
@@ -143,7 +143,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ],
       },
       {
-        label: "Pages",
+        label: t("nav.groupPages"),
         items: [
           {
             title: t("nav.home"),
@@ -173,7 +173,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">Hương Sen</span>
-                  <span className="truncate text-xs">Admin Dashboard</span>
+                  <span className="truncate text-xs">{t("nav.adminDashboard")}</span>
                 </div>
               </Link>
             </SidebarMenuButton>

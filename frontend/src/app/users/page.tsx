@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
-import { ChevronLeft, ChevronRight, Search, Settings } from "lucide-react"
+import { useMutation, keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query"
+import { ChevronLeft, ChevronRight, Search, Settings, Trash2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import { BaseLayout } from "@/components/layouts/base-layout"
-import { listMembers } from "@/api/members"
+import { deleteMember, listMembers } from "@/api/members"
+import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { Role } from "@/types/common"
@@ -17,6 +19,15 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { CreateMemberDialog } from "./components/create-member-dialog"
 import { MemberEditDialog } from "./components/member-edit-dialog"
 import { ROLE_BADGE_CLASSES, STATUS_BADGE_ACTIVE, STATUS_BADGE_INACTIVE } from "./components/role-constants"
@@ -54,6 +65,7 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<Role | typeof ALL>(ALL)
   const [statusFilter, setStatusFilter] = useState<"true" | "false" | typeof ALL>(ALL)
   const [editTarget, setEditTarget] = useState<Member | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Member | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading: loading } = useQuery({
@@ -76,6 +88,16 @@ export default function UsersPage() {
   }
 
   const members = data?.content ?? []
+
+  const deleteMutation = useMutation({
+    mutationFn: (member: Member) => deleteMember(member.id),
+    onSuccess: async () => {
+      toast.success(t("users.deleteToastSuccess"))
+      await refreshMembers()
+      setDeleteTarget(null)
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  })
 
   return (
     <BaseLayout title={t("users.title")} description={t("users.description")}>
@@ -189,15 +211,35 @@ export default function UsersPage() {
                         <TableCell>{member.phone ?? "—"}</TableCell>
                         <TableCell>{formatDate(member.createdAt)}</TableCell>
                         <TableCell className="pr-4">
-                          <div className="flex items-center justify-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={t("users.editDialog.trigger")}
-                              onClick={() => setEditTarget(member)}
-                            >
-                              <Settings />
-                            </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t("users.editDialog.trigger")}
+                                  onClick={() => setEditTarget(member)}
+                                >
+                                  <Settings />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t("users.editDialog.trigger")}</TooltipContent>
+                            </Tooltip>
+                            {!member.isActive && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("users.editDialog.deleteTrigger")}
+                                    onClick={() => setDeleteTarget(member)}
+                                  >
+                                    <Trash2 className="text-destructive" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t("users.editDialog.deleteTrigger")}</TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -214,22 +256,34 @@ export default function UsersPage() {
             {t("users.pagination", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.first ?? true)}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.last ?? true)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.previousPage")}
+                  disabled={loading || (data?.first ?? true)}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.previousPage")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.nextPage")}
+                  disabled={loading || (data?.last ?? true)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.nextPage")}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -240,6 +294,27 @@ export default function UsersPage() {
         onOpenChange={(open) => !open && setEditTarget(null)}
         onSaved={refreshMembers}
       />
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("users.editDialog.deleteDialog.title")}</DialogTitle>
+            <DialogDescription>{t("users.editDialog.deleteDialog.description")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? t("common.deleting") : t("common.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </BaseLayout>
   )
 }

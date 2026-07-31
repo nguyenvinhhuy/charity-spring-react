@@ -80,7 +80,7 @@ export default function FAQsPage() {
                 type="button"
                 onClick={() => setCategory(ALL_CATEGORIES)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   category === ALL_CATEGORIES ? "bg-muted" : "hover:bg-muted/50",
                 )}
               >
@@ -93,7 +93,7 @@ export default function FAQsPage() {
                   type="button"
                   onClick={() => setCategory(key)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     category === key ? "bg-muted" : "hover:bg-muted/50",
                   )}
                 >

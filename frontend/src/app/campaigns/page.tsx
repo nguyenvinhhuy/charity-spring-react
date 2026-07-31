@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   allowedTransitions,
   categoryLabel,
@@ -266,44 +267,68 @@ export default function CampaignsPage() {
                         <TableCell>{formatDate(campaign.startDate)}</TableCell>
                         <TableCell className="pr-4">
                           <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={t("campaigns.actions.edit")}
-                              onClick={() => openEdit(campaign)}
-                            >
-                              <Pencil />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t("campaigns.actions.edit")}
+                                  onClick={() => openEdit(campaign)}
+                                >
+                                  <Pencil />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t("campaigns.actions.edit")}</TooltipContent>
+                            </Tooltip>
 
                             {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={t("campaigns.actions.manageDonations")}
-                                onClick={() => openDonations(campaign)}
-                              >
-                                <HandCoins />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("campaigns.actions.manageDonations")}
+                                    onClick={() => openDonations(campaign)}
+                                  >
+                                    <HandCoins />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t("campaigns.actions.manageDonations")}</TooltipContent>
+                              </Tooltip>
                             )}
 
                             {isAdmin && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={t("campaigns.actions.manageRegistrations")}
-                                onClick={() => openRegistrations(campaign)}
-                              >
-                                <Users />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("campaigns.actions.manageRegistrations")}
+                                    onClick={() => openRegistrations(campaign)}
+                                  >
+                                    <Users />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t("campaigns.actions.manageRegistrations")}</TooltipContent>
+                              </Tooltip>
                             )}
 
                             {isAdmin && transitions.length > 0 && (
                               <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" title={t("campaigns.actions.changeStatus")}>
-                                    <ArrowRightLeft />
-                                  </Button>
-                                </DropdownMenuTrigger>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label={t("campaigns.actions.changeStatus")}
+                                      >
+                                        <ArrowRightLeft />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{t("campaigns.actions.changeStatus")}</TooltipContent>
+                                </Tooltip>
                                 <DropdownMenuContent align="end">
                                   {transitions.map((status) => (
                                     <DropdownMenuItem
@@ -318,14 +343,19 @@ export default function CampaignsPage() {
                             )}
 
                             {canDelete && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={t("common.delete")}
-                                onClick={() => setDeleteTarget(campaign)}
-                              >
-                                <Trash2 className="text-destructive" />
-                              </Button>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t("common.delete")}
+                                    onClick={() => setDeleteTarget(campaign)}
+                                  >
+                                    <Trash2 className="text-destructive" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t("common.delete")}</TooltipContent>
+                              </Tooltip>
                             )}
                           </div>
                         </TableCell>
@@ -343,22 +373,34 @@ export default function CampaignsPage() {
             {t("common.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.first ?? true)}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.last ?? true)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.previousPage")}
+                  disabled={loading || (data?.first ?? true)}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.previousPage")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.nextPage")}
+                  disabled={loading || (data?.last ?? true)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.nextPage")}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

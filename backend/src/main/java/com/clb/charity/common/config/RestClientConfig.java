@@ -23,8 +23,7 @@ public class RestClientConfig {
      */
     @Bean
     public RestClient restClient() {
-        // SimpleClientHttpRequestFactory connects lazily per request, so bean creation does not
-        // eagerly open the JDK HttpClient's loopback selector (which fails in sandboxed test envs).
+        // Connects lazily per request so bean creation doesn't open a loopback selector (fails in sandboxed tests).
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(CONNECT_TIMEOUT);
         factory.setReadTimeout(READ_TIMEOUT);

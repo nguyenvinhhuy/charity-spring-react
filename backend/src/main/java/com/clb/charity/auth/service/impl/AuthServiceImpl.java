@@ -6,7 +6,6 @@ import com.clb.charity.auth.dto.response.LoginResponse;
 import com.clb.charity.auth.dto.response.RefreshResponse;
 import com.clb.charity.auth.repository.RefreshTokenRepository;
 import com.clb.charity.auth.service.AuthService;
-import com.clb.charity.common.exception.EmailAlreadyExistsException;
 import com.clb.charity.common.exception.InvalidCredentialsException;
 import com.clb.charity.common.exception.InvalidRefreshTokenException;
 import com.clb.charity.common.exception.TooManyRequestsException;
@@ -14,15 +13,16 @@ import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.JwtTokenProvider;
 import com.clb.charity.common.security.TokenHasher;
 import com.clb.charity.member.domain.AuthProvider;
-import com.clb.charity.member.domain.Member;
-import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.response.MemberResponse;
-import com.clb.charity.member.mapper.MemberMapper;
-import com.clb.charity.member.repository.MemberRepository;
+import com.clb.charity.member.event.MemberSessionsRevokedEvent;
+import com.clb.charity.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,20 +33,15 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
 
-    // Dummy hash so a missing-email login costs the same BCrypt time as a real wrong-password check.
-    private static final String DUMMY_PASSWORD_HASH = "$2a$12$TlCEHbKUuuWt0X55MIBWLuqg8pJPBPEi8Y484wv0uxzfdq1vLUD26";
-
     private static final int LOGIN_MAX_PER_IP = 20;
     private static final int LOGIN_MAX_PER_EMAIL = 5;
     private static final Duration LOGIN_WINDOW = Duration.ofMinutes(15);
     private static final int REGISTER_MAX_PER_IP = 5;
     private static final Duration REGISTER_WINDOW = Duration.ofHours(1);
 
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtTokenProvider tokenProvider;
-    private final PasswordEncoder passwordEncoder;
-    private final MemberMapper memberMapper;
     private final SlidingWindowRateLimiter rateLimiter;
 
     @Override
@@ -55,16 +50,9 @@ public class AuthServiceImpl implements AuthService {
         if (!rateLimiter.allow("register-ip", clientIp, REGISTER_MAX_PER_IP, REGISTER_WINDOW)) {
             throw new TooManyRequestsException("Too many registration attempts, please try again later");
         }
-        if (memberRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException(request.email());
-        }
-        Member member = new Member();
-        member.setFullName(request.fullName());
-        member.setEmail(request.email());
-        member.setPasswordHash(passwordEncoder.encode(request.password()));
-        member.setRole(Role.MEMBER);
-        member.setActive(true);
-        return issueTokens(memberRepository.save(member));
+        MemberResponse member =
+                memberService.registerSelfSignup(request.fullName(), request.email(), request.password());
+        return issueTokens(member);
     }
 
     @Override
@@ -74,16 +62,8 @@ public class AuthServiceImpl implements AuthService {
                 || !rateLimiter.allow("login-email", email.toLowerCase(), LOGIN_MAX_PER_EMAIL, LOGIN_WINDOW)) {
             throw new TooManyRequestsException("Too many login attempts, please try again later");
         }
-
-        Member member = memberRepository.findByEmail(email).filter(Member::isActive).orElse(null);
-        if (member == null || member.getPasswordHash() == null) {
-            // Run the same expensive comparison as a real login so this branch isn't faster.
-            passwordEncoder.matches(rawPassword, DUMMY_PASSWORD_HASH);
-            throw new InvalidCredentialsException();
-        }
-        if (!passwordEncoder.matches(rawPassword, member.getPasswordHash())) {
-            throw new InvalidCredentialsException();
-        }
+        MemberResponse member = memberService.authenticate(email, rawPassword)
+                .orElseThrow(InvalidCredentialsException::new);
         return issueTokens(member);
     }
 
@@ -91,19 +71,8 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginResult loginWithOAuth(AuthProvider provider, String providerId, String email, String fullName,
                                       String avatarUrl) {
-        Member member = memberRepository.findByEmail(email).orElseGet(Member::new);
-        if (member.getId() == null) {
-            member.setEmail(email);
-            member.setRole(Role.MEMBER);
-            member.setActive(true);
-        }
-        member.setFullName(fullName != null && !fullName.isBlank() ? fullName : email);
-        member.setProvider(provider);
-        member.setProviderId(providerId);
-        if (avatarUrl != null) {
-            member.setAvatarUrl(avatarUrl);
-        }
-        return issueTokens(memberRepository.save(member));
+        MemberResponse member = memberService.upsertOAuthMember(provider, providerId, email, fullName, avatarUrl);
+        return issueTokens(member);
     }
 
     /**
@@ -112,13 +81,11 @@ public class AuthServiceImpl implements AuthService {
      * @param member the authenticated member
      * @return the login body and the opaque refresh token
      */
-    private LoginResult issueTokens(Member member) {
-        String accessToken = tokenProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole());
-        String refreshToken = persistNewRefreshToken(member.getId());
-
-        MemberResponse memberResponse = memberMapper.toResponse(member);
+    private LoginResult issueTokens(MemberResponse member) {
+        String accessToken = tokenProvider.createAccessToken(member.id(), member.email(), member.role());
+        String refreshToken = persistNewRefreshToken(member.id());
         LoginResponse body = new LoginResponse(
-                accessToken, TOKEN_TYPE, tokenProvider.getAccessTokenExpirySeconds(), memberResponse);
+                accessToken, TOKEN_TYPE, tokenProvider.getAccessTokenExpirySeconds(), member);
         return new LoginResult(body, refreshToken);
     }
 
@@ -137,15 +104,14 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidRefreshTokenException();
         }
 
-        Member member = memberRepository.findById(existing.getMemberId())
-                .filter(Member::isActive)
+        MemberResponse member = memberService.findActiveById(existing.getMemberId())
                 .orElseThrow(InvalidRefreshTokenException::new);
 
         // Rotate: revoke the used token and issue a fresh one.
         refreshTokenRepository.deleteByToken(hashedToken);
-        String newRefreshToken = persistNewRefreshToken(member.getId());
+        String newRefreshToken = persistNewRefreshToken(member.id());
 
-        String accessToken = tokenProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole());
+        String accessToken = tokenProvider.createAccessToken(member.id(), member.email(), member.role());
         RefreshResponse body = new RefreshResponse(
                 accessToken, TOKEN_TYPE, tokenProvider.getAccessTokenExpirySeconds());
         return new RefreshResult(body, newRefreshToken);
@@ -163,6 +129,15 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void revokeAllTokensForMember(Long memberId) {
         refreshTokenRepository.deleteAllByMemberId(memberId);
+    }
+
+    /** Revokes all of a member's refresh tokens once the triggering member-service transaction has committed. */
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMemberSessionsRevoked(MemberSessionsRevokedEvent event) {
+        // @Async keeps this off the request thread; REQUIRES_NEW is needed since AFTER_COMMIT has no transaction.
+        revokeAllTokensForMember(event.memberId());
     }
 
     /**

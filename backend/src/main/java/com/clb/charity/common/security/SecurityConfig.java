@@ -5,6 +5,7 @@ import com.clb.charity.common.exception.ProblemTypes;
 import com.clb.charity.common.security.oauth2.HttpCookieOAuth2AuthorizationRequestRepository;
 import com.clb.charity.common.security.oauth2.OAuth2LoginFailureHandler;
 import com.clb.charity.common.security.oauth2.OAuth2LoginSuccessHandler;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
@@ -69,6 +70,9 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
+                        // ASYNC only completes an already-authenticated SseEmitter, so it never needs re-authorizing.
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+
                         // ── Public docs & health ──────────────────────────
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health")
                         .permitAll()
@@ -95,13 +99,11 @@ public class SecurityConfig {
                         // Reactions: any authenticated member may react, not just staff.
                         .requestMatchers(HttpMethod.PUT, API + "/campaigns/*/reactions/me").authenticated()
                         .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/reactions/me").authenticated()
-                        // Comments: any authenticated member may comment; ownership/moderation checked in the service layer.
+                        // Comments: any authenticated member may comment; ownership checked in the service layer.
                         .requestMatchers(HttpMethod.POST, API + "/campaigns/*/comments").authenticated()
                         .requestMatchers(HttpMethod.PUT, API + "/campaigns/*/comments/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/comments/*").authenticated()
-                        // Registrations: any authenticated member may self-register/cancel; the roster (with member
-                        // names) and force-remove are moderator-only. Must precede the GET /campaigns/** catch-all
-                        // below, or it would fall through as permitAll instead.
+                        // Registrations: self-serve is any member; roster/remove is staff-only; precede GET catch-all.
                         .requestMatchers(HttpMethod.POST, API + "/campaigns/*/registrations/me").authenticated()
                         .requestMatchers(HttpMethod.DELETE, API + "/campaigns/*/registrations/me").authenticated()
                         .requestMatchers(HttpMethod.GET, API + "/campaigns/*/registrations")
@@ -130,7 +132,7 @@ public class SecurityConfig {
                         // Reactions: any authenticated member may react, not just staff.
                         .requestMatchers(HttpMethod.PUT, API + "/posts/*/reactions/me").authenticated()
                         .requestMatchers(HttpMethod.DELETE, API + "/posts/*/reactions/me").authenticated()
-                        // Comments: any authenticated member may comment; ownership/moderation checked in the service layer.
+                        // Comments: any authenticated member may comment; ownership checked in the service layer.
                         .requestMatchers(HttpMethod.POST, API + "/posts/*/comments").authenticated()
                         .requestMatchers(HttpMethod.PUT, API + "/posts/*/comments/*").authenticated()
                         .requestMatchers(HttpMethod.DELETE, API + "/posts/*/comments/*").authenticated()
@@ -144,15 +146,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, API + "/faqs/**").permitAll()
 
                         // ── Members ───────────────────────────────────────
-                        // Mention search / team listing return only non-sensitive fields — public/any-authenticated.
-                        // Both must come BEFORE "/members/*" below, which would otherwise match these paths too
-                        // (single path segment) and wrongly restrict them to ADMIN.
+                        // Mention/team listing return non-sensitive fields; must precede "/members/*" or locks ADMIN.
                         .requestMatchers(HttpMethod.GET, API + "/members/mentions").authenticated()
                         .requestMatchers(HttpMethod.GET, API + "/members/team").permitAll()
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/status").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/members/*/team-profile").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/members/*/force-logout").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, API + "/members/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, API + "/members").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, API + "/members").hasRole("ADMIN")
                         // Member detail can carry sensitive fields (DOB/address/national ID) — ADMIN only.
@@ -172,8 +173,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, API + "/inquiries/*").hasAnyRole("CONTRIBUTOR", "ADMIN")
 
                         // ── Settings ──────────────────────────────────────
-                        // Reading the default bank account is staff-only (pre-fills the campaign form);
-                        // changing it is ADMIN-only.
+                        // Reading the bank account is staff-only (pre-fills campaign form); changing it is ADMIN-only.
                         .requestMatchers(HttpMethod.GET, API + "/settings/bank").hasAnyRole("CONTRIBUTOR", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, API + "/settings/bank").hasRole("ADMIN")
 
@@ -198,8 +198,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(problemAccessDeniedHandler()))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // Enable social login only when at least one OAuth2 client is configured, so the app
-        // still starts with no provider credentials set.
+        // Enables social login only when an OAuth2 client is configured, so the app still starts with none set.
         if (clientRegistrationRepository.getIfAvailable() != null) {
             http.oauth2Login(oauth -> oauth
                     .authorizationEndpoint(endpoint -> endpoint

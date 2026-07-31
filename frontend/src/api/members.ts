@@ -101,3 +101,12 @@ export async function updateTeamProfile(id: number, payload: UpdateTeamProfileRe
 export async function forceLogoutMember(id: number): Promise<void> {
   await api.post(`/members/${id}/force-logout`)
 }
+
+/**
+ * Permanently delete a deactivated member, reattributing any content they created to the caller (admin only).
+ *
+ * @param id member id
+ */
+export async function deleteMember(id: number): Promise<void> {
+  await api.delete(`/members/${id}`)
+}

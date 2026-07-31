@@ -281,6 +281,8 @@ export function CampaignFormDialog({ open, onOpenChange, campaign, onSaved }: Ca
           <div className="text-muted-foreground py-10 text-center text-sm">{t("common.loading")}</div>
         ) : (
           <Form {...form}>
+            {/* handleSubmit defers to the submit event, it doesn't call onSubmit during render */}
+            {/* eslint-disable-next-line react-hooks/refs */}
             <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)}>
               <FormField
                 control={form.control}

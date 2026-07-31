@@ -1,5 +1,6 @@
 package com.clb.charity.member.service;
 
+import com.clb.charity.member.domain.AuthProvider;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.ChangePasswordRequest;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Member account query and administration operations.
@@ -93,6 +95,15 @@ public interface MemberService {
     void forceLogout(Long id);
 
     /**
+     * Permanently deletes a deactivated member, reattributing any campaigns, posts, FAQs, events,
+     * and donations they created to the acting admin so that content is never left authorless.
+     *
+     * @param id the member id to delete
+     * @param actingAdminId the id of the admin performing the deletion
+     */
+    void delete(Long id, Long actingAdminId);
+
+    /**
      * Builds the total member count and the per-role distribution.
      *
      * @return the member statistics
@@ -130,4 +141,59 @@ public interface MemberService {
      * @return the updated member representation
      */
     MemberResponse updateTeamProfile(Long id, UpdateTeamProfileRequest request);
+
+    /**
+     * Lists the ids of active members holding any of the given roles.
+     *
+     * @param roles the roles to match
+     * @return matching active member ids
+     */
+    List<Long> findActiveIdsByRoles(Collection<Role> roles);
+
+    /**
+     * Lists the ids of all active members.
+     *
+     * @return every active member id
+     */
+    List<Long> findAllActiveIds();
+
+    /**
+     * Verifies an email/password pair against an active member's credentials.
+     *
+     * @param email the member email
+     * @param rawPassword the raw password to verify
+     * @return the member representation if the credentials match an active member, empty otherwise
+     */
+    Optional<MemberResponse> authenticate(String email, String rawPassword);
+
+    /**
+     * Gets an active member by id, for minting a fresh access token during refresh.
+     *
+     * @param id the member id
+     * @return the member representation if found and active, empty otherwise
+     */
+    Optional<MemberResponse> findActiveById(Long id);
+
+    /**
+     * Registers a new member with the MEMBER role and an encoded password.
+     *
+     * @param fullName the display name
+     * @param email the account email
+     * @param rawPassword the raw password to encode and store
+     * @return the created member representation
+     */
+    MemberResponse registerSelfSignup(String fullName, String email, String rawPassword);
+
+    /**
+     * Creates or updates a member from a verified OAuth2 profile, linking by email.
+     *
+     * @param provider the identity provider
+     * @param providerId the provider's stable user id
+     * @param email the account email
+     * @param fullName the display name
+     * @param avatarUrl the profile picture URL, or null
+     * @return the upserted member representation
+     */
+    MemberResponse upsertOAuthMember(AuthProvider provider, String providerId, String email, @Nullable String fullName,
+                                     @Nullable String avatarUrl);
 }

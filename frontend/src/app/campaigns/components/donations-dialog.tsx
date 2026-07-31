@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatVnd } from "./campaign-constants"
 
 interface DonationsDialogProps {
@@ -191,14 +192,19 @@ export function DonationsDialog({ open, onOpenChange, campaign, onChanged }: Don
                     <TableCell>{d.donorName ?? t("campaigns.donations.anonymous")}</TableCell>
                     <TableCell className="text-right font-medium">{formatVnd(d.amount)}</TableCell>
                     <TableCell className="pr-4 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMutation.mutate(d.id)}
-                        aria-label={t("common.delete")}
-                      >
-                        <Trash2 className="text-destructive" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteMutation.mutate(d.id)}
+                            aria-label={t("common.delete")}
+                          >
+                            <Trash2 className="text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("common.delete")}</TooltipContent>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))

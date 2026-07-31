@@ -38,7 +38,7 @@ update progress manually.
 | Boilerplate | **Lombok** | 1.18.46 (JDK 26 support) |
 | API docs | springdoc-openapi | 3.0.0, Swagger UI at `/swagger-ui.html` |
 
-### Frontend (rebuild pending — see §7)
+### Frontend
 | Thing | Version | Notes |
 |---|---|---|
 | React / react-dom | **19.2.x** | functional components only |
@@ -88,6 +88,11 @@ com.clb.charity/
 - `common` never depends on a feature (exception: `Role` lives in `member/domain`
   and is imported by security — the one accepted shared concept).
 
+**Enforcement**: there is no lint/boundary tool wired up for this (same tradeoff as
+§5.0a's frontend equivalent). This section **is** the enforcement — new code must
+follow it; existing violations get migrated opportunistically, one feature at a
+time, not in a big-bang pass.
+
 ---
 
 ## 4. Backend coding conventions
@@ -131,6 +136,9 @@ com.clb.charity/
 - `GlobalExceptionHandler` converts everything to `ProblemDetail`. Never build a
   custom error envelope, and never construct `ProblemDetail` inside a
   service/controller.
+- **Exception**: `common/security`'s `AuthenticationEntryPoint`/`AccessDeniedHandler`
+  build `ProblemDetail` directly — a rejection there never reaches
+  `GlobalExceptionHandler`, so there's no other way to emit RFC 9457 for it.
 
 ### 4.7 Persistence & migrations
 - Flyway files in `src/main/resources/db/migration/`. The initial schema is
@@ -161,8 +169,9 @@ com.clb.charity/
   the **120-column** line width (only wrap if it would exceed 120 columns).
 - Always keep the blank line separating the WHAT sentence from the `@param`/
   `@return`/`@throws` block.
-- Explain **why** only for genuinely non-obvious or long logic, as short inline
-  `//` comments **inside** the method body.
+- Explain **why** only for genuinely non-obvious or long logic, as a `//` comment
+  **inside** the method body — **exactly one line, never wrapped across two or
+  more `//` lines**, no exceptions.
 - Do not document Lombok-generated accessors. Do not restate the obvious.
 
 ### 4.10 Tests
@@ -292,6 +301,37 @@ don't add a new flat file to the old `types/`, `api/`, or `components/` location
   row) — pick one pattern per dialog and apply it to every row in that dialog, no
   mixing.
 
+### 5.3 Icon-only controls & interactive-element hygiene (STRICT)
+- **Every icon-only interactive control** — a `Button` showing only an icon, a
+  `Switch`, a `Toggle`, or any other control with no visible text label — MUST
+  get both an `aria-label` and a shared `Tooltip` (`components/ui/tooltip.tsx`
+  — `Tooltip`/`TooltipTrigger`/`TooltipContent`, never a plain HTML `title=`
+  attribute, which is slow and unstyled) using the same text for both. Add this
+  the moment the control is created — don't rely on a later audit to catch it,
+  see the two rounds of misses in this project's history (icon buttons missed
+  first, then `Switch`/`SidebarTrigger` missed in the very next pass because the
+  first audit only looked for `<Button>`).
+- **Radix `data-state` collision gotcha**: never make a component that uses its
+  *own* `data-state` attribute for visual styling (`Switch`, `Toggle`, `Tabs`,
+  `Accordion`, ...) the **direct** child of `TooltipTrigger asChild` (or any
+  other Radix `asChild` trigger). The wrapping primitive's own `data-state`
+  (e.g. Tooltip's open/closed) silently overwrites the inner component's
+  `data-state` (e.g. Switch's checked/unchecked) on the same DOM node, breaking
+  its color styling — the bug is invisible in a lint/typecheck/build pass and
+  only shows up as a wrong color on hover. Fix: wrap the inner component in a
+  plain `<span className="inline-flex">` first and make **that span** the
+  `asChild` target instead.
+- **Every new interactive/clickable primitive** (in `components/ui/` or
+  elsewhere) must include `cursor-pointer` in its base className. Browsers do
+  **not** give `<button>` a pointer cursor by default (only `<a>` tags get
+  one) — this has already been missed, in one pass each, across `Tabs`,
+  `Dialog`/`Sheet` close buttons, `Switch`, `Checkbox`, `Toggle`,
+  `RadioGroup`, `Accordion`, `NavigationMenu`, `Sidebar` menu buttons/actions,
+  and `DropdownMenu`/`Command`/`Select` items (which shipped with an explicit
+  `cursor-default` override). When adding any new clickable shadcn primitive,
+  check it against this list rather than assuming the base component already
+  handles it.
+
 ---
 
 ## 6. Build & run
@@ -308,12 +348,39 @@ cd frontend && npm install && npm run dev
 
 Seeded admin: `admin@clb.vn` / `Admin@123`.
 
-> ⚠️ **Known Windows/Docker Desktop quirk**: running `docker build` from `backend/`
-> on this machine has repeatedly left a stray, empty, junk folder literally named
-> `backend;C` in the repo root (root cause not fully pinned down — likely a
-> Windows PATH/WSL2 path-translation artifact). **After every `docker build` run,
-> immediately `ls` the repo root and delete any stray `*;C` folder** before
-> reporting the build result — do not wait to be told about it again.
+> ⚠️ **MANDATORY: run all `docker build` / `docker run -v` commands via
+> PowerShell, never Bash. No exceptions.**
+
+> ⚠️ **PowerShell `${PWD}` can silently point at the wrong directory** if the
+> tool's session cwd has drifted (e.g. into `frontend`) — always use an explicit
+> absolute path for docker volume mounts, never `${PWD}`.
+
+> ⚠️ **Never chain multi-command bash strings through PowerShell → `docker run` →
+> `bash -c "..."`** — escaping (e.g. `\$`) breaks silently and the command can
+> report exit 0 while having done nothing. Write anything beyond a single command
+> to a script file and run that file instead.
+
+> ⚠️ **`CharityApplicationTests` always fails in the ephemeral no-Maven test
+> container — exclude it, don't re-diagnose it.** It needs Testcontainers to spin
+> up a real Postgres, which needs the Docker socket; the ephemeral container
+> doesn't have one. Run `mvn -Dtest='!CharityApplicationTests' test` (or mount
+> `/var/run/docker.sock` if you specifically need this test) instead of treating
+> the failure as a regression each time.
+
+> ⚠️ **Ad-hoc test containers/images must be cleaned up, but not the reusable base
+> image**: this project has no local Maven, so backend tests are often run via a
+> throwaway `docker run --rm -v backend:/app -v .m2:/root/.m2 eclipse-temurin:26-jdk
+> ...` container. `--rm` only removes the *container* — the base image and any
+> Docker build cache are left behind and accumulate across sessions (grew to
+> 3.76GB of build cache in one sitting). Rule: **keep `eclipse-temurin:26-jdk`
+> cached** (it's reused constantly for this pattern and re-pulling it every time
+> just wastes time), but **always remove any other one-off image** created for a
+> single inspection or test (e.g. a throwaway `alpine` container, or
+> `testcontainers/ryuk` pulled in by a Testcontainers run) and run
+> `docker builder prune -f` right after a build/test verification pass — don't
+> leave it for the user to notice their disk filling up. Before reporting "just
+> this one leftover image," diff `docker images` against `docker-compose.yml`'s
+> `image:`/`build:` entries — don't eyeball-guess the count.
 
 ---
 
@@ -338,6 +405,8 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
   (e.g. "these files are unused, deleting them") — the user decides what counts
   as safe to do, not the model.
 - ✅ Modular monolith, package-by-feature, cross-feature by id only.
+- ✅ **MANDATORY: `docker build` / `docker run -v` always via PowerShell, never
+  Bash** — see §6.
 - ✅ **Frontend is migrating to feature-sliced** (§5.0a): new code always follows
   `features/<name>/{api,types,components,pages}` + `shared/`; existing flat
   `types/`/`api/`/`components/` code migrates incrementally, one small
@@ -355,8 +424,20 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
 - ❌ No "..." (`MoreHorizontal`) catch-all row-action menus anywhere — see §5.2.
 - ❌ No mixing layout primitives (e.g. `items-start` vs `items-center`) across
   field rows within the same dialog — see §5.2.
+- ✅ Every icon-only control (`Button`, `Switch`, `Toggle`, ...) gets an
+  `aria-label` + shared `Tooltip` the moment it's created, not as a later
+  audit — see §5.3.
+- ❌ Never nest a `data-state`-styled component (`Switch`/`Toggle`/`Tabs`/
+  `Accordion`) directly inside `TooltipTrigger asChild` — wrap it in a plain
+  `<span>` first, or its own `data-state` gets silently overwritten — see §5.3.
+- ✅ Every new clickable primitive gets `cursor-pointer` in its base
+  className — check it against the known-missed list in §5.3.
 - ❌ Never leave a stray `*;C` junk folder in the repo root after `docker build`
   — check and delete it every time, see §6.
+- ✅ After any ad-hoc test-container run, remove one-off images (`alpine`,
+  `testcontainers/ryuk`, ...) and `docker builder prune -f` the build cache —
+  but keep `eclipse-temurin:26-jdk` cached since it's reused constantly. Diff
+  `docker images` vs `docker-compose.yml` before reporting what's leftover, see §6.
 - ✅ **When asked to fix one occurrence of a text/wording/pattern, grep the whole
   repo (source only, not `dist`/`build`) for other occurrences of the same thing
   and surface them before finishing** — e.g. "sửa Hội → Câu lạc bộ" in one file

@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { NewsFormDialog } from "./components/news-form-dialog"
 
 const PAGE_SIZE = 10
@@ -194,23 +195,46 @@ export default function NewsManagePage() {
                             {post.isPublished ? t("news.manage.status.published") : t("news.manage.status.draft")}
                           </Badge>
                           {isAdmin && (
-                            <Switch
-                              checked={post.isPublished}
-                              onCheckedChange={(checked) => publishToggleMutation.mutate({ post, published: checked })}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {/* Wrapper span keeps Tooltip's own data-state off the Switch's DOM
+                                    node, since Switch uses data-state itself for checked/unchecked color. */}
+                                <span className="inline-flex">
+                                  <Switch
+                                    aria-label={
+                                      post.isPublished
+                                        ? t("news.manage.unpublishAction")
+                                        : t("news.manage.publishAction")
+                                    }
+                                    checked={post.isPublished}
+                                    onCheckedChange={(checked) =>
+                                      publishToggleMutation.mutate({ post, published: checked })
+                                    }
+                                  />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {post.isPublished ? t("news.manage.unpublishAction") : t("news.manage.publishAction")}
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>{formatDate(post.publishedAt)}</TableCell>
                       <TableCell className="pr-4 text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title={t("news.manage.edit")}
-                          onClick={() => openEdit(post)}
-                        >
-                          <Pencil />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={t("news.manage.edit")}
+                              onClick={() => openEdit(post)}
+                            >
+                              <Pencil />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t("news.manage.edit")}</TooltipContent>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -225,22 +249,34 @@ export default function NewsManagePage() {
             {t("news.manage.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.first ?? true)}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.last ?? true)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.previousPage")}
+                  disabled={loading || (data?.first ?? true)}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.previousPage")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.nextPage")}
+                  disabled={loading || (data?.last ?? true)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.nextPage")}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

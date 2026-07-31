@@ -1,8 +1,7 @@
 package com.clb.charity.notification.service.impl;
 
 import com.clb.charity.common.exception.NotificationNotFoundException;
-import com.clb.charity.member.domain.Member;
-import com.clb.charity.member.repository.MemberRepository;
+import com.clb.charity.member.service.MemberService;
 import com.clb.charity.notification.domain.Notification;
 import com.clb.charity.notification.domain.NotificationMute;
 import com.clb.charity.notification.domain.NotificationReferenceType;
@@ -56,7 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationMuteRepository muteRepository;
     private final NotificationMapper notificationMapper;
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @Override
     public Page<NotificationResponse> list(Long recipientMemberId, Pageable pageable) {
@@ -137,17 +136,17 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void broadcast(CreateBroadcastRequest request) {
-        for (Member member : memberRepository.findByActiveTrue()) {
-            if (muteRepository.existsById(new NotificationMute.Id(member.getId(), NotificationType.BROADCAST))) {
+        for (Long memberId : memberService.findAllActiveIds()) {
+            if (muteRepository.existsById(new NotificationMute.Id(memberId, NotificationType.BROADCAST))) {
                 continue;
             }
             Notification notification = new Notification();
-            notification.setRecipientMemberId(member.getId());
+            notification.setRecipientMemberId(memberId);
             notification.setType(NotificationType.BROADCAST);
             notification.setTitle(request.title());
             notification.setMessage(request.message());
             Notification saved = notificationRepository.save(notification);
-            pushToLiveConnections(member.getId(), notificationMapper.toResponse(saved));
+            pushToLiveConnections(memberId, notificationMapper.toResponse(saved));
         }
     }
 
@@ -161,10 +160,27 @@ public class NotificationServiceImpl implements NotificationService {
             }
             emitters.add(emitter);
         }
-        emitter.onCompletion(() -> emitters.remove(emitter));
-        emitter.onTimeout(() -> emitters.remove(emitter));
-        emitter.onError(e -> emitters.remove(emitter));
+        emitter.onCompletion(() -> removeEmitter(memberId, emitter));
+        emitter.onTimeout(() -> removeEmitter(memberId, emitter));
+        emitter.onError(e -> removeEmitter(memberId, emitter));
         return emitter;
+    }
+
+    /**
+     * Detaches an emitter from a member's list, dropping the list entirely once it's empty.
+     *
+     * @param memberId the member the emitter belongs to
+     * @param emitter  the emitter to remove
+     */
+    private void removeEmitter(Long memberId, SseEmitter emitter) {
+        List<SseEmitter> emitters = emittersByMemberId.get(memberId);
+        if (emitters == null) {
+            return;
+        }
+        emitters.remove(emitter);
+        if (emitters.isEmpty()) {
+            emittersByMemberId.remove(memberId, emitters);
+        }
     }
 
     private void pushToLiveConnections(Long memberId, NotificationResponse payload) {
@@ -176,7 +192,7 @@ public class NotificationServiceImpl implements NotificationService {
             try {
                 emitter.send(SseEmitter.event().name("notification").data(payload));
             } catch (Exception e) {
-                emitters.remove(emitter);
+                removeEmitter(memberId, emitter);
             }
         }
     }
@@ -189,7 +205,7 @@ public class NotificationServiceImpl implements NotificationService {
                 try {
                     emitter.send(SseEmitter.event().comment("heartbeat"));
                 } catch (Exception e) {
-                    emitters.remove(emitter);
+                    removeEmitter(memberId, emitter);
                 }
             }
         });

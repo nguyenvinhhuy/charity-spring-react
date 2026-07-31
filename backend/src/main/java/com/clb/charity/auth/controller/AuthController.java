@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -35,7 +36,8 @@ public class AuthController {
 
     private static final String REFRESH_COOKIE = "refresh_token";
     private static final String COOKIE_PATH = "/api/v1/auth";
-    private static final String SAME_SITE = "Lax";
+    // None (not Lax) because the frontend and backend are deployed on different origins.
+    private static final String SAME_SITE = "None";
 
     private final AuthService authService;
     private final MemberService memberService;
@@ -53,7 +55,7 @@ public class AuthController {
     public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request,
                                                    HttpServletRequest httpRequest) {
         AuthService.LoginResult result = authService.register(request, ClientIpUtil.resolve(httpRequest));
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(result.refreshToken()).toString())
                 .body(result.body());
     }

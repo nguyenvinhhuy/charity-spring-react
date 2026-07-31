@@ -59,6 +59,7 @@ export function VercelStatusCard({ status, range }: VercelStatusCardProps) {
       description={t("monitoring.vercel.description")}
       status={toSystemStatus(status.status)}
       statusLabel={t(`monitoring.status.${toSystemStatus(status.status)}`)}
+      infoTooltip={t("monitoring.vercel.metricsNote")}
     >
       {status.errorMessage ? (
         <p className="text-destructive text-sm">{status.errorMessage}</p>
@@ -73,26 +74,23 @@ export function VercelStatusCard({ status, range }: VercelStatusCardProps) {
             </p>
           )}
           {chartData.length > 0 ? (
-            <>
-              <ChartContainer config={chartConfig} className="h-[160px] w-full">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} minTickGap={24} />
-                  <YAxis axisLine={false} tickLine={false} width={36} tick={{ fontSize: 11 }} unit="s" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="buildSeconds"
-                    stroke="var(--color-buildSeconds)"
-                    fill="var(--color-buildSeconds)"
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                  />
-                  <ChartLegend content={<ChartLegendContent />} />
-                </AreaChart>
-              </ChartContainer>
-              <p className="text-muted-foreground text-xs">{t("monitoring.vercel.metricsNote")}</p>
-            </>
+            <ChartContainer config={chartConfig} className="h-[160px] w-full">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} minTickGap={24} />
+                <YAxis axisLine={false} tickLine={false} width={36} tick={{ fontSize: 11 }} unit="s" />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area
+                  type="monotone"
+                  dataKey="buildSeconds"
+                  stroke="var(--color-buildSeconds)"
+                  fill="var(--color-buildSeconds)"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+              </AreaChart>
+            </ChartContainer>
           ) : (
             <p className="text-muted-foreground py-6 text-center text-sm">{t("monitoring.noData")}</p>
           )}

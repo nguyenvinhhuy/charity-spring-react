@@ -105,9 +105,7 @@ public class CommentServiceImpl implements CommentService {
             throw new CommentAccessDeniedException("The 15-minute edit window for this comment has expired");
         }
         comment.setContent(request.content());
-        // Flush immediately so @UpdateTimestamp is populated before toResponse() reads it — a plain
-        // save() on an already-managed entity defers the actual UPDATE (and the timestamp refresh) to
-        // end-of-transaction flush, which would make the response report a stale updatedAt.
+        // Flushed immediately so @UpdateTimestamp is set before toResponse() reads it, not deferred to commit.
         Comment saved = commentRepository.saveAndFlush(comment);
         String authorName = memberService.namesByIds(Set.of(memberId)).get(memberId);
         return toResponse(saved, authorName, memberId, null);

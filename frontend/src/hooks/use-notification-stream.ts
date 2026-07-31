@@ -25,9 +25,12 @@ export function useNotificationStream(enabled: boolean, onNotification: (notific
 
     fetchEventSource(`${API_BASE_URL}/notifications/stream`, {
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}`,
-      },
+      // `headers` is frozen for every auto-retry, so read the token fresh here instead of going stale.
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          headers: { ...init?.headers, Authorization: `Bearer ${useAuthStore.getState().accessToken ?? ""}` },
+        }),
       openWhenHidden: true,
       async onopen(response) {
         if (!response.ok) {

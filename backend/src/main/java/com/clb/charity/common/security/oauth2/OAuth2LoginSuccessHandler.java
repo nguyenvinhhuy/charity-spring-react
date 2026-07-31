@@ -27,7 +27,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private static final String REFRESH_COOKIE = "refresh_token";
     private static final String COOKIE_PATH = "/api/v1/auth";
-    private static final String SAME_SITE = "Lax";
+    // None (not Lax) because the frontend and backend are deployed on different origins.
+    private static final String SAME_SITE = "None";
 
     private final AuthService authService;
     private final JwtTokenProvider tokenProvider;

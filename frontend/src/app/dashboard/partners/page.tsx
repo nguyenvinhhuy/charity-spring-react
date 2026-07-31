@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PartnerFormDialog } from "./components/partner-form-dialog"
 
 export default function PartnersManagePage() {
@@ -132,23 +133,33 @@ export default function PartnersManagePage() {
                       <TableCell>{partner.displayOrder ?? "—"}</TableCell>
                       <TableCell className="pr-4">
                         <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title={t("partnersManage.edit")}
-                            onClick={() => openEdit(partner)}
-                          >
-                            <Pencil />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("partnersManage.edit")}
+                                onClick={() => openEdit(partner)}
+                              >
+                                <Pencil />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("partnersManage.edit")}</TooltipContent>
+                          </Tooltip>
                           {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={t("partnersManage.delete")}
-                              onClick={() => setDeleteTarget(partner)}
-                            >
-                              <Trash2 className="text-destructive" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t("partnersManage.delete")}
+                                  onClick={() => setDeleteTarget(partner)}
+                                >
+                                  <Trash2 className="text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t("partnersManage.delete")}</TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>

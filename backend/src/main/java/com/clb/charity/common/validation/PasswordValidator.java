@@ -11,8 +11,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        // Presence is @NotBlank's job; a null/blank value passes here so the two annotations don't
-        // produce duplicate error messages for the same missing-value case.
+        // Presence is @NotBlank's job; passing null/blank here avoids a duplicate error for the same missing value.
         if (value == null || value.isBlank()) {
             return true;
         }

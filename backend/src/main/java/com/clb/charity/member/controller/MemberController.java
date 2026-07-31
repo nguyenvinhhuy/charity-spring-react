@@ -1,5 +1,6 @@
 package com.clb.charity.member.controller;
 
+import com.clb.charity.common.security.AuthPrincipal;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.dto.request.CreateMemberRequest;
 import com.clb.charity.member.dto.request.UpdateActiveRequest;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -150,6 +153,20 @@ public class MemberController {
     @PostMapping("/{id}/force-logout")
     public ResponseEntity<Void> forceLogout(@PathVariable Long id) {
         memberService.forceLogout(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Permanently deletes a deactivated member, reattributing any content they created to the caller.
+     *
+     * @param id the member id
+     * @param principal the authenticated admin performing the deletion
+     * @return an empty 204 response
+     */
+    @Operation(summary = "Delete a deactivated member")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id, @AuthenticationPrincipal AuthPrincipal principal) {
+        memberService.delete(id, principal.memberId());
         return ResponseEntity.noContent().build();
     }
 }

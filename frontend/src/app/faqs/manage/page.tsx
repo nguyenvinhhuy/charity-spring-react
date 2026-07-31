@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FaqFormDialog } from "./components/faq-form-dialog"
 import { faqCategoryLabel } from "./components/faq-constants"
 
@@ -184,27 +185,58 @@ export default function FaqManagePage() {
                             {faq.isPublished ? t("faqManage.status.published") : t("faqManage.status.draft")}
                           </Badge>
                           {isAdmin && (
-                            <Switch
-                              checked={faq.isPublished}
-                              onCheckedChange={(checked) => publishToggleMutation.mutate({ faq, published: checked })}
-                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {/* Wrapper span keeps Tooltip's own data-state off the Switch's DOM
+                                    node, since Switch uses data-state itself for checked/unchecked color. */}
+                                <span className="inline-flex">
+                                  <Switch
+                                    aria-label={
+                                      faq.isPublished ? t("faqManage.unpublishAction") : t("faqManage.publishAction")
+                                    }
+                                    checked={faq.isPublished}
+                                    onCheckedChange={(checked) =>
+                                      publishToggleMutation.mutate({ faq, published: checked })
+                                    }
+                                  />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {faq.isPublished ? t("faqManage.unpublishAction") : t("faqManage.publishAction")}
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="pr-4">
                         <div className="flex items-center justify-center gap-1">
-                          <Button variant="ghost" size="icon" title={t("faqManage.edit")} onClick={() => openEdit(faq)}>
-                            <Pencil />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("faqManage.edit")}
+                                onClick={() => openEdit(faq)}
+                              >
+                                <Pencil />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("faqManage.edit")}</TooltipContent>
+                          </Tooltip>
                           {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={t("faqManage.delete")}
-                              onClick={() => setDeleteTarget(faq)}
-                            >
-                              <Trash2 className="text-destructive" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t("faqManage.delete")}
+                                  onClick={() => setDeleteTarget(faq)}
+                                >
+                                  <Trash2 className="text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t("faqManage.delete")}</TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       </TableCell>
@@ -221,22 +253,34 @@ export default function FaqManagePage() {
             {t("faqManage.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.first ?? true)}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.last ?? true)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.previousPage")}
+                  disabled={loading || (data?.first ?? true)}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.previousPage")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.nextPage")}
+                  disabled={loading || (data?.last ?? true)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.nextPage")}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

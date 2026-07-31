@@ -11,14 +11,12 @@ import com.clb.charity.common.exception.TooManyRequestsException;
 import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.JwtTokenProvider;
 import com.clb.charity.common.security.TokenHasher;
-import com.clb.charity.member.domain.Member;
 import com.clb.charity.member.domain.Role;
-import com.clb.charity.member.mapper.MemberMapper;
-import com.clb.charity.member.repository.MemberRepository;
+import com.clb.charity.member.dto.response.MemberResponse;
+import com.clb.charity.member.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -31,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,11 +40,10 @@ class AuthServiceTest {
 
     private static final String EMAIL = "admin@clb.vn";
     private static final String RAW_PASSWORD = "Admin@123";
-    private static final String HASH = "$2b$12$hash";
     private static final String CLIENT_IP = "203.0.113.1";
 
     @Mock
-    private MemberRepository memberRepository;
+    private MemberService memberService;
 
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
@@ -53,14 +51,8 @@ class AuthServiceTest {
     @Mock
     private JwtTokenProvider tokenProvider;
 
-    @Mock
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
-
     @Captor
     private ArgumentCaptor<RefreshToken> refreshTokenCaptor;
-
-    // Use the real generated MapStruct mapper for member -> response mapping.
-    private final MemberMapper memberMapper = Mappers.getMapper(MemberMapper.class);
 
     // Real instance, not a mock, so rate-limit behavior is actually exercised.
     private final SlidingWindowRateLimiter rateLimiter = new SlidingWindowRateLimiter();
@@ -69,24 +61,17 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthServiceImpl(memberRepository, refreshTokenRepository, tokenProvider,
-                passwordEncoder, memberMapper, rateLimiter);
+        authService = new AuthServiceImpl(memberService, refreshTokenRepository, tokenProvider, rateLimiter);
     }
 
-    private Member activeMember() {
-        Member member = new Member();
-        member.setFullName("Admin CLB");
-        member.setEmail(EMAIL);
-        member.setPasswordHash(HASH);
-        member.setRole(Role.ADMIN);
-        return member;
+    private MemberResponse activeMemberResponse() {
+        return new MemberResponse(1L, "Admin CLB", EMAIL, Role.ADMIN, null, null, null, null, null, null, null, null,
+                true, Instant.now());
     }
 
     @Test
     void login_success_issuesTokensAndPersistsRefresh() {
-        Member member = activeMember();
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(member));
-        when(passwordEncoder.matches(RAW_PASSWORD, HASH)).thenReturn(true);
+        when(memberService.authenticate(EMAIL, RAW_PASSWORD)).thenReturn(Optional.of(activeMemberResponse()));
         when(tokenProvider.createAccessToken(any(), any(), any())).thenReturn("access-token");
         when(tokenProvider.createRefreshToken()).thenReturn("refresh-token");
         when(tokenProvider.getAccessTokenExpirySeconds()).thenReturn(900L);
@@ -106,9 +91,7 @@ class AuthServiceTest {
 
     @Test
     void login_wrongPassword_throws() {
-        Member member = activeMember();
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.of(member));
-        when(passwordEncoder.matches(RAW_PASSWORD, HASH)).thenReturn(false);
+        when(memberService.authenticate(EMAIL, RAW_PASSWORD)).thenReturn(Optional.empty());
 
         assertThrows(InvalidCredentialsException.class, () -> authService.login(EMAIL, RAW_PASSWORD, CLIENT_IP));
         verify(refreshTokenRepository, never()).save(any());
@@ -116,14 +99,14 @@ class AuthServiceTest {
 
     @Test
     void login_unknownEmail_throws() {
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(memberService.authenticate(EMAIL, RAW_PASSWORD)).thenReturn(Optional.empty());
 
         assertThrows(InvalidCredentialsException.class, () -> authService.login(EMAIL, RAW_PASSWORD, CLIENT_IP));
     }
 
     @Test
     void login_exceedingPerEmailLimit_throwsTooManyRequests() {
-        when(memberRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+        when(memberService.authenticate(EMAIL, RAW_PASSWORD)).thenReturn(Optional.empty());
 
         for (int i = 0; i < 5; i++) {
             String attemptIp = "198.51.100." + (i + 1);
@@ -136,7 +119,7 @@ class AuthServiceTest {
 
     @Test
     void login_exceedingPerIpLimit_throwsTooManyRequests() {
-        lenient().when(memberRepository.findByEmail(any())).thenReturn(Optional.empty());
+        lenient().when(memberService.authenticate(anyString(), anyString())).thenReturn(Optional.empty());
 
         for (int i = 0; i < 20; i++) {
             String email = "user" + i + "@example.com";
@@ -149,8 +132,7 @@ class AuthServiceTest {
 
     @Test
     void register_exceedingPerIpLimit_throwsTooManyRequests() {
-        lenient().when(passwordEncoder.encode(any())).thenReturn(HASH);
-        lenient().when(memberRepository.save(any(Member.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(memberService.registerSelfSignup(any(), any(), any())).thenReturn(activeMemberResponse());
         lenient().when(tokenProvider.createRefreshToken()).thenReturn("refresh-token");
 
         for (int i = 0; i < 5; i++) {
@@ -183,15 +165,13 @@ class AuthServiceTest {
 
     @Test
     void refresh_validToken_rotatesAndStoresTheNewTokenHashed() {
-        Member member = activeMember();
-        member.setId(1L);
         String hashedOldToken = TokenHasher.sha256Hex("old-token");
         RefreshToken valid = new RefreshToken();
         valid.setMemberId(1L);
         valid.setToken(hashedOldToken);
         valid.setExpiresAt(Instant.now().plusSeconds(3600));
         when(refreshTokenRepository.findByToken(hashedOldToken)).thenReturn(Optional.of(valid));
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(member));
+        when(memberService.findActiveById(1L)).thenReturn(Optional.of(activeMemberResponse()));
         when(tokenProvider.createAccessToken(any(), any(), any())).thenReturn("access-token");
         when(tokenProvider.createRefreshToken()).thenReturn("new-token");
         when(tokenProvider.getAccessTokenExpirySeconds()).thenReturn(900L);

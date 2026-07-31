@@ -43,6 +43,14 @@ public interface CampaignService {
     CampaignDetailResponse getBySlug(String slug);
 
     /**
+     * Gets the detail of the campaign identified by its id.
+     *
+     * @param id the campaign id
+     * @return the campaign detail
+     */
+    CampaignDetailResponse getById(Long id);
+
+    /**
      * Creates a campaign in DRAFT status from the given request. Non-ADMIN callers cannot set the bank account fields —
      * the club's default bank account is used instead, regardless of what the request carries.
      *

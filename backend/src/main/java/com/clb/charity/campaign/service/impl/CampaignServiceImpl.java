@@ -83,6 +83,11 @@ public class CampaignServiceImpl implements CampaignService {
     }
 
     @Override
+    public CampaignDetailResponse getById(Long id) {
+        return campaignMapper.toDetail(loadById(id));
+    }
+
+    @Override
     @Transactional
     public void recordView(Long id) {
         campaignRepository.incrementViewCount(id);

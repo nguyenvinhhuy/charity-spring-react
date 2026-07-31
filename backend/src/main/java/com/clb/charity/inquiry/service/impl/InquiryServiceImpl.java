@@ -10,9 +10,8 @@ import com.clb.charity.inquiry.mapper.InquiryMapper;
 import com.clb.charity.inquiry.repository.InquiryRepository;
 import com.clb.charity.inquiry.service.InquiryRateLimiter;
 import com.clb.charity.inquiry.service.InquiryService;
-import com.clb.charity.member.domain.Member;
 import com.clb.charity.member.domain.Role;
-import com.clb.charity.member.repository.MemberRepository;
+import com.clb.charity.member.service.MemberService;
 import com.clb.charity.notification.domain.NotificationReferenceType;
 import com.clb.charity.notification.domain.NotificationType;
 import com.clb.charity.notification.service.NotificationService;
@@ -38,7 +37,7 @@ public class InquiryServiceImpl implements InquiryService {
     private final InquiryMapper inquiryMapper;
     private final InquiryRateLimiter rateLimiter;
     private final NotificationService notificationService;
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     @Override
     @Transactional
@@ -60,9 +59,9 @@ public class InquiryServiceImpl implements InquiryService {
 
     /** Notifies every active ADMIN/CONTRIBUTOR member that a new contact inquiry has arrived. */
     private void notifyStaff(Inquiry inquiry) {
-        List<Member> staff = memberRepository.findByActiveTrueAndRoleIn(List.of(Role.ADMIN, Role.CONTRIBUTOR));
-        for (Member member : staff) {
-            notificationService.notify(member.getId(), NotificationType.INQUIRY_RECEIVED, inquiry.getFullName(),
+        List<Long> staffIds = memberService.findActiveIdsByRoles(List.of(Role.ADMIN, Role.CONTRIBUTOR));
+        for (Long staffId : staffIds) {
+            notificationService.notify(staffId, NotificationType.INQUIRY_RECEIVED, inquiry.getFullName(),
                     NotificationReferenceType.INQUIRY, inquiry.getId(), inquiry.getSubject(), null);
         }
     }

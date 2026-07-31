@@ -39,6 +39,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import {
   categoryLabel,
@@ -251,17 +252,50 @@ export function CalendarMain({
     <div className="flex flex-col h-full">
       <div className="flex flex-col flex-wrap gap-4 p-6 border-b md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4 flex-wrap">
-          <Button variant="outline" size="sm" className="xl:hidden cursor-pointer" onClick={onMenuClick}>
-            <Menu className="w-4 h-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="xl:hidden cursor-pointer"
+                aria-label={t("common.openMenu")}
+                onClick={onMenuClick}
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("common.openMenu")}</TooltipContent>
+          </Tooltip>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth("prev")} className="cursor-pointer">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth("next")} className="cursor-pointer">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMonth("prev")}
+                  className="cursor-pointer"
+                  aria-label={t("calendar.previousMonth")}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("calendar.previousMonth")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateMonth("next")}
+                  className="cursor-pointer"
+                  aria-label={t("calendar.nextMonth")}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("calendar.nextMonth")}</TooltipContent>
+            </Tooltip>
             <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())} className="cursor-pointer">
               {t("calendar.today")}
             </Button>

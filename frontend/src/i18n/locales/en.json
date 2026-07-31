@@ -20,7 +20,11 @@
     "inquiriesManage": "Manage Inquiries",
     "partnersManage": "Manage Partners",
     "settings": "Settings",
-    "monitoring": "System Monitoring"
+    "monitoring": "System Monitoring",
+    "groupDashboards": "Dashboards",
+    "groupApps": "Apps",
+    "groupPages": "Pages",
+    "adminDashboard": "Admin Dashboard"
   },
   "userMenu": {
     "profile": "Profile",
@@ -116,7 +120,10 @@
     "actions": "Actions",
     "cancel": "Cancel",
     "close": "Close",
+    "open": "Open",
     "delete": "Delete",
+    "sidebarSheetTitle": "Sidebar",
+    "sidebarSheetDescription": "Displays the mobile sidebar.",
     "deleting": "Deleting...",
     "loading": "Loading...",
     "saving": "Saving...",
@@ -129,6 +136,11 @@
     "scrollToTop": "Scroll to top",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "accountMenu": "Account",
+    "switchToLightMode": "Switch to light mode",
+    "switchToDarkMode": "Switch to dark mode",
     "validation": {
       "password": {
         "min": "Password must be at least {{min}} characters",
@@ -282,6 +294,7 @@
     "statusInactive": "Inactive",
     "pagination": "Page {{current}}/{{total}}",
     "addMember": "Add member",
+    "deleteToastSuccess": "Member deleted",
     "dialog": {
       "title": "Add member",
       "description": "Create a new member account for the club.",
@@ -319,6 +332,11 @@
       "forceLogoutConfirmDescription": "This member will need to sign in again on every device. Their current session may still work for up to 15 minutes due to how access tokens work.",
       "forceLogoutConfirming": "Logging out...",
       "forceLogoutSuccess": "Revoked every session for this member",
+      "deleteTrigger": "Delete member",
+      "deleteDialog": {
+        "title": "Delete member?",
+        "description": "This permanently deletes this deactivated account. Campaigns, posts, FAQs, events, and donations they created will be reassigned to you."
+      },
       "leadershipTitleLabel": "Team display title",
       "leadershipTitlePlaceholder": "E.g. President",
       "leadershipTitleHint": "Blank hides it from the About page.",
@@ -447,7 +465,16 @@
     "validationStartDateRequired": "Please select a start date",
     "eventCreated": "Activity added",
     "eventUpdated": "Activity updated",
-    "eventDeleted": "Activity deleted"
+    "eventDeleted": "Activity deleted",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month"
+  },
+  "richTextEditor": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading": "Heading",
+    "bulletList": "Bullet list",
+    "numberedList": "Numbered list"
   },
   "faqManage": {
     "title": "Manage FAQs",
@@ -484,6 +511,8 @@
       "updated": "Question updated",
       "created": "Question created"
     },
+    "publishAction": "Publish question",
+    "unpublishAction": "Unpublish question",
     "form": {
       "editTitle": "Edit question",
       "editDescription": "Update the content of this frequently asked question.",
@@ -542,6 +571,8 @@
         "updated": "Post updated",
         "created": "Post created"
       },
+      "publishAction": "Publish post",
+      "unpublishAction": "Unpublish post",
       "form": {
         "editTitle": "Edit post",
         "editDescription": "Update the content of this post.",
@@ -934,6 +965,18 @@
       "DONATION_RECEIVED": "A new donation arrives on your campaign",
       "INQUIRY_RECEIVED": "A new inquiry arrives",
       "BROADCAST": "General announcements from the club"
+    }
+  },
+  "errors": {
+    "goHome": "Go back home",
+    "contactUs": "Contact us",
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or has been moved."
+    },
+    "forbidden": {
+      "title": "Access forbidden",
+      "description": "You don't have the necessary permissions to view this page."
     }
   }
 }

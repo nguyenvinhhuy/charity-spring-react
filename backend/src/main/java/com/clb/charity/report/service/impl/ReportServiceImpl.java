@@ -1,8 +1,8 @@
 package com.clb.charity.report.service.impl;
 
-import com.clb.charity.campaign.domain.Campaign;
-import com.clb.charity.campaign.repository.CampaignRepository;
-import com.clb.charity.common.exception.CampaignNotFoundException;
+import com.clb.charity.campaign.dto.response.CampaignDetailResponse;
+import com.clb.charity.campaign.dto.response.CampaignSummaryResponse;
+import com.clb.charity.campaign.service.CampaignService;
 import com.clb.charity.report.service.ReportService;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -13,6 +13,7 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,16 +36,14 @@ public class ReportServiceImpl implements ReportService {
             new String(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF}, StandardCharsets.UTF_8);
     private static final int PERCENT_SCALE = 100;
 
-    private final CampaignRepository campaignRepository;
+    private final CampaignService campaignService;
 
     @Override
     public byte[] generateCampaignPdf(Long campaignId) {
-        Campaign campaign = campaignRepository.findById(campaignId)
-                .orElseThrow(() -> new CampaignNotFoundException(String.valueOf(campaignId)));
+        CampaignDetailResponse campaign = campaignService.getById(campaignId);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        // Closing the Document cascades to the PdfDocument and PdfWriter, so only
-        // the Document is managed here to avoid closing the same resource twice.
+        // Closing Document cascades to PdfDocument/PdfWriter, so only it is managed here to avoid a double-close.
         PdfDocument pdf = new PdfDocument(new PdfWriter(out));
         try (Document doc = new Document(pdf)) {
 
@@ -53,19 +52,19 @@ public class ReportServiceImpl implements ReportService {
                     .setFontSize(20)
                     .setTextAlignment(TextAlignment.CENTER));
             // FUTURE: embed a Unicode TTF font so Vietnamese diacritics render (default PDF font is Latin-only).
-            doc.add(new Paragraph(campaign.getTitle()).setFontSize(14).setItalic());
+            doc.add(new Paragraph(campaign.title()).setFontSize(14).setItalic());
 
             Table table = new Table(UnitValue.createPercentArray(new float[]{40, 60}))
                     .useAllAvailableWidth();
-            addRow(table, "Slug", campaign.getSlug());
-            addRow(table, "Status", campaign.getStatus().name());
-            addRow(table, "Category", campaign.getCategory().name());
-            addRow(table, "Target amount (VND)", String.valueOf(campaign.getTargetAmount()));
-            addRow(table, "Raised amount (VND)", String.valueOf(campaign.getCurrentAmount()));
-            addRow(table, "Progress", progressPercent(campaign) + " %");
-            addRow(table, "Donor count", String.valueOf(campaign.getDonorCount()));
-            addRow(table, "Start date", String.valueOf(campaign.getStartDate()));
-            addRow(table, "End date", campaign.getEndDate() != null ? campaign.getEndDate().toString() : "-");
+            addRow(table, "Slug", campaign.slug());
+            addRow(table, "Status", campaign.status().name());
+            addRow(table, "Category", campaign.category().name());
+            addRow(table, "Target amount (VND)", String.valueOf(campaign.targetAmount()));
+            addRow(table, "Raised amount (VND)", String.valueOf(campaign.currentAmount()));
+            addRow(table, "Progress", progressPercent(campaign.targetAmount(), campaign.currentAmount()) + " %");
+            addRow(table, "Donor count", String.valueOf(campaign.donorCount()));
+            addRow(table, "Start date", String.valueOf(campaign.startDate()));
+            addRow(table, "End date", campaign.endDate() != null ? campaign.endDate().toString() : "-");
             doc.add(table);
         }
         // Document is now closed and fully flushed to the stream.
@@ -74,20 +73,21 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public byte[] exportCampaignsCsv() {
-        List<Campaign> campaigns = campaignRepository.findAll();
+        List<CampaignSummaryResponse> campaigns =
+                campaignService.list(null, null, null, Pageable.unpaged()).getContent();
         StringBuilder sb = new StringBuilder();
         sb.append(UTF8_BOM); // so Excel renders Vietnamese correctly
         sb.append(CSV_HEADER).append("\r\n");
-        for (Campaign c : campaigns) {
-            sb.append(c.getId()).append(',')
-                    .append(csv(c.getTitle())).append(',')
-                    .append(c.getStatus().name()).append(',')
-                    .append(c.getCategory().name()).append(',')
-                    .append(c.getTargetAmount()).append(',')
-                    .append(c.getCurrentAmount()).append(',')
-                    .append(c.getDonorCount()).append(',')
-                    .append(c.getStartDate()).append(',')
-                    .append(c.getEndDate() != null ? c.getEndDate().toString() : "")
+        for (CampaignSummaryResponse c : campaigns) {
+            sb.append(c.id()).append(',')
+                    .append(csv(c.title())).append(',')
+                    .append(c.status().name()).append(',')
+                    .append(c.category().name()).append(',')
+                    .append(c.targetAmount()).append(',')
+                    .append(c.currentAmount()).append(',')
+                    .append(c.donorCount()).append(',')
+                    .append(c.startDate()).append(',')
+                    .append(c.endDate() != null ? c.endDate().toString() : "")
                     .append("\r\n");
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -96,14 +96,15 @@ public class ReportServiceImpl implements ReportService {
     /**
      * Computes the funding progress as an integer percentage.
      *
-     * @param campaign the campaign to measure
+     * @param targetAmount the campaign's fundraising target
+     * @param currentAmount the amount raised so far
      * @return the progress percentage, or 0 when the target is non-positive
      */
-    private long progressPercent(Campaign campaign) {
-        if (campaign.getTargetAmount() <= 0) {
+    private long progressPercent(long targetAmount, long currentAmount) {
+        if (targetAmount <= 0) {
             return 0;
         }
-        return campaign.getCurrentAmount() * PERCENT_SCALE / campaign.getTargetAmount();
+        return currentAmount * PERCENT_SCALE / targetAmount;
     }
 
     /**

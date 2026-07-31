@@ -135,11 +135,11 @@ export default function ProfileSettingsPage() {
   // Local preview of a picked-but-not-yet-uploaded avatar, so cancelling the page never leaves an
   // unattached image on Cloudinary.
   useEffect(() => {
-    if (!pendingAvatarFile) {
-      setAvatarPreviewUrl("")
-      return
-    }
+    // Read at `pendingAvatarFile ? avatarPreviewUrl : avatarUrl`, so there's nothing to reset here.
+    if (!pendingAvatarFile) return
     const objectUrl = URL.createObjectURL(pendingAvatarFile)
+    // The blob URL only exists after this call, so storing it here (not derived during render) is correct.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvatarPreviewUrl(objectUrl)
     return () => URL.revokeObjectURL(objectUrl)
   }, [pendingAvatarFile])

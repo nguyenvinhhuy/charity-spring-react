@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { LANG_STORAGE_KEY, SUPPORTED_LANGUAGES, type Language } from "@/i18n"
 import { cn } from "@/lib/utils"
 
@@ -39,12 +40,21 @@ export function LanguageToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="cursor-pointer">
-          <img src={FLAGS[current]} alt={t(`language.${current}`)} className="h-4 w-6 rounded-[2px] object-cover" />
-          <span className="sr-only">{t("language.title")}</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="cursor-pointer" aria-label={t("language.title")}>
+              <img
+                src={FLAGS[current]}
+                alt={t(`language.${current}`)}
+                className="h-4 w-6 rounded-[2px] object-cover"
+              />
+              <span className="sr-only">{t("language.title")}</span>
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t("language.title")}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuLabel className="text-muted-foreground text-xs uppercase">{t("language.title")}</DropdownMenuLabel>
         <DropdownMenuSeparator />

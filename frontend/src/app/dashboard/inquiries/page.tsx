@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 const PAGE_SIZE = 10
 const ALL = "ALL"
@@ -152,32 +153,47 @@ export default function InquiriesManagePage() {
                       <TableCell>{formatDateTime(inquiry.createdAt)}</TableCell>
                       <TableCell className="pr-4">
                         <div className="flex items-center justify-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title={t("inquiries.actions.viewDetail")}
-                            onClick={() => setViewing(inquiry)}
-                          >
-                            <Eye />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("inquiries.actions.viewDetail")}
+                                onClick={() => setViewing(inquiry)}
+                              >
+                                <Eye />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("inquiries.actions.viewDetail")}</TooltipContent>
+                          </Tooltip>
                           {inquiry.status === "NEW" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title={t("inquiries.actions.markHandled")}
-                              onClick={() => markHandledMutation.mutate(inquiry)}
-                            >
-                              <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={t("inquiries.actions.markHandled")}
+                                  onClick={() => markHandledMutation.mutate(inquiry)}
+                                >
+                                  <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t("inquiries.actions.markHandled")}</TooltipContent>
+                            </Tooltip>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title={t("inquiries.actions.delete")}
-                            onClick={() => setDeleteTarget(inquiry)}
-                          >
-                            <Trash2 className="text-destructive" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("inquiries.actions.delete")}
+                                onClick={() => setDeleteTarget(inquiry)}
+                              >
+                                <Trash2 className="text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t("inquiries.actions.delete")}</TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -193,22 +209,34 @@ export default function InquiriesManagePage() {
             {t("inquiries.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.first ?? true)}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={loading || (data?.last ?? true)}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.previousPage")}
+                  disabled={loading || (data?.first ?? true)}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.previousPage")}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.nextPage")}
+                  disabled={loading || (data?.last ?? true)}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("common.nextPage")}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>

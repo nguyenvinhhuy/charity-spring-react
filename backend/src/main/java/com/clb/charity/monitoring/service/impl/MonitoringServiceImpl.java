@@ -69,8 +69,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     private final AlertService alertService;
     private final ObjectMapper objectMapper;
 
-    // In-memory only: the backend runs as a single instance (same reasoning as InquiryRateLimiter), and this
-    // only needs to debounce repeat alert emails, not survive a restart.
+    // In-memory only: single-instance backend (see InquiryRateLimiter), just needs to debounce repeat alert emails.
     private final Map<MonitoringResource, Boolean> alertingByResource = new ConcurrentHashMap<>();
 
     @Override
@@ -149,20 +148,15 @@ public class MonitoringServiceImpl implements MonitoringService {
             long resolutionSeconds) {
         Instant end = Instant.now();
         Instant start = end.minusSeconds(lookbackSeconds);
-        // aggregationMethod=AVG makes Render merge series server-side. Without it, the Free plan's frequent
-        // spin-down/spin-up cycle hands out a new instance id per restart, so a single query window returns one
-        // series PER instance — and picking just the first one silently drops every later instance, truncating
-        // the chart to whichever instance happened to be oldest.
+        // aggregationMethod=AVG merges server-side — Free-plan restarts otherwise return one series per instance.
         String url = "https://api.render.com/v1/metrics/" + metric
                 + "?resource={resource}&startTime={start}&endTime={end}&resolutionSeconds={resolution}"
                 + "&aggregationMethod=AVG";
         try {
-            // Render's metrics API rejects epoch-second integers for startTime/endTime ("invalid filter parameter") —
-            // it requires RFC3339 timestamps, which Instant#toString produces directly.
+            // Render's metrics API rejects epoch-second start/endTime — needs RFC3339 (Instant#toString produces this).
             JsonNode root = getJson(url, apiKey, serviceId, start.toString(), end.toString(), resolutionSeconds);
             List<MetricPoint> points = new ArrayList<>();
-            // With aggregationMethod set, Render always returns exactly one merged series — kept the flat-array
-            // fallback below in case Render ever returns one series unwrapped.
+            // Flat-array fallback kept in case Render ever returns one series unwrapped instead of merged.
             JsonNode samples = root.isArray() && !root.isEmpty() && root.get(0).has("values")
                     ? root.get(0).path("values")
                     : root;
@@ -170,12 +164,13 @@ public class MonitoringServiceImpl implements MonitoringService {
                 for (JsonNode point : samples) {
                     Instant ts = parseInstant(point.path("timestamp").asString(null));
                     double value = point.path("value").asDouble(0);
-                    // Verified against a live API key: Render reports memory as raw bytes used, and CPU as a
-                    // fraction of one core — both need scaling against this plan's allocation to become a percent.
+                    // Verified live: memory is raw bytes, CPU is a core fraction — both scaled to a percent here.
                     if ("memory".equals(metric)) {
-                        value = value / RENDER_MEMORY_LIMIT_BYTES * 100;
+                        double memoryPercent = (value / RENDER_MEMORY_LIMIT_BYTES) * 100;
+                        value = Math.min(memoryPercent, 100.0);
                     } else if ("cpu".equals(metric)) {
-                        value = value / RENDER_CPU_LIMIT_CORES * 100;
+                        double cpuPercent = (value / RENDER_CPU_LIMIT_CORES) * 100;
+                        value = Math.min(cpuPercent, 100.0);
                     }
                     if (ts != null) {
                         points.add(new MetricPoint(ts, value));
@@ -237,8 +232,7 @@ public class MonitoringServiceImpl implements MonitoringService {
 
     // ── Database (Supabase/Postgres, queried directly) ──────────────────
 
-    // Queried directly rather than through a separate Supabase Management API token, since the backend already holds a
-    // live JDBC connection to this same database.
+    // Queried directly (no Supabase Management API token) — the backend already holds a live JDBC connection.
     private DatabaseStatusResponse fetchDatabaseStatus() {
         try {
             long sizeBytes = ((Number) entityManager
@@ -286,9 +280,7 @@ public class MonitoringServiceImpl implements MonitoringService {
             long storageUsed = extractUsageBytes(usage, "storage");
             long bandwidthUsed = extractUsageBytes(usage, "bandwidth");
 
-            // Cloudinary's account-level usage() call does not reliably break storage down by resource type
-            // (image/video/raw) — only a single total is well-documented. Show that single slice rather than guessing
-            // at undocumented fields; revisit once real Cloudinary usage is high enough to matter.
+            // Cloudinary's usage() doesn't break storage down by type reliably, so this shows one total slice.
             List<CategoryAmount> byResourceType = storageUsed > 0
                     ? List.of(new CategoryAmount("Tổng dung lượng", storageUsed))
                     : List.of();
@@ -320,9 +312,7 @@ public class MonitoringServiceImpl implements MonitoringService {
     void checkThresholdsAndAlert() {
         double threshold = appProperties.alert().thresholdFraction();
 
-        // Render's CPU/memory are fetched at a much finer resolution than the UI chart uses, so a brief spike that both
-        // starts and ends between two scheduler runs still shows up as its own data point instead of being averaged
-        // away inside a coarse bucket.
+        // Fetched at finer resolution than the UI chart uses, so a brief spike between runs isn't averaged away.
         RenderStatusResponse render = fetchRenderStatus(ALERT_METRIC_LOOKBACK_SECONDS, ALERT_METRIC_RESOLUTION_SECONDS);
         boolean deployFailed = render.status() == RenderState.ERROR;
         MetricPoint cpuPeak = peakOver(render.cpuSeries(), threshold);

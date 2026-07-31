@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuthStore } from "@/store/authStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useNotificationStream } from "@/hooks/use-notification-stream"
@@ -223,32 +224,47 @@ export function NotificationBell() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative cursor-pointer" aria-label={t("notifications.title")}>
-          <Bell />
-          {unreadCount > 0 && (
-            <span className="bg-destructive text-destructive-foreground absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative cursor-pointer"
+              aria-label={t("notifications.title")}
+            >
+              <Bell />
+              {unreadCount > 0 && (
+                <span className="bg-destructive text-destructive-foreground absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t("notifications.title")}</TooltipContent>
+      </Tooltip>
       <PopoverContent align="end" className="w-96 p-0">
         <div className="flex items-center justify-between gap-2 p-3">
           <h3 className="text-sm font-semibold">{t("notifications.title")}</h3>
           <div className="flex items-center gap-1">
             {isAdmin && (
               <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 cursor-pointer"
-                    aria-label={t("notifications.sendBroadcast")}
-                  >
-                    <Megaphone className="size-4" />
-                  </Button>
-                </DialogTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 cursor-pointer"
+                        aria-label={t("notifications.sendBroadcast")}
+                      >
+                        <Megaphone className="size-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("notifications.sendBroadcast")}</TooltipContent>
+                </Tooltip>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>{t("notifications.sendBroadcast")}</DialogTitle>
@@ -281,15 +297,20 @@ export function NotificationBell() {
               </Dialog>
             )}
             {notifications.some((n) => !n.read) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 cursor-pointer"
-                onClick={handleMarkAllRead}
-                aria-label={t("notifications.markAllRead")}
-              >
-                <Check className="size-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 cursor-pointer"
+                    onClick={handleMarkAllRead}
+                    aria-label={t("notifications.markAllRead")}
+                  >
+                    <Check className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("notifications.markAllRead")}</TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -329,19 +350,24 @@ export function NotificationBell() {
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true, locale: dateLocale })}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0 cursor-pointer"
-                      aria-label={t("common.delete")}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handleDelete(n.id, !n.read)
-                      }}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0 cursor-pointer"
+                          aria-label={t("common.delete")}
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleDelete(n.id, !n.read)
+                          }}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t("common.delete")}</TooltipContent>
+                    </Tooltip>
                   </div>
                 )
                 return (

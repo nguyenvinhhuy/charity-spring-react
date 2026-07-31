@@ -20,7 +20,11 @@
     "inquiriesManage": "Quản lý liên hệ",
     "partnersManage": "Quản lý đơn vị kết hợp",
     "settings": "Cài đặt",
-    "monitoring": "Giám sát hệ thống"
+    "monitoring": "Giám sát hệ thống",
+    "groupDashboards": "Bảng điều khiển",
+    "groupApps": "Ứng dụng",
+    "groupPages": "Trang khác",
+    "adminDashboard": "Trang quản trị"
   },
   "userMenu": {
     "profile": "Hồ sơ",
@@ -116,7 +120,10 @@
     "actions": "Hành động",
     "cancel": "Hủy",
     "close": "Đóng",
+    "open": "Mở",
     "delete": "Xóa",
+    "sidebarSheetTitle": "Thanh điều hướng",
+    "sidebarSheetDescription": "Hiển thị thanh điều hướng trên di động.",
     "deleting": "Đang xóa...",
     "loading": "Đang tải...",
     "saving": "Đang lưu...",
@@ -129,6 +136,11 @@
     "scrollToTop": "Lên đầu trang",
     "openMenu": "Mở menu",
     "closeMenu": "Đóng menu",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
+    "accountMenu": "Tài khoản",
+    "switchToLightMode": "Chuyển sang giao diện sáng",
+    "switchToDarkMode": "Chuyển sang giao diện tối",
     "validation": {
       "password": {
         "min": "Mật khẩu tối thiểu {{min}} ký tự",
@@ -282,6 +294,7 @@
     "statusInactive": "Vô hiệu",
     "pagination": "Trang {{current}}/{{total}}",
     "addMember": "Thêm thành viên",
+    "deleteToastSuccess": "Đã xóa thành viên",
     "dialog": {
       "title": "Thêm thành viên",
       "description": "Tạo tài khoản thành viên mới cho câu lạc bộ.",
@@ -319,6 +332,11 @@
       "forceLogoutConfirmDescription": "Thành viên này sẽ phải đăng nhập lại trên mọi thiết bị. Phiên hiện tại của họ vẫn còn hiệu lực tối đa 15 phút do cách hoạt động của access token.",
       "forceLogoutConfirming": "Đang đăng xuất...",
       "forceLogoutSuccess": "Đã thu hồi toàn bộ phiên đăng nhập của thành viên này",
+      "deleteTrigger": "Xóa thành viên",
+      "deleteDialog": {
+        "title": "Xóa thành viên?",
+        "description": "Thao tác này xóa vĩnh viễn tài khoản đã bị vô hiệu hóa này. Chiến dịch, bài viết, câu hỏi, hoạt động và khoản đóng góp do họ tạo sẽ được chuyển sang tên bạn."
+      },
       "leadershipTitleLabel": "Chức vụ hiển thị",
       "leadershipTitlePlaceholder": "VD: Chủ tịch",
       "leadershipTitleHint": "Trống = ẩn khỏi trang Giới thiệu.",
@@ -447,7 +465,16 @@
     "validationStartDateRequired": "Vui lòng chọn ngày bắt đầu",
     "eventCreated": "Đã thêm hoạt động",
     "eventUpdated": "Đã cập nhật hoạt động",
-    "eventDeleted": "Đã xóa hoạt động"
+    "eventDeleted": "Đã xóa hoạt động",
+    "previousMonth": "Tháng trước",
+    "nextMonth": "Tháng sau"
+  },
+  "richTextEditor": {
+    "bold": "In đậm",
+    "italic": "In nghiêng",
+    "heading": "Tiêu đề",
+    "bulletList": "Danh sách gạch đầu dòng",
+    "numberedList": "Danh sách đánh số"
   },
   "faqManage": {
     "title": "Quản lý FAQ",
@@ -484,6 +511,8 @@
       "updated": "Đã cập nhật câu hỏi",
       "created": "Đã tạo câu hỏi"
     },
+    "publishAction": "Đăng câu hỏi",
+    "unpublishAction": "Gỡ đăng câu hỏi",
     "form": {
       "editTitle": "Chỉnh sửa câu hỏi",
       "editDescription": "Cập nhật nội dung câu hỏi thường gặp.",
@@ -542,6 +571,8 @@
         "updated": "Đã cập nhật bài viết",
         "created": "Đã tạo bài viết"
       },
+      "publishAction": "Đăng bài viết",
+      "unpublishAction": "Gỡ đăng bài viết",
       "form": {
         "editTitle": "Chỉnh sửa bài viết",
         "editDescription": "Cập nhật nội dung bài viết.",
@@ -934,6 +965,18 @@
       "DONATION_RECEIVED": "Có quyên góp mới vào chiến dịch của bạn",
       "INQUIRY_RECEIVED": "Có liên hệ mới gửi tới",
       "BROADCAST": "Thông báo chung từ CLB"
+    }
+  },
+  "errors": {
+    "goHome": "Về trang chủ",
+    "contactUs": "Liên hệ",
+    "notFound": {
+      "title": "Không tìm thấy trang",
+      "description": "Trang bạn tìm không tồn tại hoặc đã được chuyển đến vị trí khác."
+    },
+    "forbidden": {
+      "title": "Không có quyền truy cập",
+      "description": "Bạn không có đủ quyền để xem trang này."
     }
   }
 }

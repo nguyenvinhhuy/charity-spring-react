@@ -8,6 +8,7 @@ import com.clb.charity.common.exception.StorageException;
 import com.clb.charity.common.exception.TooManyRequestsException;
 import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.storage.service.StorageService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +23,7 @@ import java.util.UUID;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class StorageServiceImpl implements StorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 5L * 1024 * 1024; // 5 MB
@@ -30,22 +32,8 @@ public class StorageServiceImpl implements StorageService {
     private static final Duration UPLOAD_WINDOW = Duration.ofHours(1);
 
     private final Cloudinary cloudinary;
-    private final AppProperties.Cloudinary config;
+    private final AppProperties appProperties;
     private final SlidingWindowRateLimiter rateLimiter;
-
-    /**
-     * Creates the storage service with its Cloudinary client and resolved config.
-     *
-     * @param cloudinary the Cloudinary client
-     * @param appProperties the application properties carrying Cloudinary settings
-     * @param rateLimiter the shared sliding-window rate limiter
-     */
-    public StorageServiceImpl(Cloudinary cloudinary, AppProperties appProperties,
-            SlidingWindowRateLimiter rateLimiter) {
-        this.cloudinary = cloudinary;
-        this.config = appProperties.cloudinary();
-        this.rateLimiter = rateLimiter;
-    }
 
     @Override
     public String upload(MultipartFile file, Long memberId) {
@@ -65,7 +53,7 @@ public class StorageServiceImpl implements StorageService {
 
         try {
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                    "folder", config.uploadFolder(),
+                    "folder", appProperties.cloudinary().uploadFolder(),
                     "public_id", UUID.randomUUID().toString(),
                     "resource_type", "image",
                     "overwrite", false));

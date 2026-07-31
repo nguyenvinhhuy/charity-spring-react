@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface RegistrationsDialogProps {
   open: boolean
@@ -94,14 +95,19 @@ export function RegistrationsDialog({ open, onOpenChange, campaign }: Registrati
                     <TableCell className="pl-4">{r.memberName}</TableCell>
                     <TableCell>{new Date(r.registeredAt).toLocaleString("vi-VN")}</TableCell>
                     <TableCell className="pr-4 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeMutation.mutate(r.memberId)}
-                        aria-label={t("common.delete")}
-                      >
-                        <Trash2 className="text-destructive" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeMutation.mutate(r.memberId)}
+                            aria-label={t("common.delete")}
+                          >
+                            <Trash2 className="text-destructive" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t("common.delete")}</TooltipContent>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))

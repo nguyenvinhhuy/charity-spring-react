@@ -59,6 +59,7 @@ export function RenderStatusCard({ status, range }: RenderStatusCardProps) {
       description={t("monitoring.render.description")}
       status={toSystemStatus(status.status)}
       statusLabel={t(`monitoring.status.${toSystemStatus(status.status)}`)}
+      infoTooltip={t("monitoring.render.metricsNote")}
     >
       {status.errorMessage ? (
         <p className="text-destructive text-sm">{status.errorMessage}</p>
@@ -74,42 +75,39 @@ export function RenderStatusCard({ status, range }: RenderStatusCardProps) {
             </p>
           )}
           {chartData.length > 0 ? (
-            <>
-              <ChartContainer config={chartConfig} className="h-[160px] w-full">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} minTickGap={24} />
-                  {/* Fixed 0-100% domain, always — an auto-scaled axis would visually exaggerate low usage. */}
-                  <YAxis
-                    domain={[0, 100]}
-                    axisLine={false}
-                    tickLine={false}
-                    width={36}
-                    tick={{ fontSize: 11 }}
-                    unit="%"
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="cpu"
-                    stroke="var(--color-cpu)"
-                    fill="var(--color-cpu)"
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="memory"
-                    stroke="var(--color-memory)"
-                    fill="var(--color-memory)"
-                    fillOpacity={0.15}
-                    strokeWidth={2}
-                  />
-                  <ChartLegend content={<ChartLegendContent />} />
-                </AreaChart>
-              </ChartContainer>
-              <p className="text-muted-foreground text-xs">{t("monitoring.render.metricsNote")}</p>
-            </>
+            <ChartContainer config={chartConfig} className="h-[360px] w-full">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} minTickGap={24} />
+                {/* Fixed 0-100% domain, always — an auto-scaled axis would visually exaggerate low usage. */}
+                <YAxis
+                  domain={[0, 100]}
+                  axisLine={false}
+                  tickLine={false}
+                  width={36}
+                  tick={{ fontSize: 11 }}
+                  unit="%"
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area
+                  type="monotone"
+                  dataKey="cpu"
+                  stroke="var(--color-cpu)"
+                  fill="var(--color-cpu)"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="memory"
+                  stroke="var(--color-memory)"
+                  fill="var(--color-memory)"
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+              </AreaChart>
+            </ChartContainer>
           ) : (
             <p className="text-muted-foreground py-6 text-center text-sm">{t("monitoring.noData")}</p>
           )}
