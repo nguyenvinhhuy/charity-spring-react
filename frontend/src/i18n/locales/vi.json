@@ -654,14 +654,13 @@
   },
   "monitoring": {
     "title": "Giám sát hệ thống",
-    "description": "Trạng thái Render, Vercel, Database và Cloudinary",
+    "description": "Trạng thái Render, Database và Cloudinary",
     "loading": "Đang tải...",
     "empty": "Không có dữ liệu",
     "noData": "Chưa có dữ liệu",
     "notConfigured": "Chưa cấu hình",
     "refresh": "Làm mới",
     "lastUpdated": "Cập nhật lúc {{time}}",
-    "autoRefreshNote": "Tự động làm mới mỗi 60 giây",
     "bytesLabel": "Dung lượng",
     "range": {
       "TWELVE_HOURS": "12 giờ",
@@ -682,13 +681,6 @@
       "memory": "Bộ nhớ",
       "lastDeploy": "Lần deploy gần nhất: {{status}}",
       "metricsNote": "CPU & RAM lấy từ Render API với độ chi tiết tương ứng khung thời gian đã chọn — phản ánh tải thực tế (kể cả khi lượng truy cập tăng đột biến), không phụ thuộc vào lần deploy gần nhất."
-    },
-    "vercel": {
-      "title": "Vercel (Frontend)",
-      "description": "Trạng thái hosting frontend",
-      "buildDuration": "Thời gian build (giây)",
-      "lastDeploy": "Deploy gần nhất",
-      "metricsNote": "Vercel (gói miễn phí) không có API đo tải/băng thông theo thời gian thực, nên biểu đồ này chỉ thể hiện thời gian build của các lần deploy gần đây."
     },
     "database": {
       "title": "Supabase (Database)",
@@ -977,6 +969,11 @@
     "forbidden": {
       "title": "Không có quyền truy cập",
       "description": "Bạn không có đủ quyền để xem trang này."
+    },
+    "crash": {
+      "title": "Đã xảy ra lỗi",
+      "description": "Ứng dụng gặp sự cố ngoài dự kiến. Vui lòng tải lại trang; nếu vẫn lỗi, hãy báo cho quản trị viên.",
+      "reload": "Tải lại trang"
     }
   }
 }

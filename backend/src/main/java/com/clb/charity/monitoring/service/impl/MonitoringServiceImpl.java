@@ -4,15 +4,12 @@ import com.clb.charity.common.config.AppProperties;
 import com.clb.charity.monitoring.domain.MetricRange;
 import com.clb.charity.monitoring.domain.MonitoringResource;
 import com.clb.charity.monitoring.domain.RenderState;
-import com.clb.charity.monitoring.domain.VercelState;
 import com.clb.charity.monitoring.dto.response.CategoryAmount;
 import com.clb.charity.monitoring.dto.response.CloudinaryStatusResponse;
 import com.clb.charity.monitoring.dto.response.DatabaseStatusResponse;
-import com.clb.charity.monitoring.dto.response.DeployDurationPoint;
 import com.clb.charity.monitoring.dto.response.MetricPoint;
 import com.clb.charity.monitoring.dto.response.MonitoringOverviewResponse;
 import com.clb.charity.monitoring.dto.response.RenderStatusResponse;
-import com.clb.charity.monitoring.dto.response.VercelStatusResponse;
 import com.clb.charity.monitoring.service.AlertService;
 import com.clb.charity.monitoring.service.MonitoringService;
 import com.cloudinary.Cloudinary;
@@ -32,7 +29,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +44,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MonitoringServiceImpl implements MonitoringService {
 
     private static final int TOP_TABLES_LIMIT = 7;
-    // Safety cap regardless of range, so an active project's 1-month view stays light.
-    private static final int MAX_BUILDS_RETURNED = 60;
-    // The alert-check job always evaluates the shortest range, independent of whatever the UI is showing.
-    private static final MetricRange ALERT_CHECK_RANGE = MetricRange.ONE_DAY;
     // Render Free plan instance RAM cap — bump this if the plan ever changes.
     private static final long RENDER_MEMORY_LIMIT_BYTES = 512L * 1024 * 1024;
     // Render Free plan instance CPU cap, in cores — bump this if the plan ever changes.
@@ -76,7 +68,6 @@ public class MonitoringServiceImpl implements MonitoringService {
     public MonitoringOverviewResponse getOverview(MetricRange range) {
         return new MonitoringOverviewResponse(
                 fetchRenderStatus(range),
-                fetchVercelStatus(range),
                 fetchDatabaseStatus(),
                 fetchCloudinaryStatus(),
                 Instant.now());
@@ -184,52 +175,6 @@ public class MonitoringServiceImpl implements MonitoringService {
         }
     }
 
-    // ── Vercel ────────────────────────────────────────────────────────────
-
-    private VercelStatusResponse fetchVercelStatus(MetricRange range) {
-        AppProperties.Vercel config = appProperties.vercel();
-        if (isBlank(config.apiToken()) || isBlank(config.projectId())) {
-            return new VercelStatusResponse(false, VercelState.NOT_CONFIGURED, null, List.of(), null);
-        }
-        try {
-            String url = "https://api.vercel.com/v6/deployments?projectId={id}&limit={limit}&since={since}";
-            JsonNode root = getJson(url, config.apiToken(), config.projectId(), MAX_BUILDS_RETURNED,
-                    (Instant.now().getEpochSecond() - range.lookbackSeconds()) * 1000);
-            JsonNode deployments = root.path("deployments");
-            List<DeployDurationPoint> recentBuilds = new ArrayList<>();
-            VercelState latestState = VercelState.NOT_CONFIGURED;
-            String latestUrl = null;
-            if (deployments.isArray()) {
-                for (JsonNode d : deployments) {
-                    VercelState state = parseVercelState(d.path("state").asString("UNKNOWN"));
-                    long createdMs = d.path("created").asLong(0);
-                    long readyMs = d.path("ready").asLong(0);
-                    long buildSeconds = readyMs > createdMs ? (readyMs - createdMs) / 1000 : 0;
-                    recentBuilds.add(new DeployDurationPoint(Instant.ofEpochMilli(createdMs), buildSeconds, state));
-                }
-                if (!recentBuilds.isEmpty()) {
-                    // Vercel returns deployments newest-first; reverse so the chart reads left-to-right in time.
-                    latestState = recentBuilds.getFirst().state();
-                    latestUrl = deployments.get(0).path("url").asString(null);
-                }
-            }
-            Collections.reverse(recentBuilds);
-            return new VercelStatusResponse(true, latestState, latestUrl, recentBuilds, null);
-        } catch (Exception ex) {
-            log.warn("Failed to fetch Vercel status: {}", ex.getMessage());
-            return new VercelStatusResponse(true, VercelState.ERROR, null, List.of(), ex.getMessage());
-        }
-    }
-
-    private VercelState parseVercelState(String raw) {
-        return switch (raw.toUpperCase()) {
-            case "READY" -> VercelState.READY;
-            case "BUILDING", "QUEUED", "INITIALIZING" -> VercelState.BUILDING;
-            case "ERROR", "CANCELED" -> VercelState.ERROR;
-            default -> VercelState.ERROR;
-        };
-    }
-
     // ── Database (Supabase/Postgres, queried directly) ──────────────────
 
     // Queried directly (no Supabase Management API token) — the backend already holds a live JDBC connection.
@@ -321,11 +266,6 @@ public class MonitoringServiceImpl implements MonitoringService {
                 render.configured() && render.status() != RenderState.NOT_CONFIGURED
                         && (deployFailed || cpuPeak != null || memoryPeak != null),
                 renderAlertMessage(deployFailed, cpuPeak, memoryPeak));
-
-        VercelStatusResponse vercel = fetchVercelStatus(ALERT_CHECK_RANGE);
-        evaluate(MonitoringResource.VERCEL,
-                vercel.configured() && vercel.status() == VercelState.ERROR,
-                "Lần deploy Vercel (frontend) gần nhất bị lỗi.");
 
         DatabaseStatusResponse database = fetchDatabaseStatus();
         double databaseUsedPercent = fraction(database.databaseSizeBytes(), database.databaseLimitBytes()) * 100;

@@ -1,7 +1,6 @@
 package com.clb.charity.comment.service.impl;
 
 import com.clb.charity.comment.domain.Comment;
-import com.clb.charity.comment.domain.CommentTargetType;
 import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.dto.request.UpdateCommentRequest;
 import com.clb.charity.comment.dto.response.CommentResponse;
@@ -10,11 +9,12 @@ import com.clb.charity.comment.service.CommentService;
 import com.clb.charity.common.exception.CommentAccessDeniedException;
 import com.clb.charity.common.exception.CommentNotFoundException;
 import com.clb.charity.common.exception.TooManyRequestsException;
+import com.clb.charity.common.model.CommentTargetType;
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
 import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.service.MemberService;
-import com.clb.charity.notification.domain.NotificationReferenceType;
-import com.clb.charity.notification.domain.NotificationType;
 import com.clb.charity.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;

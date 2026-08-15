@@ -1,7 +1,7 @@
 package com.clb.charity.notification.dto.response;
 
-import com.clb.charity.notification.domain.NotificationReferenceType;
-import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;

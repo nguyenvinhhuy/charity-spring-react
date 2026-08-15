@@ -11,6 +11,7 @@ import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { CampaignStatus, CampaignSummary } from "@/types/campaign"
+import { isFirstPage, isLastPage } from "@/types/common"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -188,7 +189,7 @@ export default function CampaignsPage() {
               </SelectContent>
             </Select>
             <span className="text-muted-foreground text-sm">
-              {t("common.total", { count: data?.totalElements ?? 0 })}
+              {t("common.total", { count: data?.page.totalElements ?? 0 })}
             </span>
           </div>
           <Button onClick={openCreate}>
@@ -370,7 +371,7 @@ export default function CampaignsPage() {
 
         <div className="flex items-center justify-end gap-4">
           <span className="text-muted-foreground text-sm">
-            {t("common.page", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
+            {t("common.page", { current: (data?.page.number ?? 0) + 1, total: data?.page.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
             <Tooltip>
@@ -379,7 +380,7 @@ export default function CampaignsPage() {
                   variant="outline"
                   size="icon"
                   aria-label={t("common.previousPage")}
-                  disabled={loading || (data?.first ?? true)}
+                  disabled={loading || (data ? isFirstPage(data.page) : true)}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                 >
                   <ChevronLeft />
@@ -393,7 +394,7 @@ export default function CampaignsPage() {
                   variant="outline"
                   size="icon"
                   aria-label={t("common.nextPage")}
-                  disabled={loading || (data?.last ?? true)}
+                  disabled={loading || (data ? isLastPage(data.page) : true)}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   <ChevronRight />

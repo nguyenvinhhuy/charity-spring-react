@@ -10,8 +10,8 @@ import com.clb.charity.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -44,8 +44,8 @@ public class NotificationController {
      */
     @Operation(summary = "List the caller's notifications, most recent first")
     @GetMapping
-    public Page<NotificationResponse> list(Pageable pageable, @AuthenticationPrincipal AuthPrincipal principal) {
-        return notificationService.list(principal.memberId(), pageable);
+    public PagedModel<NotificationResponse> list(Pageable pageable, @AuthenticationPrincipal AuthPrincipal principal) {
+        return new PagedModel<>(notificationService.list(principal.memberId(), pageable));
     }
 
     /**

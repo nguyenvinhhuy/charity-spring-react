@@ -9,89 +9,112 @@ import { Search, HeartHandshake, LayoutDashboard, Calendar, User, type LucideIco
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
-const Command = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive
-    ref={ref}
-    className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-xl bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50",
-      className,
-    )}
-    {...props}
-  />
-))
-Command.displayName = CommandPrimitive.displayName
+function Command({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive>>
+}) {
+  return (
+    <CommandPrimitive
+      ref={ref}
+      className={cn(
+        "flex h-full w-full flex-col overflow-hidden rounded-xl bg-white dark:bg-zinc-950 text-zinc-950 dark:text-zinc-50",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
 
-const CommandInput = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Input
-    ref={ref}
-    className={cn(
-      "flex h-12 w-full border-none bg-transparent px-4 py-3 text-[17px] outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 mb-4",
-      className,
-    )}
-    {...props}
-  />
-))
-CommandInput.displayName = CommandPrimitive.Input.displayName
+function CommandInput({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Input>>
+}) {
+  return (
+    <CommandPrimitive.Input
+      ref={ref}
+      className={cn(
+        "flex h-12 w-full border-none bg-transparent px-4 py-3 text-[17px] outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 mb-4",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
 
-const CommandList = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[400px] overflow-y-auto overflow-x-hidden pb-2", className)}
-    {...props}
-  />
-))
-CommandList.displayName = CommandPrimitive.List.displayName
+function CommandList({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.List> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.List>>
+}) {
+  return (
+    <CommandPrimitive.List
+      ref={ref}
+      className={cn("max-h-[400px] overflow-y-auto overflow-x-hidden pb-2", className)}
+      {...props}
+    />
+  )
+}
 
-const CommandEmpty = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Empty>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="flex h-12 items-center justify-center text-sm text-zinc-500 dark:text-zinc-400"
-    {...props}
-  />
-))
-CommandEmpty.displayName = CommandPrimitive.Empty.displayName
+function CommandEmpty({
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Empty>>
+}) {
+  return (
+    <CommandPrimitive.Empty
+      ref={ref}
+      className="flex h-12 items-center justify-center text-sm text-zinc-500 dark:text-zinc-400"
+      {...props}
+    />
+  )
+}
 
-const CommandGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      "overflow-hidden px-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-zinc-500 dark:[&_[cmdk-group-heading]]:text-zinc-400 [&:not(:first-child)]:mt-2",
-      className,
-    )}
-    {...props}
-  />
-))
-CommandGroup.displayName = CommandPrimitive.Group.displayName
+function CommandGroup({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Group>>
+}) {
+  return (
+    <CommandPrimitive.Group
+      ref={ref}
+      className={cn(
+        "overflow-hidden px-2 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-zinc-500 dark:[&_[cmdk-group-heading]]:text-zinc-400 [&:not(:first-child)]:mt-2",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
 
-const CommandItem = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex h-12 cursor-pointer select-none items-center gap-2 rounded-lg px-4 text-sm text-zinc-700 dark:text-zinc-300 outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-zinc-100 dark:data-[selected=true]:bg-zinc-800 data-[selected=true]:text-zinc-900 dark:data-[selected=true]:text-zinc-100 data-[disabled=true]:opacity-50 [&+[cmdk-item]]:mt-1",
-      className,
-    )}
-    {...props}
-  />
-))
-CommandItem.displayName = CommandPrimitive.Item.displayName
+function CommandItem({
+  className,
+  ref,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item> & {
+  ref?: React.Ref<React.ElementRef<typeof CommandPrimitive.Item>>
+}) {
+  return (
+    <CommandPrimitive.Item
+      ref={ref}
+      className={cn(
+        "relative flex h-12 cursor-pointer select-none items-center gap-2 rounded-lg px-4 text-sm text-zinc-700 dark:text-zinc-300 outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-zinc-100 dark:data-[selected=true]:bg-zinc-800 data-[selected=true]:text-zinc-900 dark:data-[selected=true]:text-zinc-100 data-[disabled=true]:opacity-50 [&+[cmdk-item]]:mt-1",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
 
 interface SearchItem {
   title: string

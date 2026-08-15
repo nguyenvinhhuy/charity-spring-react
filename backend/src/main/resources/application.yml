@@ -61,9 +61,6 @@ app:
   render:
     api-key: ${RENDER_API_KEY:}
     service-id: ${RENDER_SERVICE_ID:}
-  vercel:
-    api-token: ${VERCEL_API_TOKEN:}
-    project-id: ${VERCEL_PROJECT_ID:}
   alert:
     resend-api-key: ${RESEND_API_KEY:}
     email-to: ${ALERT_EMAIL_TO:nguyenvana0258@gmail.com}

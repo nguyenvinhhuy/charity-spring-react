@@ -102,6 +102,11 @@ function buildCommentSchema(t: TFunction) {
   })
 }
 
+/** Replaces the cached page's content, adjusting `totalElements` by `delta` (e.g. +1/-1 on add/delete). */
+function withUpdatedContent(prev: Page<Comment>, content: Comment[], delta = 0): Page<Comment> {
+  return { ...prev, content, page: { ...prev.page, totalElements: prev.page.totalElements + delta } }
+}
+
 interface CommentSectionProps {
   target: ReactionTarget
   targetId: number
@@ -143,7 +148,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
     mutationFn: (content: string) => addComment(target, targetId, { content }),
     onSuccess: (created) => {
       queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
-        prev ? { ...prev, content: [created, ...prev.content], totalElements: prev.totalElements + 1 } : prev,
+        prev ? withUpdatedContent(prev, [created, ...prev.content], 1) : prev,
       )
       setDraft("")
     },
@@ -171,7 +176,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
       updateComment(target, targetId, commentId, { content }),
     onSuccess: (updated) => {
       queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
-        prev ? { ...prev, content: prev.content.map((c) => (c.id === updated.id ? updated : c)) } : prev,
+        prev ? withUpdatedContent(prev, prev.content.map((c) => (c.id === updated.id ? updated : c))) : prev,
       )
       setEditingId(null)
     },
@@ -193,13 +198,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
     mutationFn: (comment: Comment) => deleteComment(target, targetId, comment.id),
     onSuccess: (_result, comment) => {
       queryClient.setQueryData<Page<Comment>>(commentsQueryKey, (prev) =>
-        prev
-          ? {
-              ...prev,
-              content: prev.content.filter((c) => c.id !== comment.id),
-              totalElements: prev.totalElements - 1,
-            }
-          : prev,
+        prev ? withUpdatedContent(prev, prev.content.filter((c) => c.id !== comment.id), -1) : prev,
       )
       setDeleteTarget(null)
     },
@@ -209,7 +208,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
   const { data, isLoading: loading } = useQuery({
     queryKey: commentsQueryKey,
     queryFn: () => {
-      const prevTotal = queryClient.getQueryData<Page<Comment>>(commentsQueryKey)?.totalElements
+      const prevTotal = queryClient.getQueryData<Page<Comment>>(commentsQueryKey)?.page.totalElements
       const size = showingAll ? Math.max(PAGE_SIZE, prevTotal ?? PAGE_SIZE) : PAGE_SIZE
       return listComments(target, targetId, { page: 0, size })
     },
@@ -221,7 +220,7 @@ export function CommentSection({ target, targetId }: CommentSectionProps) {
   })
 
   const comments = data?.content ?? []
-  const total = data?.totalElements ?? 0
+  const total = data?.page.totalElements ?? 0
   const hasMore = !showingAll && total > comments.length
   // The API returns newest-first; a comment thread reads top-to-bottom oldest-to-newest, like a
   // chat, with the composer anchored at the bottom right after the latest comment.

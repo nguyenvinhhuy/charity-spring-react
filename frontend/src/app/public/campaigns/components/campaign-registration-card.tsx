@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { cancelRegistration, getRegistrationSummary, registerForCampaign } from "@/api/registrations"
@@ -44,81 +44,87 @@ function cancelCutoffDate(eventStartDate: string): string {
 export function CampaignRegistrationCard({ campaignId, capacity, eventStartDate }: CampaignRegistrationCardProps) {
   const { t } = useTranslation()
   const member = useAuthStore((s) => s.member)
-  const [summary, setSummary] = useState<RegistrationSummary | null>(null)
-  const [pending, setPending] = useState(false)
-  const pendingRef = useRef(pending)
+  const queryClient = useQueryClient()
+  const queryKey = ["registrations", "summary", campaignId]
 
-  useEffect(() => {
-    pendingRef.current = pending
-  }, [pending])
-
-  useEffect(() => {
-    let active = true
-
-    function refresh() {
-      // Skip while register/cancel is in flight so the poll can't clobber its optimistic update.
-      if (pendingRef.current) return
-      getRegistrationSummary(campaignId)
-        .then((result) => {
-          if (active) setSummary(result)
+  /** Registers the current member, optimistically bumping the count, then notifies the cancel cutoff. */
+  const registerMutation = useMutation({
+    mutationFn: () => registerForCampaign(campaignId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<RegistrationSummary>(queryKey)
+      if (previous) {
+        queryClient.setQueryData<RegistrationSummary>(queryKey, {
+          ...previous,
+          registeredCount: previous.registeredCount + 1,
+          isRegistered: true,
         })
-        .catch(() => {
-          // Non-critical decorative section: fail silently, just don't render the card.
-        })
-    }
+      }
+      return { previous }
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
+      toast.error(getErrorMessage(err))
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKey, updated)
+      toast.success(t("registrations.registerSuccess", { date: cancelCutoffDate(eventStartDate) }))
+    },
+  })
 
-    refresh()
-    const intervalId = setInterval(refresh, POLL_INTERVAL_MS)
-    return () => {
-      active = false
-      clearInterval(intervalId)
-    }
-  }, [campaignId])
+  /** Cancels the current member's own registration, optimistically dropping the count. */
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      await cancelRegistration(campaignId)
+      return getRegistrationSummary(campaignId)
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<RegistrationSummary>(queryKey)
+      if (previous) {
+        queryClient.setQueryData<RegistrationSummary>(queryKey, {
+          ...previous,
+          registeredCount: Math.max(0, previous.registeredCount - 1),
+          isRegistered: false,
+        })
+      }
+      return { previous }
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
+      toast.error(getErrorMessage(err))
+    },
+    onSuccess: (refreshed) => {
+      queryClient.setQueryData(queryKey, refreshed)
+    },
+  })
+
+  const { data: summary } = useQuery({
+    queryKey,
+    queryFn: () => getRegistrationSummary(campaignId),
+    // Non-critical decorative section: fail silently, just don't render the card.
+    meta: { silent: true },
+    // Paused while register/cancel is in flight so the poll can't clobber its optimistic update.
+    refetchInterval: () => (registerMutation.isPending || cancelMutation.isPending ? false : POLL_INTERVAL_MS),
+  })
 
   if (!summary) return null
 
   const isFull = !summary.isRegistered && summary.registeredCount >= capacity
+  const pending = registerMutation.isPending || cancelMutation.isPending
 
-  /** Registers the current member, optimistically bumping the count, then notifies the cancel cutoff. */
-  async function handleRegister() {
+  function handleRegister() {
     if (!member) {
       toast.error(t("registrations.loginPrompt"))
       return
     }
-    if (pending || !summary || isFull) return
-
-    const previous = summary
-    setSummary({ ...summary, registeredCount: summary.registeredCount + 1, isRegistered: true })
-    setPending(true)
-    try {
-      const updated = await registerForCampaign(campaignId)
-      setSummary(updated)
-      toast.success(t("registrations.registerSuccess", { date: cancelCutoffDate(eventStartDate) }))
-    } catch (err) {
-      setSummary(previous)
-      toast.error(getErrorMessage(err))
-    } finally {
-      setPending(false)
-    }
+    if (pending || isFull) return
+    registerMutation.mutate()
   }
 
-  /** Cancels the current member's own registration, optimistically dropping the count. */
-  async function handleCancel() {
-    if (pending || !summary) return
-
-    const previous = summary
-    setSummary({ ...summary, registeredCount: Math.max(0, summary.registeredCount - 1), isRegistered: false })
-    setPending(true)
-    try {
-      await cancelRegistration(campaignId)
-      const refreshed = await getRegistrationSummary(campaignId)
-      setSummary(refreshed)
-    } catch (err) {
-      setSummary(previous)
-      toast.error(getErrorMessage(err))
-    } finally {
-      setPending(false)
-    }
+  function handleCancel() {
+    if (pending) return
+    cancelMutation.mutate()
   }
 
   return (

@@ -1,7 +1,7 @@
 package com.clb.charity.notification.service;
 
-import com.clb.charity.notification.domain.NotificationReferenceType;
-import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
 import com.clb.charity.notification.dto.request.CreateBroadcastRequest;
 import com.clb.charity.notification.dto.request.UpdateNotificationPreferencesRequest;
 import com.clb.charity.notification.dto.response.NotificationPreferenceResponse;

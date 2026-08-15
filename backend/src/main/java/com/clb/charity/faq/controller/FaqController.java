@@ -9,8 +9,8 @@ import com.clb.charity.faq.service.FaqService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -42,11 +42,11 @@ public class FaqController {
      */
     @Operation(summary = "List FAQs (paginated, optional published filter and question search)")
     @GetMapping
-    public Page<FaqResponse> list(
+    public PagedModel<FaqResponse> list(
             @RequestParam(required = false) Boolean published,
             @RequestParam(required = false) String search,
             Pageable pageable) {
-        return faqService.list(published, search, pageable);
+        return new PagedModel<>(faqService.list(published, search, pageable));
     }
 
     /**

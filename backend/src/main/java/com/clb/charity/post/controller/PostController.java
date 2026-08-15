@@ -1,10 +1,11 @@
 package com.clb.charity.post.controller;
 
-import com.clb.charity.comment.domain.CommentTargetType;
 import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.dto.request.UpdateCommentRequest;
 import com.clb.charity.comment.dto.response.CommentResponse;
 import com.clb.charity.comment.service.CommentService;
+import com.clb.charity.common.model.CommentTargetType;
+import com.clb.charity.common.model.ReactionTargetType;
 import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.AuthPrincipal;
 import com.clb.charity.common.util.ClientIpUtil;
@@ -14,7 +15,6 @@ import com.clb.charity.post.dto.request.UpdatePostRequest;
 import com.clb.charity.post.dto.response.PostDetailResponse;
 import com.clb.charity.post.dto.response.PostSummaryResponse;
 import com.clb.charity.post.service.PostService;
-import com.clb.charity.reaction.domain.ReactionTargetType;
 import com.clb.charity.reaction.dto.request.SetReactionRequest;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
 import com.clb.charity.reaction.service.ReactionService;
@@ -23,8 +23,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -63,10 +63,10 @@ public class PostController {
      */
     @Operation(summary = "List posts (paginated, optional published filter)")
     @GetMapping
-    public Page<PostSummaryResponse> list(
+    public PagedModel<PostSummaryResponse> list(
             @RequestParam(required = false) Boolean published,
             Pageable pageable) {
-        return postService.list(published, pageable);
+        return new PagedModel<>(postService.list(published, pageable));
     }
 
     /**
@@ -194,11 +194,11 @@ public class PostController {
      */
     @Operation(summary = "List a post's comments")
     @GetMapping("/{id}/comments")
-    public Page<CommentResponse> listComments(@PathVariable Long id, Pageable pageable,
+    public PagedModel<CommentResponse> listComments(@PathVariable Long id, Pageable pageable,
                                               @AuthenticationPrincipal @Nullable AuthPrincipal principal) {
-        return commentService.list(CommentTargetType.POST, id, pageable,
+        return new PagedModel<>(commentService.list(CommentTargetType.POST, id, pageable,
                 principal == null ? null : principal.memberId(),
-                principal == null ? null : principal.role());
+                principal == null ? null : principal.role()));
     }
 
     /**

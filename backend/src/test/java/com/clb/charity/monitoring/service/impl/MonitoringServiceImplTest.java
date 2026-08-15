@@ -4,7 +4,6 @@ import com.clb.charity.common.config.AppProperties;
 import com.clb.charity.monitoring.domain.MetricRange;
 import com.clb.charity.monitoring.domain.MonitoringResource;
 import com.clb.charity.monitoring.domain.RenderState;
-import com.clb.charity.monitoring.domain.VercelState;
 import com.clb.charity.monitoring.dto.response.MetricPoint;
 import com.clb.charity.monitoring.dto.response.MonitoringOverviewResponse;
 import com.clb.charity.monitoring.service.AlertService;
@@ -64,7 +63,6 @@ class MonitoringServiceImplTest {
     @Test
     void getOverview_reportsNotConfigured_whenNoExternalCredentialsSet() {
         when(appProperties.render()).thenReturn(new AppProperties.Render("", ""));
-        when(appProperties.vercel()).thenReturn(new AppProperties.Vercel("", ""));
         when(appProperties.cloudinary()).thenReturn(new AppProperties.Cloudinary("", "", "", "clb-media"));
         when(appProperties.alert()).thenReturn(
                 new AppProperties.Alert("", "nguyenvana0258@gmail.com", "onboarding@resend.dev", 0.8, 500_000_000L, 25_000_000_000L));
@@ -79,8 +77,6 @@ class MonitoringServiceImplTest {
 
         assertFalse(overview.render().configured());
         assertEquals(RenderState.NOT_CONFIGURED, overview.render().status());
-        assertFalse(overview.vercel().configured());
-        assertEquals(VercelState.NOT_CONFIGURED, overview.vercel().status());
         assertFalse(overview.cloudinary().configured());
     }
 

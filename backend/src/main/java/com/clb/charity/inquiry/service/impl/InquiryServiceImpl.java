@@ -2,6 +2,8 @@ package com.clb.charity.inquiry.service.impl;
 
 import com.clb.charity.common.exception.InquiryNotFoundException;
 import com.clb.charity.common.exception.InquiryRateLimitExceededException;
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
 import com.clb.charity.inquiry.domain.Inquiry;
 import com.clb.charity.inquiry.domain.InquiryStatus;
 import com.clb.charity.inquiry.dto.request.CreateInquiryRequest;
@@ -12,8 +14,6 @@ import com.clb.charity.inquiry.service.InquiryRateLimiter;
 import com.clb.charity.inquiry.service.InquiryService;
 import com.clb.charity.member.domain.Role;
 import com.clb.charity.member.service.MemberService;
-import com.clb.charity.notification.domain.NotificationReferenceType;
-import com.clb.charity.notification.domain.NotificationType;
 import com.clb.charity.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;

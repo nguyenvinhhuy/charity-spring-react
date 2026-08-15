@@ -13,8 +13,8 @@ import com.clb.charity.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -48,12 +48,12 @@ public class MemberController {
      */
     @Operation(summary = "List members (paginated, optional search/role/active filters)")
     @GetMapping
-    public Page<MemberResponse> list(
+    public PagedModel<MemberResponse> list(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Role role,
             @RequestParam(required = false) Boolean active,
             Pageable pageable) {
-        return memberService.list(search, role, active, pageable);
+        return new PagedModel<>(memberService.list(search, role, active, pageable));
     }
 
     /**

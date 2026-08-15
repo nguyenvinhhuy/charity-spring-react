@@ -1,7 +1,7 @@
 package com.clb.charity.reaction.repository;
 
+import com.clb.charity.common.model.ReactionTargetType;
 import com.clb.charity.reaction.domain.Reaction;
-import com.clb.charity.reaction.domain.ReactionTargetType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

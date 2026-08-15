@@ -6,9 +6,9 @@ import com.clb.charity.monitoring.dto.response.MonitoringOverviewResponse;
 public interface MonitoringService {
 
     /**
-     * Fetches the current status of all 4 monitored external services.
+     * Fetches the current status of all 3 monitored external services.
      *
-     * @param range the time window for the Render/Vercel trend charts
+     * @param range the time window for the Render trend charts
      * @return the aggregated overview
      */
     MonitoringOverviewResponse getOverview(MetricRange range);

@@ -36,7 +36,7 @@ import {
   markNotificationRead,
 } from "@/api/notifications"
 import { getErrorMessage } from "@/api/axios"
-import type { Page } from "@/types/common"
+import { isLastPage, type Page } from "@/types/common"
 import type { AppNotification } from "@/types/notification"
 
 const PAGE_SIZE = 20
@@ -149,7 +149,7 @@ export function NotificationBell() {
     queryKey: NOTIFICATIONS_QUERY_KEY,
     queryFn: ({ pageParam }) => listNotifications({ page: pageParam, size: PAGE_SIZE }),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => (lastPage.last ? undefined : allPages.length),
+    getNextPageParam: (lastPage, allPages) => (isLastPage(lastPage.page) ? undefined : allPages.length),
     enabled: open,
   })
   const notifications = useMemo(() => notificationsPages?.pages.flatMap((p) => p.content) ?? [], [notificationsPages])

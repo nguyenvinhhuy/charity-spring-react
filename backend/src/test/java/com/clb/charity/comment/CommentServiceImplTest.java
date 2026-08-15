@@ -1,7 +1,7 @@
 package com.clb.charity.comment;
 
 import com.clb.charity.comment.domain.Comment;
-import com.clb.charity.comment.domain.CommentTargetType;
+import com.clb.charity.common.model.CommentTargetType;
 import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.repository.CommentRepository;
 import com.clb.charity.comment.service.impl.CommentServiceImpl;

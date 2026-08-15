@@ -1,7 +1,7 @@
 package com.clb.charity.comment.repository;
 
 import com.clb.charity.comment.domain.Comment;
-import com.clb.charity.comment.domain.CommentTargetType;
+import com.clb.charity.common.model.CommentTargetType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

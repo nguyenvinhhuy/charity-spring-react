@@ -11,6 +11,7 @@ import { getErrorMessage } from "@/api/axios"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { Role } from "@/types/common"
+import { isFirstPage, isLastPage } from "@/types/common"
 import type { Member } from "@/types/member"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -152,7 +153,7 @@ export default function UsersPage() {
               </SelectContent>
             </Select>
             <p className="text-muted-foreground text-sm">
-              {t("users.totalCount", { count: data?.totalElements ?? 0 })}
+              {t("users.totalCount", { count: data?.page.totalElements ?? 0 })}
             </p>
           </div>
           <CreateMemberDialog onCreated={refreshMembers} />
@@ -253,7 +254,7 @@ export default function UsersPage() {
 
         <div className="flex items-center justify-end gap-4">
           <span className="text-muted-foreground text-sm">
-            {t("users.pagination", { current: (data?.number ?? 0) + 1, total: data?.totalPages ?? 1 })}
+            {t("users.pagination", { current: (data?.page.number ?? 0) + 1, total: data?.page.totalPages ?? 1 })}
           </span>
           <div className="flex gap-2">
             <Tooltip>
@@ -262,7 +263,7 @@ export default function UsersPage() {
                   variant="outline"
                   size="icon"
                   aria-label={t("common.previousPage")}
-                  disabled={loading || (data?.first ?? true)}
+                  disabled={loading || (data ? isFirstPage(data.page) : true)}
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                 >
                   <ChevronLeft />
@@ -276,7 +277,7 @@ export default function UsersPage() {
                   variant="outline"
                   size="icon"
                   aria-label={t("common.nextPage")}
-                  disabled={loading || (data?.last ?? true)}
+                  disabled={loading || (data ? isLastPage(data.page) : true)}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   <ChevronRight />

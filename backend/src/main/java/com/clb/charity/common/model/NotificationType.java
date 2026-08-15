@@ -1,4 +1,4 @@
-package com.clb.charity.notification.domain;
+package com.clb.charity.common.model;
 
 /** The kind of event a notification was generated from. */
 public enum NotificationType {

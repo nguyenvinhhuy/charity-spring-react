@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -22,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Logo } from "@/components/logo"
 import type { NotificationPreference, NotificationType } from "@/types/notification"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -74,13 +76,14 @@ export default function ProfileSettingsPage() {
   const { t } = useTranslation()
   const member = useAuthStore((s) => s.member)
   const setMember = useAuthStore((s) => s.setMember)
+  const queryClient = useQueryClient()
+  const preferencesQueryKey = ["notifications", "preferences"]
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatarUrl ?? null)
+  const avatarUrl = member?.avatarUrl ?? null
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("")
   const profileSchema = useMemo(() => buildProfileSchema(t), [t])
   const passwordSchema = useMemo(() => buildPasswordSchema(t), [t])
-  const [preferences, setPreferences] = useState<NotificationPreference[]>([])
   const [savingType, setSavingType] = useState<NotificationType | null>(null)
 
   const profileForm = useForm<ProfileValues>({
@@ -92,45 +95,49 @@ export default function ProfileSettingsPage() {
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   })
 
-  // Refresh the profile from the server on mount, then fill the form.
-  useEffect(() => {
-    let active = true
-    getMe()
-      .then((fresh) => {
-        if (!active) return
-        setMember(fresh)
-        setAvatarUrl(fresh.avatarUrl)
-        profileForm.reset({
-          fullName: fresh.fullName,
-          phone: fresh.phone ?? "",
-          bio: fresh.bio ?? "",
-          dateOfBirth: fresh.dateOfBirth ?? "",
-          address: fresh.address ?? "",
-          nationalId: fresh.nationalId ?? "",
-        })
-      })
-      .catch(() => {
-        // Guarded route: if this fails the axios interceptor handles re-auth.
-      })
-    return () => {
-      active = false
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Refresh the profile from the server on mount, then fill the form. Silent: a failure here is
+  // a guarded route the axios interceptor already handles re-auth for, not a user-facing error.
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: getMe, meta: { silent: true } })
+  // Silent: non-critical section, toggles just default to unknown/enabled-looking until retried.
+  const preferencesQuery = useQuery({
+    queryKey: preferencesQueryKey,
+    queryFn: getNotificationPreferences,
+    meta: { silent: true },
+  })
+  const preferences = preferencesQuery.data ?? []
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ type, enabled }: { type: NotificationType; enabled: boolean }) =>
+      updateNotificationPreferences([{ type, enabled }]),
+    onMutate: async ({ type, enabled }) => {
+      await queryClient.cancelQueries({ queryKey: preferencesQueryKey })
+      const previous = queryClient.getQueryData<NotificationPreference[]>(preferencesQueryKey)
+      queryClient.setQueryData<NotificationPreference[]>(preferencesQueryKey, (prev) =>
+        prev?.map((p) => (p.type === type ? { ...p, enabled } : p)),
+      )
+      return { previous }
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(preferencesQueryKey, context.previous)
+      toast.error(getErrorMessage(err))
+    },
+  })
 
   useEffect(() => {
-    let active = true
-    getNotificationPreferences()
-      .then((prefs) => {
-        if (active) setPreferences(prefs)
-      })
-      .catch(() => {
-        // Non-critical: toggles just default to unknown/enabled-looking until retried.
-      })
-    return () => {
-      active = false
-    }
-  }, [])
+    if (!meQuery.data) return
+    const fresh = meQuery.data
+    setMember(fresh)
+    profileForm.reset({
+      fullName: fresh.fullName,
+      phone: fresh.phone ?? "",
+      bio: fresh.bio ?? "",
+      dateOfBirth: fresh.dateOfBirth ?? "",
+      address: fresh.address ?? "",
+      nationalId: fresh.nationalId ?? "",
+    })
+    // `setMember`/`profileForm` are stable across renders; only re-sync on freshly fetched data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meQuery.data])
 
   // Local preview of a picked-but-not-yet-uploaded avatar, so cancelling the page never leaves an
   // unattached image on Cloudinary.
@@ -151,14 +158,11 @@ export default function ProfileSettingsPage() {
    * @param enabled the new desired state
    */
   async function onTogglePreference(type: NotificationType, enabled: boolean) {
-    const previous = preferences
-    setPreferences((prev) => prev.map((p) => (p.type === type ? { ...p, enabled } : p)))
     setSavingType(type)
     try {
-      await updateNotificationPreferences([{ type, enabled }])
-    } catch (err) {
-      setPreferences(previous)
-      toast.error(getErrorMessage(err))
+      await toggleMutation.mutateAsync({ type, enabled })
+    } catch {
+      // Already surfaced via the mutation's onError (rollback + toast).
     } finally {
       setSavingType(null)
     }
@@ -202,7 +206,6 @@ export default function ProfileSettingsPage() {
         nationalId: values.nationalId?.trim() ? values.nationalId.trim() : null,
       })
       setMember(updated)
-      setAvatarUrl(nextAvatarUrl)
       setPendingAvatarFile(null)
       toast.success(t("profile.profileUpdated"))
     } catch (err) {
@@ -449,11 +452,21 @@ export default function ProfileSettingsPage() {
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{t(`notifications.preferenceLabels.${type}`)}</span>
                   </div>
-                  <Switch
-                    checked={enabled}
-                    disabled={savingType === type}
-                    onCheckedChange={(checked) => onTogglePreference(type, checked)}
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {/* Wrapper span keeps Tooltip's own data-state off the Switch's DOM
+                          node, since Switch uses data-state itself for checked/unchecked color. */}
+                      <span className="inline-flex">
+                        <Switch
+                          aria-label={t(`notifications.preferenceLabels.${type}`)}
+                          checked={enabled}
+                          disabled={savingType === type}
+                          onCheckedChange={(checked) => onTogglePreference(type, checked)}
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t(`notifications.preferenceLabels.${type}`)}</TooltipContent>
+                  </Tooltip>
                 </div>
               )
             })}

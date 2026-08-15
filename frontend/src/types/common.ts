@@ -2,15 +2,27 @@
 
 export type Role = "ADMIN" | "CONTRIBUTOR" | "MEMBER"
 
-/** Mirrors Spring Data's Page JSON (current page is `number`, 0-based). */
-export interface Page<T> {
-  content: T[]
-  number: number
+/** Mirrors Spring Data's PagedModel JSON (current page is `page.number`, 0-based). */
+export interface PageMeta {
   size: number
+  number: number
   totalElements: number
   totalPages: number
-  first: boolean
-  last: boolean
+}
+
+export interface Page<T> {
+  content: T[]
+  page: PageMeta
+}
+
+/** True when `page` is the first page (0-based). */
+export function isFirstPage(page: PageMeta): boolean {
+  return page.number === 0
+}
+
+/** True when `page` is the last page, including the empty-result case. */
+export function isLastPage(page: PageMeta): boolean {
+  return page.number >= page.totalPages - 1
 }
 
 export interface ProblemDetail {

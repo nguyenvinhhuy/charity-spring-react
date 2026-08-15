@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from "@tanstack/react-query"
 import type { TFunction } from "i18next"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
@@ -32,31 +33,23 @@ type BankSettingsFormValues = z.infer<ReturnType<typeof buildBankSettingsSchema>
 export default function SettingsPage() {
   const { t } = useTranslation()
   const bankSettingsSchema = useMemo(() => buildBankSettingsSchema(t), [t])
-  const [loading, setLoading] = useState(true)
 
   const form = useForm<BankSettingsFormValues>({
     resolver: zodResolver(bankSettingsSchema),
     defaultValues: { bankAccountNo: "", bankAccountName: "" },
   })
 
+  const bankSettingsQuery = useQuery({
+    queryKey: ["settings", "bank"],
+    queryFn: getBankSettings,
+  })
+  const loading = bankSettingsQuery.isLoading
+
   useEffect(() => {
-    let active = true
-    getBankSettings()
-      .then((settings) => {
-        if (active) form.reset(settings)
-      })
-      .catch((err) => {
-        if (active) toast.error(getErrorMessage(err))
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
-    return () => {
-      active = false
-    }
-    // Load once on mount.
+    if (bankSettingsQuery.data) form.reset(bankSettingsQuery.data)
+    // `form` is stable across renders; only re-sync when freshly fetched data arrives.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [bankSettingsQuery.data])
 
   /**
    * Saves the default bank account settings.

@@ -9,7 +9,7 @@ import java.util.List;
  * Strongly-typed binding for the {@code app.*} block in application.yml.
  */
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, OAuth2 oauth2, Render render, Vercel vercel, Alert alert) {
+public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, OAuth2 oauth2, Render render, Alert alert) {
 
     public record Jwt(
             /** Base64-encoded HS256 secret (>= 32 bytes decoded). */
@@ -55,14 +55,6 @@ public record AppProperties(Jwt jwt, Cloudinary cloudinary, Cors cors, OAuth2 oa
             String apiKey,
             /** The Render service id (e.g. {@code srv-xxxx}) to query metrics/deploys for. */
             String serviceId
-    ) {
-    }
-
-    public record Vercel(
-            /** Vercel access token (Bearer token). Blank means the Vercel card is not configured. */
-            String apiToken,
-            /** The Vercel project id to query deployments for. */
-            String projectId
     ) {
     }
 

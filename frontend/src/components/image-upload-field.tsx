@@ -1,7 +1,7 @@
 "use client"
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
-import type { ChangeEvent } from "react"
+import { useEffect, useImperativeHandle, useRef, useState } from "react"
+import type { ChangeEvent, Ref } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { ImagePlus, Upload } from "lucide-react"
@@ -30,11 +30,13 @@ export interface ImageUploadHandle {
  *
  * @param value the currently saved image URL, or an empty string when none is set
  * @param aspectRatio the preview shape
+ * @param ref imperative handle exposing {@link ImageUploadHandle.commit}
  */
-export const ImageUploadField = forwardRef<ImageUploadHandle, ImageUploadFieldProps>(function ImageUploadField(
-  { value, aspectRatio = "3/2" },
+export function ImageUploadField({
+  value,
+  aspectRatio = "3/2",
   ref,
-) {
+}: ImageUploadFieldProps & { ref?: Ref<ImageUploadHandle> }) {
   const { t } = useTranslation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
@@ -137,4 +139,4 @@ export const ImageUploadField = forwardRef<ImageUploadHandle, ImageUploadFieldPr
       />
     </div>
   )
-})
+}

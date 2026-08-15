@@ -1,9 +1,9 @@
 package com.clb.charity.comment.service;
 
-import com.clb.charity.comment.domain.CommentTargetType;
 import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.dto.request.UpdateCommentRequest;
 import com.clb.charity.comment.dto.response.CommentResponse;
+import com.clb.charity.common.model.CommentTargetType;
 import com.clb.charity.member.domain.Role;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;

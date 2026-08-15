@@ -1,6 +1,6 @@
 package com.clb.charity.notification.dto.request;
 
-import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.common.model.NotificationType;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;

@@ -1,5 +1,6 @@
 package com.clb.charity.notification.domain;
 
+import com.clb.charity.common.model.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;

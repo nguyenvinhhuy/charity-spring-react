@@ -85,8 +85,18 @@ com.clb.charity/
 - A feature package must not import another feature's `domain`, `repository`, or
   `service/impl`. Cross-feature needs go through the other feature's `service`
   interface, passing/returning ids or DTOs.
-- `common` never depends on a feature (exception: `Role` lives in `member/domain`
-  and is imported by security — the one accepted shared concept).
+- `common` never depends on a feature (exception: `Role` and `AuthProvider` live
+  in `member/domain`; `Role` is imported by `common/security` plus any feature
+  doing an RBAC check (campaign, comment, inquiry, auth), and `AuthProvider` by
+  `auth` and `common/security/oauth2` — accepted since both are thin,
+  JPA-persisted classification enums with no relations/behavior, needed
+  everywhere authorization/login logic lives).
+- Discriminator/vocabulary enums that multiple features must reference by design
+  (e.g. `CommentTargetType`, `ReactionTargetType`, `NotificationType`,
+  `NotificationReferenceType`, `Granularity`) live in `common/model/`, not in the
+  "owning" feature's `domain` — a feature exposing a polymorphic target (comment,
+  reaction, notification) shouldn't force every caller to import its `domain`
+  package just to pass the discriminator value.
 
 **Enforcement**: there is no lint/boundary tool wired up for this (same tradeoff as
 §5.0a's frontend equivalent). This section **is** the enforcement — new code must
@@ -127,8 +137,12 @@ time, not in a big-bang pass.
 
 ### 4.5 Controllers
 - Thin. `@RestController` under `/api/v1/...`. Validate inbound with `@Valid`.
-- Return the DTO or Spring `Page<T>` **directly** — never wrap in a custom
-  success envelope. `201` for creates, `204` for deletes.
+- Return the DTO **directly** — never wrap in a custom success envelope.
+  `201` for creates, `204` for deletes.
+- Paginated endpoints: service returns `Page<T>`, controller wraps it as
+  `new PagedModel<>(page)` before returning (never return `Page<T>` directly —
+  its raw JSON leaks internals). JSON: `{content, page: {size, number,
+  totalElements, totalPages}}`.
 - Every handler carries an `@Operation(summary = "...")` for OpenAPI.
 
 ### 4.6 Errors — RFC 9457 ProblemDetail only
@@ -414,7 +428,8 @@ Seeded admin: `admin@clb.vn` / `Admin@123`.
   unverified bulk automated script (see §5.0a for why).
 - ✅ Records for DTOs (request/response); Lombok for entities + DI + logging.
 - ✅ MapStruct for all mapping; RFC 9457 ProblemDetail for all errors.
-- ✅ Return DTO / `Page<T>` directly; `@Valid` on inbound; `@Operation` on handlers.
+- ✅ Return DTO directly; paginated endpoints wrap `Page<T>` in `PagedModel<T>`
+  at the controller (§4.5). `@Valid` on inbound; `@Operation` on handlers.
 - ✅ One-sentence WHAT Javadoc + `@param` on every method; WHY only inline for hard logic.
 - ❌ No Jackson 2 imports (`com.fasterxml.jackson`) — Boot 4 uses `tools.jackson`.
 - ❌ No custom response/error envelope. ❌ No `@Data` on entities. ❌ No editing applied migrations.

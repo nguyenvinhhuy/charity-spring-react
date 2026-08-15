@@ -1,5 +1,7 @@
 package com.clb.charity.notification.domain;
 
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

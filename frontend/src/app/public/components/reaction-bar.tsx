@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { SmilePlus } from "lucide-react"
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { initialsOf, colorOf } from "@/lib/avatar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 const REACTION_EMOJI: Record<ReactionType, string> = {
   LIKE: "👍",
@@ -46,80 +48,68 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
   // `member` is persisted across reloads, unlike the in-memory `isAuthenticated` flag which resets
   // on a hard page load until some other authenticated request re-hydrates it (see PublicLayout).
   const isAuthenticated = useAuthStore((s) => s.member !== null)
-  const [summary, setSummary] = useState<ReactionSummary | null>(null)
-  const [pending, setPending] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const pendingRef = useRef(pending)
+  const queryClient = useQueryClient()
+  const queryKey = ["reactions", target, targetId]
 
-  useEffect(() => {
-    pendingRef.current = pending
-  }, [pending])
-
-  useEffect(() => {
-    let active = true
-
-    function refresh() {
-      // Skip while a pick is in flight so the poll can't clobber its optimistic update.
-      if (pendingRef.current) return
-      getReactionSummary(target, targetId)
-        .then((result) => {
-          if (active) setSummary(result)
-        })
-        .catch(() => {
-          // Non-critical decorative section: fail silently, just don't render reactions.
-        })
-    }
-
-    refresh()
-    const intervalId = setInterval(refresh, POLL_INTERVAL_MS)
-    return () => {
-      active = false
-      clearInterval(intervalId)
-    }
-  }, [target, targetId])
-
-  if (!summary) return null
-
-  /** Sets, switches, or removes (if already picked) the caller's reaction, optimistically. */
-  async function handlePick(type: ReactionType) {
-    setPickerOpen(false)
-    if (!isAuthenticated) {
-      toast.error(t("reactions.loginPrompt"))
-      return
-    }
-    if (pending || !summary) return
-
-    const previous = summary
-    const removing = summary.myReaction === type
-    const nextCounts = { ...summary.counts }
-    if (summary.myReaction) {
-      nextCounts[summary.myReaction] = Math.max(0, (nextCounts[summary.myReaction] ?? 0) - 1)
-    }
-    if (!removing) {
-      nextCounts[type] = (nextCounts[type] ?? 0) + 1
-    }
-    setSummary({
-      ...summary,
-      counts: nextCounts,
-      myReaction: removing ? null : type,
-      total: previous.total + (removing ? -1 : summary.myReaction ? 0 : 1),
-    })
-
-    setPending(true)
-    try {
+  const pickMutation = useMutation({
+    mutationFn: async ({ type, removing }: { type: ReactionType; removing: boolean }) => {
       if (removing) {
         await removeReaction(target, targetId)
       } else {
         await setReaction(target, targetId, type)
       }
-      const refreshed = await getReactionSummary(target, targetId)
-      setSummary(refreshed)
-    } catch (err) {
-      setSummary(previous)
+      return getReactionSummary(target, targetId)
+    },
+    onMutate: async ({ type, removing }) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous = queryClient.getQueryData<ReactionSummary>(queryKey)
+      if (previous) {
+        const nextCounts = { ...previous.counts }
+        if (previous.myReaction) {
+          nextCounts[previous.myReaction] = Math.max(0, (nextCounts[previous.myReaction] ?? 0) - 1)
+        }
+        if (!removing) {
+          nextCounts[type] = (nextCounts[type] ?? 0) + 1
+        }
+        queryClient.setQueryData<ReactionSummary>(queryKey, {
+          ...previous,
+          counts: nextCounts,
+          myReaction: removing ? null : type,
+          total: previous.total + (removing ? -1 : previous.myReaction ? 0 : 1),
+        })
+      }
+      return { previous }
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
       toast.error(getErrorMessage(err))
-    } finally {
-      setPending(false)
+    },
+    onSuccess: (refreshed) => {
+      queryClient.setQueryData(queryKey, refreshed)
+    },
+  })
+
+  const { data: summary } = useQuery({
+    queryKey,
+    queryFn: () => getReactionSummary(target, targetId),
+    // Non-critical decorative section: fail silently, just don't render reactions.
+    meta: { silent: true },
+    // Paused while a pick is in flight so the poll can't clobber its optimistic update.
+    refetchInterval: () => (pickMutation.isPending ? false : POLL_INTERVAL_MS),
+  })
+
+  if (!summary) return null
+
+  /** Sets, switches, or removes (if already picked) the caller's reaction, optimistically. */
+  function handlePick(type: ReactionType) {
+    setPickerOpen(false)
+    if (!isAuthenticated) {
+      toast.error(t("reactions.loginPrompt"))
+      return
     }
+    if (pickMutation.isPending || !summary) return
+    pickMutation.mutate({ type, removing: summary.myReaction === type })
   }
 
   const activeTypes = REACTION_ORDER.filter((type) => (summary.counts[type] ?? 0) > 0)
@@ -136,7 +126,7 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
             <HoverCardTrigger asChild>
               <button
                 type="button"
-                disabled={pending}
+                disabled={pickMutation.isPending}
                 onClick={() => handlePick(type)}
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60",
@@ -177,18 +167,22 @@ export function ReactionBar({ target, targetId }: ReactionBarProps) {
         <HoverCardContent className="w-auto p-1.5" align="start">
           <div className="flex items-center gap-1">
             {REACTION_ORDER.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handlePick(type)}
-                title={t(`reactions.types.${type}`)}
-                className={cn(
-                  "flex size-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125 hover:bg-muted",
-                  summary.myReaction === type && "bg-primary/10",
-                )}
-              >
-                {REACTION_EMOJI[type]}
-              </button>
+              <Tooltip key={type}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => handlePick(type)}
+                    aria-label={t(`reactions.types.${type}`)}
+                    className={cn(
+                      "flex size-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125 hover:bg-muted",
+                      summary.myReaction === type && "bg-primary/10",
+                    )}
+                  >
+                    {REACTION_EMOJI[type]}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{t(`reactions.types.${type}`)}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </HoverCardContent>

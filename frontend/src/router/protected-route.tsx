@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Navigate, useLocation } from "react-router"
 import { getMe } from "@/api/auth"
 import { useAuthStore } from "@/store/authStore"
@@ -28,30 +29,23 @@ export function ProtectedRoute({ children, requiredRole, requiredRoles }: Protec
   const location = useLocation()
 
   // The access token lives in memory only. On a fresh load, call getMe(): its 401 goes
-  // through the axios single-flight refresh (so React StrictMode's double effect can't
-  // trigger two token rotations), restoring the session from the HttpOnly cookie.
-  const [restoring, setRestoring] = useState(!accessToken)
+  // through the axios single-flight refresh (so React StrictMode's double fetch can't trigger
+  // two token rotations), restoring the session from the HttpOnly cookie. `enabled: !accessToken`
+  // means this never re-runs once a normal sign-in sets the token, matching the one-shot-on-mount
+  // behavior the previous effect got by intentionally excluding `accessToken` from its deps.
+  const bootstrapQuery = useQuery({
+    queryKey: ["auth", "bootstrap"],
+    queryFn: getMe,
+    enabled: !accessToken,
+    retry: false,
+    meta: { silent: true }, // "not logged in" is the common case here, not a user-facing error
+  })
+  const restoring = !accessToken && bootstrapQuery.isPending
 
   useEffect(() => {
-    if (accessToken) return
-    let active = true
-    getMe()
-      .then((m) => {
-        if (active) setMember(m)
-      })
-      .catch(() => {
-        if (active) clear()
-      })
-      .finally(() => {
-        if (active) setRestoring(false)
-      })
-    return () => {
-      active = false
-    }
-    // Intentionally excludes accessToken: this must run once on mount only, not whenever
-    // accessToken later changes (e.g. after a normal sign-in), or it would re-trigger restoration.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clear, setMember])
+    if (bootstrapQuery.isSuccess) setMember(bootstrapQuery.data)
+    if (bootstrapQuery.isError) clear()
+  }, [bootstrapQuery.isSuccess, bootstrapQuery.isError, bootstrapQuery.data, setMember, clear])
 
   if (restoring) {
     return (

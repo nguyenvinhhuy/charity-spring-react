@@ -1,5 +1,6 @@
 package com.clb.charity.comment.domain;
 
+import com.clb.charity.common.model.CommentTargetType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

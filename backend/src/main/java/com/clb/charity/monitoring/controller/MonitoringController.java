@@ -18,9 +18,9 @@ public class MonitoringController {
     private final MonitoringService monitoringService;
 
     /**
-     * Returns the current status of Render, Vercel, the database, and Cloudinary (ADMIN only).
+     * Returns the current status of Render, the database, and Cloudinary (ADMIN only).
      *
-     * @param range the time window for the Render/Vercel trend charts
+     * @param range the time window for the Render trend charts
      * @return the aggregated overview
      */
     @Operation(summary = "Get the system monitoring overview (ADMIN)")

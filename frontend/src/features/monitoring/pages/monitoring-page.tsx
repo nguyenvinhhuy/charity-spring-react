@@ -10,16 +10,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { getMonitoringOverview } from "../api"
 import type { MetricRange } from "../types"
 import { RenderStatusCard } from "../components/render-status-card"
-import { VercelStatusCard } from "../components/vercel-status-card"
 import { DatabaseStatusCard } from "../components/database-status-card"
 import { CloudinaryStatusCard } from "../components/cloudinary-status-card"
 
 /** Matches the backend's default alert threshold fraction (app.alert.threshold-fraction). */
 const THRESHOLD_PERCENT = 80
-const AUTO_REFRESH_MS = 60_000
 const RANGE_OPTIONS: MetricRange[] = ["TWELVE_HOURS", "ONE_DAY", "THREE_DAYS", "SEVEN_DAYS"]
 
-/** Admin-only system monitoring dashboard: Render, Vercel, Database, and Cloudinary status + trend charts. */
+/** Admin-only system monitoring dashboard: Render, Database, and Cloudinary status + trend charts. */
 export default function MonitoringPage() {
   const { t, i18n } = useTranslation()
   const [range, setRange] = useState<MetricRange>("ONE_DAY")
@@ -27,7 +25,6 @@ export default function MonitoringPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["monitoring-overview", range],
     queryFn: () => getMonitoringOverview(range),
-    refetchInterval: AUTO_REFRESH_MS,
     // Keeps the previous range's data on screen while a new range loads, instead of blanking the
     // whole grid back to the loading state on every click.
     placeholderData: keepPreviousData,
@@ -39,8 +36,6 @@ export default function MonitoringPage() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-muted-foreground text-sm">
             {data && t("monitoring.lastUpdated", { time: new Date(data.fetchedAt).toLocaleTimeString(i18n.language) })}
-            {" · "}
-            {t("monitoring.autoRefreshNote")}
           </p>
           <div className="flex items-center gap-2">
             <ToggleGroup
@@ -72,8 +67,7 @@ export default function MonitoringPage() {
         ) : data ? (
           <div className={`flex flex-col gap-4 transition-opacity ${isFetching ? "opacity-60" : ""}`}>
             <RenderStatusCard status={data.render} range={range} />
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <VercelStatusCard status={data.vercel} range={range} />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <DatabaseStatusCard status={data.database} thresholdPercent={THRESHOLD_PERCENT} />
               <CloudinaryStatusCard status={data.cloudinary} thresholdPercent={THRESHOLD_PERCENT} />
             </div>

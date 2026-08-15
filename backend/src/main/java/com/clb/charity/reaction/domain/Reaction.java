@@ -1,5 +1,6 @@
 package com.clb.charity.reaction.domain;
 
+import com.clb.charity.common.model.ReactionTargetType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

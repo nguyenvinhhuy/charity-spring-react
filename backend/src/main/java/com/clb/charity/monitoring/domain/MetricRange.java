@@ -1,7 +1,7 @@
 package com.clb.charity.monitoring.domain;
 
 /**
- * A selectable time window for the Render/Vercel trend charts.
+ * A selectable time window for the Render trend charts.
  */
 public enum MetricRange {
     // Resolution grows coarser as the window widens, favoring detail over an equal point count across ranges.

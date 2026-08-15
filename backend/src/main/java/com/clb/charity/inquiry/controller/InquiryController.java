@@ -10,8 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -56,8 +56,8 @@ public class InquiryController {
      */
     @Operation(summary = "List contact-form inquiries (paginated, optional status filter)")
     @GetMapping
-    public Page<InquiryResponse> list(@RequestParam(required = false) InquiryStatus status, Pageable pageable) {
-        return inquiryService.list(status, pageable);
+    public PagedModel<InquiryResponse> list(@RequestParam(required = false) InquiryStatus status, Pageable pageable) {
+        return new PagedModel<>(inquiryService.list(status, pageable));
     }
 
     /**

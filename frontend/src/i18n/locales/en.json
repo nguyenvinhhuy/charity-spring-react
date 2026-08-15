@@ -654,14 +654,13 @@
   },
   "monitoring": {
     "title": "System Monitoring",
-    "description": "Render, Vercel, Database, and Cloudinary status",
+    "description": "Render, Database, and Cloudinary status",
     "loading": "Loading...",
     "empty": "No data",
     "noData": "No data yet",
     "notConfigured": "Not configured",
     "refresh": "Refresh",
     "lastUpdated": "Updated at {{time}}",
-    "autoRefreshNote": "Auto-refreshes every 60 seconds",
     "bytesLabel": "Size",
     "range": {
       "TWELVE_HOURS": "12 hours",
@@ -682,13 +681,6 @@
       "memory": "Memory",
       "lastDeploy": "Last deploy: {{status}}",
       "metricsNote": "CPU & memory come from Render's API at a resolution matching the selected time range — this reflects real load (including traffic spikes), independent of the last deploy."
-    },
-    "vercel": {
-      "title": "Vercel (Frontend)",
-      "description": "Frontend hosting status",
-      "buildDuration": "Build duration (s)",
-      "lastDeploy": "Last deploy",
-      "metricsNote": "Vercel's free plan has no public API for real-time load/bandwidth, so this chart only shows the build duration of recent deployments."
     },
     "database": {
       "title": "Supabase (Database)",
@@ -977,6 +969,11 @@
     "forbidden": {
       "title": "Access forbidden",
       "description": "You don't have the necessary permissions to view this page."
+    },
+    "crash": {
+      "title": "Something went wrong",
+      "description": "The app hit an unexpected error. Please reload the page; contact an admin if it keeps happening.",
+      "reload": "Reload page"
     }
   }
 }

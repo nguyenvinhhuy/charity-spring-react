@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -172,13 +173,23 @@ export function MemberEditDialog({ member, isSelf, onOpenChange, onSaved }: Memb
                       {isSelf ? t("users.editDialog.selfActiveLocked") : t("users.editDialog.activeHint")}
                     </p>
                   </div>
-                  <Switch
-                    id="member-active"
-                    checked={active}
-                    onCheckedChange={setActive}
-                    disabled={isSelf}
-                    className="data-[state=unchecked]:bg-slate-400 disabled:opacity-100 dark:data-[state=unchecked]:bg-slate-600"
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {/* Wrapper span keeps Tooltip's own data-state off the Switch's DOM
+                          node, since Switch uses data-state itself for checked/unchecked color. */}
+                      <span className="inline-flex">
+                        <Switch
+                          id="member-active"
+                          aria-label={t("users.editDialog.activeLabel")}
+                          checked={active}
+                          onCheckedChange={setActive}
+                          disabled={isSelf}
+                          className="data-[state=unchecked]:bg-slate-400 disabled:opacity-100 dark:data-[state=unchecked]:bg-slate-600"
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t("users.editDialog.activeLabel")}</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 package com.clb.charity.notification.dto.response;
 
-import com.clb.charity.notification.domain.NotificationType;
+import com.clb.charity.common.model.NotificationType;
 
 /**
  * Whether the caller currently receives notifications of a given type.

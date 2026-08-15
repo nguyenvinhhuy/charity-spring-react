@@ -13,20 +13,20 @@ import com.clb.charity.campaign.dto.response.CampaignSummaryResponse;
 import com.clb.charity.campaign.dto.response.DonationResponse;
 import com.clb.charity.campaign.dto.response.PublicCampaignStatsResponse;
 import com.clb.charity.campaign.service.CampaignService;
-import com.clb.charity.comment.domain.CommentTargetType;
 import com.clb.charity.comment.dto.request.CreateCommentRequest;
 import com.clb.charity.comment.dto.request.UpdateCommentRequest;
 import com.clb.charity.comment.dto.response.CommentResponse;
 import com.clb.charity.comment.service.CommentService;
 import com.clb.charity.common.exception.RegistrationRequestException;
+import com.clb.charity.common.model.CommentTargetType;
+import com.clb.charity.common.model.NotificationReferenceType;
+import com.clb.charity.common.model.NotificationType;
+import com.clb.charity.common.model.ReactionTargetType;
 import com.clb.charity.common.ratelimit.SlidingWindowRateLimiter;
 import com.clb.charity.common.security.AuthPrincipal;
 import com.clb.charity.common.util.ClientIpUtil;
 import com.clb.charity.member.service.MemberService;
-import com.clb.charity.notification.domain.NotificationReferenceType;
-import com.clb.charity.notification.domain.NotificationType;
 import com.clb.charity.notification.service.NotificationService;
-import com.clb.charity.reaction.domain.ReactionTargetType;
 import com.clb.charity.reaction.dto.request.SetReactionRequest;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
 import com.clb.charity.reaction.service.ReactionService;
@@ -38,8 +38,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -85,12 +85,12 @@ public class CampaignController {
      */
     @Operation(summary = "List campaigns (paginated, optional status/category/search filters)")
     @GetMapping
-    public Page<CampaignSummaryResponse> list(
+    public PagedModel<CampaignSummaryResponse> list(
             @RequestParam(required = false) CampaignStatus status,
             @RequestParam(required = false) CampaignCategory category,
             @RequestParam(required = false) String search,
             Pageable pageable) {
-        return campaignService.list(status, category, search, pageable);
+        return new PagedModel<>(campaignService.list(status, category, search, pageable));
     }
 
     /**
@@ -210,8 +210,8 @@ public class CampaignController {
      */
     @Operation(summary = "List a campaign's donations")
     @GetMapping("/{id}/donations")
-    public Page<DonationResponse> listDonations(@PathVariable Long id, Pageable pageable) {
-        return campaignService.listDonations(id, pageable);
+    public PagedModel<DonationResponse> listDonations(@PathVariable Long id, Pageable pageable) {
+        return new PagedModel<>(campaignService.listDonations(id, pageable));
     }
 
     /**
@@ -317,11 +317,11 @@ public class CampaignController {
      */
     @Operation(summary = "List a campaign's comments")
     @GetMapping("/{id}/comments")
-    public Page<CommentResponse> listComments(@PathVariable Long id, Pageable pageable,
+    public PagedModel<CommentResponse> listComments(@PathVariable Long id, Pageable pageable,
                                               @AuthenticationPrincipal @Nullable AuthPrincipal principal) {
-        return commentService.list(CommentTargetType.CAMPAIGN, id, pageable,
+        return new PagedModel<>(commentService.list(CommentTargetType.CAMPAIGN, id, pageable,
                 principal == null ? null : principal.memberId(),
-                principal == null ? null : principal.role());
+                principal == null ? null : principal.role()));
     }
 
     /**
@@ -439,8 +439,8 @@ public class CampaignController {
      */
     @Operation(summary = "List a campaign's registrants")
     @GetMapping("/{id}/registrations")
-    public Page<RegistrantResponse> listRegistrants(@PathVariable Long id, Pageable pageable) {
-        return registrationService.list(id, pageable);
+    public PagedModel<RegistrantResponse> listRegistrants(@PathVariable Long id, Pageable pageable) {
+        return new PagedModel<>(registrationService.list(id, pageable));
     }
 
     /**

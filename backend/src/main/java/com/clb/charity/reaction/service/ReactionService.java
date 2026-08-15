@@ -1,6 +1,6 @@
 package com.clb.charity.reaction.service;
 
-import com.clb.charity.reaction.domain.ReactionTargetType;
+import com.clb.charity.common.model.ReactionTargetType;
 import com.clb.charity.reaction.domain.ReactionType;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
 import org.jspecify.annotations.Nullable;

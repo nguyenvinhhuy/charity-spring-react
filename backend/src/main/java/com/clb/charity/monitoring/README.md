@@ -1,9 +1,9 @@
 # Monitoring — Giám sát hệ thống
 
-Trang giám sát nội bộ (chỉ `ADMIN`) theo dõi tình trạng 4 dịch vụ free-tier mà dự án
-đang chạy trên đó: **Render** (host backend), **Vercel** (host frontend),
-**Supabase/Postgres** (database), **Cloudinary** (lưu ảnh). Mục tiêu: phát hiện sớm
-khi sắp hết hạn mức free tier hoặc dịch vụ lỗi, trước khi ảnh hưởng người dùng thật.
+Trang giám sát nội bộ (chỉ `ADMIN`) theo dõi tình trạng 3 dịch vụ free-tier mà dự án
+đang chạy trên đó: **Render** (host backend), **Supabase/Postgres** (database),
+**Cloudinary** (lưu ảnh). Mục tiêu: phát hiện sớm khi sắp hết hạn mức free tier hoặc
+dịch vụ lỗi, trước khi ảnh hưởng người dùng thật.
 
 ---
 
@@ -11,22 +11,22 @@ khi sắp hết hạn mức free tier hoặc dịch vụ lỗi, trước khi ả
 
 ```
 Frontend (/dashboard/monitoring)
-   │  GET /api/v1/monitoring/overview?range=ONE_DAY   (mỗi 60s tự refetch)
+   │  GET /api/v1/monitoring/overview?range=ONE_DAY   (load trang / đổi khung thời gian / bấm nút Làm mới)
    ▼
 MonitoringController  ───▶  MonitoringService.getOverview(range)
                                           │
-                  ┌───────────────────────┼───────────────────┬──────────────────────┐
-                  ▼                       ▼                   ▼                      ▼
-            fetchRenderStatus     fetchVercelStatus     fetchDatabaseStatus   fetchCloudinaryStatus
-             (Render REST API)    (Vercel REST API)     (query trực tiếp      (Cloudinary SDK
-                                                        qua JDBC hiện có)     usage() API)
-                  │                       │                   │                        │
-                  └───────────────────────┴─────────┬─────────┴──────────────────────┘
-                                                    ▼
+                  ┌───────────────────────┼──────────────────────┐
+                  ▼                       ▼                      ▼
+            fetchRenderStatus     fetchDatabaseStatus    fetchCloudinaryStatus
+             (Render REST API)    (query trực tiếp        (Cloudinary SDK
+                                  qua JDBC hiện có)        usage() API)
+                  │                       │                      │
+                  └───────────────────────┴──────────┬───────────┘
+                                                       ▼
                                         MonitoringOverviewResponse
                                                     │
                                                     ▼
-                                4 card + biểu đồ (recharts) trên dashboard
+                                3 card + biểu đồ (recharts) trên dashboard
 
 ⚠️ [LƯU Ý KỸ THUẬT 01] RỦI RO NGHẼN LUỒNG API DO CHẬM KẾT NỐI (BLOCKING I/O)
 
@@ -37,7 +37,7 @@ Song song, độc lập với request trên:
 
 @Scheduled(fixedRate = 15 phút)
 checkThresholdsAndAlert()
-   │  fetch lại Render/Vercel/DB/Cloudinary (Render dùng lookback/resolution mịn hơn:
+   │  fetch lại Render/DB/Cloudinary (Render dùng lookback/resolution mịn hơn:
    │  15 phút / 30 giây, để không bỏ sót spike ngắn giữa 2 lần chạy)
    ▼
 evaluate(resource, isAlerting, message)   — so với trạng thái lần trước (in-memory)
@@ -68,18 +68,7 @@ evaluate(resource, isAlerting, message)   — so với trạng thái lần trư�
   - CPU % = số core / **0.1 core** (giới hạn CPU Render free-plan) × 100.
   - Trục Y biểu đồ luôn cố định `[0, 100]` — không auto-scale, tránh phóng đại mức dùng thấp.
 
-### 2.2 Vercel (frontend host)
-
-- Không cấu hình (`VERCEL_API_TOKEN`/`VERCEL_PROJECT_ID` trống) → `NOT_CONFIGURED`.
-- Gọi `GET /v6/deployments?projectId=...&limit=60&since=...` (tối đa 60 bản build gần nhất).
-- Trạng thái build: `READY`→`READY`, `BUILDING/QUEUED/INITIALIZING`→`BUILDING`,
-  `ERROR/CANCELED`→`ERROR`.
-- **Giới hạn đã biết**: Vercel free-plan không có API đo tải/băng thông real-time,
-  nên biểu đồ chỉ thể hiện **thời gian build** của các lần deploy gần đây, không phải
-  tải truy cập thực tế. Vercel trả kết quả mới nhất trước, phải đảo ngược mảng để
-  biểu đồ đọc trái→phải theo thời gian.
-
-### 2.3 Database (Supabase/Postgres)
+### 2.2 Database (Supabase/Postgres)
 
 - Không có trạng thái "chưa cấu hình" — luôn query trực tiếp qua kết nối JDBC hiện có
   của app (không cần token Supabase Management API riêng). Lỗi thì trả `errorMessage`.
@@ -88,7 +77,7 @@ evaluate(resource, isAlerting, message)   — so với trạng thái lần trư�
   `pg_total_relation_size`.
 - Giới hạn mặc định: **500MB** (`DB_STORAGE_LIMIT_BYTES`, khớp Supabase free tier).
 
-### 2.4 Cloudinary (lưu ảnh)
+### 2.3 Cloudinary (lưu ảnh)
 
 - Không cấu hình (`cloudName`/`apiKey` trống) → `configured=false`, số liệu = 0.
 - Gọi Cloudinary SDK `cloudinary.api().usage()` lấy `storage.usage` và `bandwidth.usage`.
@@ -125,7 +114,7 @@ xem trên UI — để không bỏ sót spike ngắn giữa 2 lần chạy job (
 - `@Scheduled(fixedRate = 900_000)` — chạy mỗi **15 phút**.
 - Ngưỡng cảnh báo: `app.alert.threshold-fraction` = **0.8 (80%)**, hard-code trong
   `application.yml`, không có biến môi trường riêng để override.
-- Với mỗi nguồn (RENDER/VERCEL/DATABASE/CLOUDINARY), tính `isAlerting` rồi so với
+- Với mỗi nguồn (RENDER/DATABASE/CLOUDINARY), tính `isAlerting` rồi so với
   trạng thái lần chạy job trước đó (lưu trong `ConcurrentHashMap` in-memory —
   **chỉ đúng khi backend chạy 1 instance duy nhất**, restart sẽ mất trạng thái debounce).
 - Chỉ gửi email khi **đổi trạng thái**:
@@ -148,7 +137,7 @@ GET /api/v1/monitoring/overview?range={TWELVE_HOURS|ONE_DAY|THREE_DAYS|SEVEN_DAY
 
 - Yêu cầu role `ADMIN` (`SecurityConfig`: `.requestMatchers(API + "/monitoring/**").hasRole("ADMIN")`).
 - `range` mặc định `ONE_DAY` nếu không truyền.
-- Trả về `MonitoringOverviewResponse` gồm cả 4 nguồn + `fetchedAt`.
+- Trả về `MonitoringOverviewResponse` gồm cả 3 nguồn + `fetchedAt`.
 
 ---
 
@@ -157,7 +146,6 @@ GET /api/v1/monitoring/overview?range={TWELVE_HOURS|ONE_DAY|THREE_DAYS|SEVEN_DAY
 | Biến                                    | Mặc định                   | Ý nghĩa                                      |
 | --------------------------------------- | -------------------------- | -------------------------------------------- |
 | `RENDER_API_KEY`, `RENDER_SERVICE_ID`   | (trống)                    | trống → Render hiện `NOT_CONFIGURED`         |
-| `VERCEL_API_TOKEN`, `VERCEL_PROJECT_ID` | (trống)                    | trống → Vercel hiện `NOT_CONFIGURED`         |
 | `RESEND_API_KEY`                        | (trống)                    | trống → tắt hẳn gửi email cảnh báo           |
 | `ALERT_EMAIL_TO`                        | `nguyenvana0258@gmail.com` | người nhận cảnh báo                          |
 | `ALERT_EMAIL_FROM`                      | `onboarding@resend.dev`    | địa chỉ gửi (Resend sandbox mặc định)        |
@@ -171,11 +159,11 @@ phải config riêng cho monitoring.
 
 ## 7. Frontend
 
-- Vị trí: `frontend/src/features/monitoring/` (page + api + types + 4 card component).
+- Vị trí: `frontend/src/features/monitoring/` (page + api + types + 3 card component).
 - Route: `/dashboard/monitoring`, chỉ `ADMIN` (`router/routes.tsx`).
-- Tự động refetch toàn bộ overview mỗi **60 giây** (TanStack Query `refetchInterval`);
-  khi đổi khung thời gian, dữ liệu cũ vẫn hiện mờ (`opacity-60`) trong lúc tải khung mới
-  thay vì nhảy về loading trắng.
+- Không tự động polling — chỉ fetch khi load trang, đổi khung thời gian, hoặc bấm nút
+  "Làm mới" (`refetch()` từ TanStack Query). Khi đổi khung thời gian, dữ liệu cũ vẫn
+  hiện mờ (`opacity-60`) trong lúc tải khung mới thay vì nhảy về loading trắng.
 - Ngưỡng 80% hiển thị màu cảnh báo trên UI là **hard-code riêng ở frontend**
   (`monitoring-page.tsx`, `THRESHOLD_PERCENT = 80`), phải tự đồng bộ tay với
   `app.alert.threshold-fraction` bên backend nếu đổi.
@@ -188,17 +176,17 @@ phải config riêng cho monitoring.
 
 **Backend** (`com.clb.charity.monitoring`):
 
-- `domain/` — `MetricRange`, `MonitoringResource`, `RenderState`, `VercelState`
-- `dto/response/` — `MonitoringOverviewResponse` + 4 DTO con + `CategoryAmount`/`MetricPoint`/`DeployDurationPoint`
+- `domain/` — `MetricRange`, `MonitoringResource`, `RenderState`
+- `dto/response/` — `MonitoringOverviewResponse` + 3 DTO con + `CategoryAmount`/`MetricPoint`
 - `service/MonitoringService.java`, `service/impl/MonitoringServiceImpl.java`
 - `service/AlertService.java` + impl (gửi email qua Resend)
 - `controller/MonitoringController.java`
-- `common/config/AppProperties.java` — nested record `Render`/`Vercel`/`Alert`/`Cloudinary`
+- `common/config/AppProperties.java` — nested record `Render`/`Alert`/`Cloudinary`
 
 **Frontend** (`frontend/src/features/monitoring/`):
 
 - `api.ts`, `types.ts`, `lib.ts`
 - `pages/monitoring-page.tsx`
-- `components/{render,vercel,database,cloudinary}-status-card.tsx`, `service-status-card.tsx`
+- `components/{render,database,cloudinary}-status-card.tsx`, `service-status-card.tsx`
 
 **i18n**: namespace `monitoring` trong `frontend/src/i18n/locales/{vi,en}.json`.

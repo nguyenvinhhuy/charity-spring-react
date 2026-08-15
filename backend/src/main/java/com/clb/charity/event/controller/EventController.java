@@ -8,8 +8,8 @@ import com.clb.charity.event.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,8 +37,8 @@ public class EventController {
      */
     @Operation(summary = "List internal activities (non-fundraising)")
     @GetMapping
-    public Page<EventResponse> list(Pageable pageable) {
-        return eventService.list(pageable);
+    public PagedModel<EventResponse> list(Pageable pageable) {
+        return new PagedModel<>(eventService.list(pageable));
     }
 
     /**

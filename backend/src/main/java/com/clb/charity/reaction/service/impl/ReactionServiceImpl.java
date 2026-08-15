@@ -1,8 +1,8 @@
 package com.clb.charity.reaction.service.impl;
 
+import com.clb.charity.common.model.ReactionTargetType;
 import com.clb.charity.member.service.MemberService;
 import com.clb.charity.reaction.domain.Reaction;
-import com.clb.charity.reaction.domain.ReactionTargetType;
 import com.clb.charity.reaction.domain.ReactionType;
 import com.clb.charity.reaction.dto.response.ReactionSummaryResponse;
 import com.clb.charity.reaction.repository.ReactionRepository;
